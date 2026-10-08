@@ -1,5 +1,7 @@
 # Русская локализация Daggerfall Online
 
+[![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Lattymoy/daggerfall-js-source/blob/main/LICENSE)
+
 > Игра — https://github.com/Lattymoy/daggerfall-js-source (открытый реимпорт TES II: Daggerfall, логика портирована из Daggerfall Unity, лицензия MIT). Поиграть в оригинал можно здесь: https://daggerfalljs.dev/. А этот репозиторий — отдельный русский языковой пакет к ней. Клиент и сервер игры мы не копируем и не меняем: баланс, сеть и сейвы остаются как в оригинале.
 
 ## Что это
