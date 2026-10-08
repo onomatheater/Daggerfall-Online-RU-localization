@@ -16,17 +16,31 @@
 <p>Шрифт: Кк Ыы Жж Ээ Юю — Стальной меч, 15 Января</p>
 <p><button id="ru">Русский</button> <button id="en">English</button></p>
 <p id="line">...</p>
-<script type="module">
-  import { t, setLocale, getLocale } from '../src/locale/locale.js';
-  import { month } from '../src/locale/morph.js';
-  const paint = () => {
-    document.getElementById('title').textContent =
-      getLocale() === 'ru' ? 'Русская локализация' : 'Russian localization';
-    document.getElementById('line').textContent =
-      t('youSee', { s: t('items:1') }) + ' — 15 ' + month(0, 'gen');
+<!--
+  Самодостаточный файл: открывается двойным кликом (file://).
+  ES-модули и import'ы тут запрещены — Chrome режет их CORS на file://.
+  Логика повторяет src/locale/locale.js + morph.js на встроенном подмножестве.
+-->
+<script>
+  var T = {
+    en: { strings: { youSee: 'You see %s.' }, items: { 1: 'Emerald' } },
+    ru: { strings: { youSee: 'Это %s.' }, items: { 1: 'Изумруд' } }
   };
-  document.getElementById('ru').onclick = () => { setLocale('ru'); paint(); };
-  document.getElementById('en').onclick = () => { setLocale('en'); paint(); };
+  var MONTH_GEN = ['Января','Февраля','Марта','Апреля','Мая','Июня','Июля','Августа','Сентября','Октября','Ноября','Декабря'];
+  var cur = 'ru';
+  function setLocale(l) { cur = T[l] ? l : 'en'; }
+  function t(table, key, v) {
+    var s = (T[cur][table] && T[cur][table][key]) || (T.en[table] && T.en[table][key]) || key;
+    return String(s).replaceAll('%s', v);
+  }
+  function paint() {
+    document.getElementById('title').textContent =
+      cur === 'ru' ? 'Русская локализация' : 'Russian localization';
+    document.getElementById('line').textContent =
+      t('strings', 'youSee', t('items', '1', '')) + ' — 15 ' + MONTH_GEN[0];
+  }
+  document.getElementById('ru').onclick = function () { setLocale('ru'); paint(); };
+  document.getElementById('en').onclick = function () { setLocale('en'); paint(); };
   setLocale('ru'); paint();
 </script>
 </body>
