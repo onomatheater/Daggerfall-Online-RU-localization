@@ -1,10 +1,11 @@
-// Импорт CSV Jagget (Key,Value) в ru.json. Источник пинится на коммит:
+// Импорт CSV Jagget (Key,Value[,Original]) в namespaced JSON.
+// Источник пинится на коммит:
 // https://github.com/Jagget/Daggerfall-Rus @ 56ab614984a70f40fcb55be3d7233909151ccbed
-// Ключи никогда не переименовываем, только Value. BOM срезаем, переводы
-// строк внутри кавычек — часть значения (DFU-правило для RSC учтено
-// вызывающей стороной, здесь сырой Value).
+// Ключи никогда не переименовываем, только Value. BOM срезаем. Третья
+// колонка Original (есть у Spells/Factions/MagicItems) — это английский
+// оригинал DFU, идёт в en-таблицу как fallback. Разные таблицы живут в
+// своих неймспейсах: items:1 и spells:1 — разные строки.
 export const JAGGET_PIN = '56ab614984a70f40fcb55be3d7233909151ccbed';
-const JAGGET_BASE = `https://raw.githubusercontent.com/Jagget/Daggerfall-Rus/${JAGGET_PIN}`;
 
 export function parseCsv(text) {
   const src = String(text ?? '').replace(/^﻿/, '');
@@ -16,7 +17,6 @@ export function parseCsv(text) {
     let field = '';
     let inQuotes = false;
     if (i >= n) return null;
-    // Пропуск пустых строк между записями
     if (src[i] === '\r' || src[i] === '\n') {
       i += src[i] === '\r' && src[i + 1] === '\n' ? 2 : 1;
       return readRecord();
@@ -44,30 +44,39 @@ export function parseCsv(text) {
   };
   const header = readRecord();
   if (!header || header[0] !== 'Key') throw new Error('expected Key,Value header');
+  const hasOrig = header[2] === 'Original';
   let rec;
   while ((rec = readRecord()) !== null) {
     if (rec.length === 1 && rec[0] === '') continue;
-    rows.push({ key: rec[0], value: rec.slice(1).join(',') });
+    rows.push({ key: rec[0], value: rec[1] ?? '', ...(hasOrig ? { orig: rec[2] ?? '' } : {}) });
   }
   return rows;
 }
 
 export function csvToJson(rows) {
-  const out = {};
-  for (const { key, value } of rows) {
+  const ru = {};
+  const en = {};
+  for (const { key, value, orig } of rows) {
     if (!key || key === 'Key') continue;
-    out[key] = value;
+    ru[key] = value;
+    if (orig) en[key] = orig;
   }
-  return out;
+  return { ru, en };
 }
 
-// CLI: node tools/jagget-import.mjs --src <csv> --out <json> [--merge <json>]
+// CLI: node tools/jagget-import.mjs --src <csv> --table <name>
+//      --ru <ru.json> --en <en.json>
 if (process.argv[1]?.endsWith('jagget-import.mjs')) {
   const { readFileSync, writeFileSync } = await import('node:fs');
   const args = process.argv.slice(2);
   const get = (f) => args[args.indexOf(f) + 1];
-  const base = get('--merge') ? JSON.parse(readFileSync(get('--merge'), 'utf8')) : {};
-  const rows = parseCsv(readFileSync(get('--src'), 'utf8'));
-  writeFileSync(get('--out'), JSON.stringify({ ...base, ...csvToJson(rows) }, null, 2) + '\n');
-  console.log(`imported ${rows.length} rows -> ${get('--out')}`);
+  const table = get('--table') || 'strings';
+  const { ru, en } = csvToJson(parseCsv(readFileSync(get('--src'), 'utf8')));
+  const ruAll = JSON.parse(readFileSync(get('--ru'), 'utf8'));
+  const enAll = JSON.parse(readFileSync(get('--en'), 'utf8'));
+  ruAll[table] = { ...(ruAll[table] ?? {}), ...ru };
+  enAll[table] = { ...(enAll[table] ?? {}), ...en };
+  writeFileSync(get('--ru'), JSON.stringify(ruAll, null, 2) + '\n');
+  writeFileSync(get('--en'), JSON.stringify(enAll, null, 2) + '\n');
+  console.log(`imported ${Object.keys(ru).length} rows -> ${table} (+${Object.keys(en).length} en-orig)`);
 }

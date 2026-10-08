@@ -16,6 +16,8 @@ test('strips BOM and unescapes doubled quotes', () => {
   assert.deepEqual(rows, [{ key: 'q', value: 'сказал "привет"' }]);
 });
 
-test('csvToJson keeps keys stable, values only', () => {
-  assert.deepEqual(csvToJson([{ key: 'saveGame', value: 'Сохранить игру' }]), { saveGame: 'Сохранить игру' });
+test('third Original column captured separately, never merged into Value', () => {
+  const rows = parseCsv('Key,Value,Original\r\n1,Замок Фенрика,Fenrik\'s Door Jam\r\n');
+  assert.deepEqual(rows, [{ key: '1', value: 'Замок Фенрика', orig: "Fenrik's Door Jam" }]);
+  assert.deepEqual(csvToJson(rows), { ru: { 1: 'Замок Фенрика' }, en: { 1: "Fenrik's Door Jam" } });
 });
