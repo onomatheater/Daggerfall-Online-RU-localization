@@ -1,36 +1,37 @@
-# Daggerfall Online — русская локализация
+# Русская локализация Daggerfall Online
 
-> **Первоисточник игры:** https://github.com/Lattymoy/daggerfall-js-source (Daggerfall Online — open-source реимплементация TES II: Daggerfall, логика портирована из Daggerfall Unity, MIT). Играть в оригинал: https://daggerfalljs.dev/ (`/play/`). **Этот репозиторий — независимый RU-оверлей, не форк игрового клиента и не сервер: сетевой протокол и баланс не трогаем, конфликтов с оригиналом нет.**
+> Игра — https://github.com/Lattymoy/daggerfall-js-source (открытый реимпорт TES II: Daggerfall, логика портирована из Daggerfall Unity, лицензия MIT). Поиграть в оригинал можно здесь: https://daggerfalljs.dev/. А этот репозиторий — отдельный русский языковой пакет к ней. Клиент и сервер игры мы не копируем и не меняем: баланс, сеть и сейвы остаются как в оригинале.
 
-[![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+## Что это
 
-Русский языковой пакет + инфраструктура переключения языка для Daggerfall Online. Дефолт игры — английский; RU включается флагом/переключателем и ни один английский пиксель по умолчанию не меняется.
+Набор файлов, который добавляет в игру русский язык: таблицы строк, переводы квестов и книг, шрифт с кириллицей и небольшой загрузчик. По умолчанию игра остаётся английской — русский включается отдельно и ни на что кроме текста не влияет.
+
+Шлём по сети и пишем в сейвы только идентификаторы (названия предметов, квестов и т.п. — по ID). Поэтому игрок с русским клиентом и игрок с английским видят каждый свой язык и не ломают друг другу ни чат, ни обмен, ни сейвы.
 
 ## Ссылки
 
-- Игра (апстрим): https://github.com/Lattymoy/daggerfall-js-source
-- Daggerfall Unity (источник логики и формата локализации): https://github.com/Interkarma/daggerfall-unity
-- Гайд по переводу DFU: https://github.com/Interkarma/daggerfall-unity/wiki/Translating-Daggerfall-Unity
-- Контент-источник RU-строк: Jagget «Daggerfall in Russian» (Nexus mods/511) — используется как данные, с атрибуцией в `docs/ATTRIBUTION.md`, только с разрешения автора
-- Шрифт: Handjet (Rosetta, OFL-1.1) — `vendor/handjet/`, веса только 400/500/700
-- Форум переводов DFU: https://forums.dfworkshop.net/viewforum.php?f=26
+- Оригинал игры: https://github.com/Lattymoy/daggerfall-js-source
+- Daggerfall Unity (откуда портирована логика и формат перевода): https://github.com/Interkarma/daggerfall-unity
+- Как устроены переводы в DFU: https://github.com/Interkarma/daggerfall-unity/wiki/Translating-Daggerfall-Unity
+- Форум переводчиков DFU: https://forums.dfworkshop.net/viewforum.php?f=26
+- Русские строки берём из перевода Jagget «Daggerfall in Russian» (Nexus, mods/511) — как данные, с указанием авторства и только с его разрешения
+- Шрифт — Handjet от Rosetta, свободная лицензия OFL-1.1, лежат только веса 400/500/700 (`vendor/handjet/`)
 
-## Установка (игроку)
+## Как поставить
 
-1. Скачай `ru-pack.zip` из Releases.
-2. Веб: открой игру с `?lang=ru` или выбери «Язык: Русский» в настройках (когда переключатель вмержен в апстрим).
-3. Десктоп: распакуй пак в `Prefs/Locale/ru/` рядом с сейвами. Сейвы (`SaveData.txt` DFU-формата) не трогаются — в них лежат ID, не строки.
-4. Обновление: замени zip на новый из Releases; версия пака видна в настройках (`locale-version.json`).
+1. Забрать `ru-pack.zip` из Releases.
+2. Браузерная версия: открыть игру с параметром `?lang=ru` или выбрать «Русский» в настройках (когда переключатель появится в игре).
+3. Десктопная версия: распаковать архив в `Prefs/Locale/ru/` рядом с сейвами. Сами сейвы (`SaveData.txt`) трогать не нужно — в них хранятся ID, а не текст.
+4. Обновление — скачать новый zip и заменить файлы. Версия пакета показана в настройках (`locale-version.json`).
 
-## Для разработчика
+## Как устроено (для тех, кто будет править)
 
-- `src/locale/locale.js` — `t(key, params, locale)`, `setLocale()`, `getLocale()`; fallback EN.
-- `src/locale/en.json` — ключи-источники (verbatim EN апстрима). `src/locale/ru.json` — только `Value` на русском, `Key` не переименовывать.
-- Тесты: `node --test test/` (движок Node ≥ 20). План: `docs/superpowers/plans/2026-10-08-rudaggerfall-localization.md`.
-- Правила: см. `AGENTS.md` (политика Pay once: ID внутри, текст только на рендере; сеть и сейвы — только ID).
+- `src/locale/locale.js` — функции `t()`, `setLocale()`, `getLocale()`. Нет ключа на русском — показывается английский, игра не падает.
+- `src/locale/en.json` — исходные английские строки, ключи оттуда переименовывать нельзя.
+- `src/locale/ru.json` — перевод: меняются только значения, ключи те же.
+- Проверка: `node --test test/`, нужен Node 20+.
 
-## Статус
+## Что готово
 
-- [x] Task 1: скелет `t()` с fallback EN
-- [ ] Task 2: Handjet-вендор + DOM-стек
-- [ ] Task 3–9 по плану
+- Каркас загрузчика строк с откатом на английский
+- Дальше по очереди: шрифт, перенос строк из перевода Jagget, квесты и книги, проверка сети, склонения и падежи
