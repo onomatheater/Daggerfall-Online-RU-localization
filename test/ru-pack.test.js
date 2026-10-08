@@ -16,9 +16,11 @@ test('pack builder assembles versioned directory with manifest', () => {
   assert.ok(manifest.files.some((f) => f.endsWith('.woff2')), 'font included');
 });
 
-test('demo page wires switcher, Handjet and sample strings', () => {
+test('demo page is self-contained (works from file://)', () => {
   const html = readFileSync(new URL('../demo/locale-switch.html', import.meta.url), 'utf8');
   assert.match(html, /Handjet/);
   assert.match(html, /setLocale/);
   assert.match(html, /Кк Ыы/);
+  assert.doesNotMatch(html, /from '\.\.\/src/, 'no module imports: file:// CORS');
+  assert.match(html, /Изумруд/, 'sample data inlined');
 });
