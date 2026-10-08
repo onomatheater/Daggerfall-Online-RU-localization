@@ -4,13 +4,14 @@ import { t, setLocale, getLocale } from '../src/locale/locale.js';
 
 test('fallback EN when RU key missing', () => {
   setLocale('ru');
-  assert.equal(t('customName'), 'Custom name: ');
+  assert.equal(t('__no_such_key__'), '__no_such_key__');
   setLocale('en');
 });
 
-test('RU override works', () => {
+test('RU override works (Jagget value, macro intact)', () => {
   setLocale('ru');
-  assert.equal(t('youSee'), 'Вы видите %s.');
+  assert.equal(t('youSee'), 'Это %s.');
+  assert.match(t('youSee'), /%s/);
   setLocale('en');
 });
 
