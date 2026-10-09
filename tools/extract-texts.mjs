@@ -14,6 +14,14 @@ export function slugify(s) {
 
 // Сканирует исходник, отдаёт сырые строковые литералы (кавычки/теги).
 // Возвращает [{ raw, index }] — сырые, без трима.
+function unescapeJs(s) {
+  return s.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/gs, (m, g) => {
+    if (g.startsWith('u')) return String.fromCharCode(parseInt(g.slice(1), 16));
+    if (g.startsWith('x')) return String.fromCharCode(parseInt(g.slice(1), 16));
+    const one = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v', 0: '\0' };
+    return one[g] ?? g;
+  });
+}
 function scan(source) {
   const out = [];
   const n = source.length;
@@ -26,7 +34,7 @@ function scan(source) {
     let closed = false;
     while (i < n) {
       const c = source[i];
-      if (quote === '`' && c === '$' && source[i + 1] === '{') {
+      if (quote === '`' && c === '$' && source[i + 1] === '{' && source[i - 1] !== '\\') {
         // ${...} с учётом вложенности — пропускаем целиком
         let depth = 0;
         while (i < n) {
@@ -44,13 +52,13 @@ function scan(source) {
         buf += '\u0000';
         continue;
       }
-      if (c === '\\' && i + 1 < n) { buf += source[i + 1]; i += 2; continue; }
+      if (c === '\\' && i + 1 < n) { buf += c + source[i + 1]; i += 2; continue; }
       if (c === quote) { closed = true; i++; break; }
       if (quote !== '`' && (c === '\n' || c === '\r')) break; // обрыв — не строка
       buf += c;
       i++;
     }
-    if (closed) out.push({ raw: buf, index: start });
+    if (closed) out.push({ raw: unescapeJs(buf), index: start, end: i, quote });
   };
   while (i < n) {
     const c = source[i];
@@ -75,7 +83,7 @@ function scan(source) {
         j++;
       }
       if (j < n && source[j] === '<' && /[A-Za-zА-Яа-яЁё]/.test(buf)) {
-        out.push({ raw: buf, index: i + 1 });
+        out.push({ raw: buf, index: i + 1, end: j, quote: '>' });
       }
       i++;
       continue;
@@ -156,4 +164,39 @@ export function extractTexts(source, page = 'page', opts = {}) {
     found.set(en, { key: `dfo:${page}.${uniq}`, en, line });
   }
   return [...found.values()];
+}
+
+// Перепись исходника: дисплейные литералы → ruT('dfo:page.slug').
+// Возвращает { code, table } — table только переписанное (для en.json).
+// Не трогает: слоты классов, dev-строки, шаблоны ${}, тексты тегов, FONT/shorthand.
+// Идемпотентен: повторный прогон — no-op.
+export function rewriteFile(source, page = 'page', opts = {}) {
+  const importFrom = opts.importFrom ?? '../locale/locale.js';
+  const rows = extractTexts(source, page, opts);
+  const byEn = new Map(rows.map((r) => [r.en, r.key]));
+  const edits = []; // { start, end, text }
+  const table = [];
+  const tabled = new Set();
+  for (const { raw, index, end, quote } of scan(source)) {
+    if (quote === '>') continue; // текст тега — не код
+    if (String(raw).includes('\u0000')) continue; // шаблон с ${} — руками
+    const en = String(raw).replace(/\u0000/g, '').trim();
+    const key = byEn.get(en);
+    if (!key) continue;
+    if (inClassSlot(source, index, en)) continue;
+    const call = `ruT('${key}')`;
+    edits.push({ start: index, end, text: call });
+    if (!tabled.has(key)) {
+      tabled.add(key);
+      table.push({ key, en, line: source.slice(0, index).split('\n').length });
+    }
+  }
+  // сплайс с конца, чтобы индексы не плыли
+  let code = source;
+  edits.sort((a, b) => b.start - a.start);
+  for (const e of edits) code = code.slice(0, e.start) + e.text + code.slice(e.end);
+  if (edits.length > 0 && !/\bt\s+as\s+ruT\b/.test(code)) {
+    code = `import { t as ruT } from '${importFrom}';\n` + code;
+  }
+  return { code, table };
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractTexts } from '../tools/extract-texts.mjs';
+import { extractTexts, rewriteFile } from '../tools/extract-texts.mjs';
 
 const FICTIONAL = `
 <button>New Game</button>
@@ -151,4 +151,33 @@ test('skips tag names and font shorthands', () => {
   assert.ok(!byEn['TEXTAREA'], 'createElement tag skipped');
   assert.ok(!byEn['700 11px Cormorant, Georgia, serif'], 'font shorthand skipped');
   assert.ok(byEn['Press a key...'], 'ellipsis text kept');
+});
+
+test('decodes JS escapes in literals', () => {
+  const src = "a = 'Morrowind record\\u2019s texture';\nb = 'line one\\nline two';\nc = 'it\\'s';";
+  const rows = extractTexts(src, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(byEn['Morrowind record’s texture'], 'uXXXX decoded, no garbage');
+  assert.ok(!Object.keys(byEn).some((k) => k.includes('u2019')), 'no escape remnants');
+  assert.ok(byEn['it\'s'], 'escaped quote kept whole');
+});
+
+const RW = `el('div', 'row', 'Cancel');
+el('div', 'row', 'Cancel');
+box.classList.add('on');
+`;
+
+test('rewrite replaces display literals with ruT keys, keeps code', () => {
+  const { code, table } = rewriteFile(RW, 'fict', { importFrom: '../locale/locale.js' });
+  assert.equal(table.length, 1);
+  assert.equal(table[0].en, 'Cancel');
+  assert.equal(table[0].key, 'dfo:fict.cancel');
+  assert.ok(code.includes(`ruT('dfo:fict.cancel')`), 'literal replaced');
+  assert.ok(!code.includes(`'Cancel'`), 'no raw literal left');
+  assert.ok(code.includes(`import { t as ruT } from '../locale/locale.js';`), 'import added');
+  assert.ok(code.includes(`classList.add('on')`), 'class untouched');
+  // идемпотентность: второй прогон ничего не меняет
+  const again = rewriteFile(code, 'fict', { importFrom: '../locale/locale.js' });
+  assert.equal(again.code, code);
+  assert.equal(again.table.length, 0);
 });
