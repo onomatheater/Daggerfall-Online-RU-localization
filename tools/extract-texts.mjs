@@ -116,7 +116,8 @@ function isSkippable(raw) {
   if (/^(TODO|FIXME|XXX)\b/.test(s) || /^NOTE:/.test(s)) return true; // dev-пометки
   if (/\b\d+(\.\d+)?px\b/.test(s)) return true; // font-шорткат (700 11px ...)
   const core = s.replace(/[?!…]+$/u, '');
-  if (/[=<>!&|?;:(){}\[\]\\]/.test(core)) return true; // обрывки кода
+  if (/[=<>!&|;:(){}\[\]\\]/.test(core)) return true; // обрывки кода
+  if (/\?\?/.test(core) || /\?\./.test(core) || /\w\?\w/.test(core) || / \? /.test(core)) return true; // кодовый ?
   return false;
 }
 
@@ -137,7 +138,25 @@ function inClassSlot(source, index, en) {
   if (/el\(\s*(['"])[^'"]*\1\s*,\s*['"]?$/.test(back)) {
     return /^[a-z0-9][a-z0-9-]*(\s+[a-z0-9][a-z0-9-]*)*$/.test(en);
   }
+  if (/[^?]\?\s*['"]?$/.test(back)) {
+    return /^[a-z0-9][a-z0-9-]*(\s+[a-z0-9][a-z0-9-]*)*$/.test(en);
+  }
   return false;
+}
+
+// Строка, которая МОЖЕТ быть показана, но выглядит как кодовая константа
+// или половина шаблона: не переписываем автоматом — несём в очередь ревью,
+// где человек пишет целое сообщение с плейсхолдерами (ICU).
+function riskOf(source, index, en) {
+  const back = source.slice(Math.max(0, index - 80), index);
+  if (/(===|!==|==|!=)\s*$/.test(back)) return 'code-const'; // сравнение с константой
+  if (/\?\?\s*$/.test(back)) return 'code-const'; // ?? fallback
+  if (/\+ ?$/.test(back)) return 'template-part'; // половина конкатенации
+  if (/ {2,}/.test(en)) return 'template-part'; // дырка от ${}
+  if (en.length >= 12 && /\b(of|in|to|for|with|on|at|by|from|and|or|the|is|are|be)\s*$/i.test(en)) {
+    return 'template-part'; // обрыв на служебном слове
+  }
+  return null;
 }
 
 // Слой показа: по умолчанию берём всё, но звать надо с opts { file, include } —
@@ -161,7 +180,8 @@ export function extractTexts(source, page = 'page', opts = {}) {
     while (usedSlugs.has(uniq)) uniq = `${slug}_${k++}`;
     usedSlugs.add(uniq);
     const line = source.slice(0, index).split('\n').length;
-    found.set(en, { key: `dfo:${page}.${uniq}`, en, line });
+    const risk = riskOf(source, index, en);
+    found.set(en, { key: `dfo:${page}.${uniq}`, en, line, risk });
   }
   return [...found.values()];
 }
@@ -179,7 +199,7 @@ export function rewriteFile(source, page = 'page', opts = {}) {
   const include = opts.include ?? UI_SCOPE;
   const importFrom = opts.importFrom ?? '../locale/locale.js';
   const rows = extractTexts(source, page, { ...opts, include });
-  const byEn = new Map(rows.map((r) => [r.en, r.key]));
+  const byEn = new Map(rows.filter((r) => !r.risk).map((r) => [r.en, r.key]));
   const edits = []; // { start, end, text }
   const table = [];
   const tabled = new Set();

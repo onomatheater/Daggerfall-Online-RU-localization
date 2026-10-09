@@ -153,6 +153,49 @@ test('skips tag names and font shorthands', () => {
   assert.ok(byEn['Press a key...'], 'ellipsis text kept');
 });
 
+test('skips class ternary branches, keeps word ternaries', () => {
+  const src = `const b = el('button', a.primary ? 'act primary' : 'act', a.label);
+const w = el('div', 'x', cond ? 'Yes' : 'No');`;
+  const rows = extractTexts(src, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(!byEn['act primary'] && !byEn['act'], 'class ternary skipped');
+  assert.ok(byEn['Yes'] && byEn['No'], 'word ternary kept');
+});
+
+const CODEQ = `
+a = 'Takes effect at once. ?fps forces it on.';
+b = 'a?b:c';
+c = reason === 'not built' ? 'Builds when you play' : 'On';
+d = armState?.reason ?? 'not built';
+e = name ?? 'Unknown';
+`;
+
+test('keeps ?-hints, skips code constants', () => {
+  const rows = extractTexts(CODEQ, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(byEn['Takes effect at once. ?fps forces it on.'], '?-hint kept');
+  assert.ok(!byEn['a?b:c'], 'ternary frag skipped');
+  assert.equal(byEn['not built'] && rows.find((r) => r.en === 'not built').risk, 'code-const', 'compared constant risk-flagged, not silently taken');
+  assert.ok(byEn['Builds when you play'], 'display branch kept');
+  assert.ok(byEn['Unknown'], 'capitalized fallback kept');
+});
+
+const RISKQ = `
+const reason = armState?.reason ?? 'not built';
+const label = UPDATE ?? 'a development build';
+`;
+
+test('marks ?? fallbacks as code-risk, rewrite leaves them', () => {
+  const rows = extractTexts(RISKQ, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(byEn['a development build'], 'fallback extracted for review');
+  const row = rows.find((r) => r.en === 'a development build');
+  assert.equal(row.risk, 'code-const', 'risk flagged');
+  const { code, table } = rewriteFile(RISKQ, 'fict', { file: 'src/ui/fict.js' });
+  assert.ok(code.includes(`?? 'a development build'`), 'rewrite does not touch risk rows');
+  assert.equal(table.length, 0);
+});
+
 test('decodes JS escapes in literals', () => {
   const src = "a = 'Morrowind record\\u2019s texture';\nb = 'line one\\nline two';\nc = 'it\\'s';";
   const rows = extractTexts(src, 'fict');
