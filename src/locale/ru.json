@@ -2802,7 +2802,7 @@
     "launcher.status.downloading": "Скачиваю v{version}",
     "launcher.detail.setup_files": "Установится, как зададите файлы игры, — Daggerfall Online сам переоткроется.",
     "launcher.detail.reopen": "Daggerfall Online сам закроется и переоткроется через секунды. Сохранения, настройки и файлы игры на месте.",
-    "launcher.detail.same_version": "Установится до игры — будете на версии всех в сети.",
+    "launcher.detail.same_version": "Установится перед запуском игры, чтобы у вас была та же версия, что у всех в сети.",
     "launcher.detail.notice": "У вас v{current}. Скачайте, выйдите и положите вместо этой копии — сохранения, настройки и файлы игры на месте.",
     "launcher.detail.background": "Доскачается, пока играете.",
     "launcher.detail.failed": "Скачивание встало. Эта версия играет как есть, обновление попробуется снова.",

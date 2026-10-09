@@ -48,3 +48,12 @@ test('launcher strings render in RU', () => {
   assert.equal(t('dfo:launcher.progress.mb', { done: 3, total: 9 }), '3 из 9 МБ');
   setLocale('en');
 });
+
+test('launcher detail lines read as Russian, not calques', () => {
+  setLocale('ru');
+  assert.equal(
+    t('dfo:launcher.detail.same_version'),
+    'Установится перед запуском игры, чтобы у вас была та же версия, что у всех в сети.'
+  );
+  setLocale('en');
+});
