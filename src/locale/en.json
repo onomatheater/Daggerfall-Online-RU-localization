@@ -4825,7 +4825,7 @@
     "bindc.transport": "Transport",
     "bindc.static_keys": "Keys that do not move",
     "bindc.howto": "Click a binding, then press the key you want. Every key binds, Escape included. Hold Ctrl, Shift or Alt while you press to bind a combination. Right-click a binding, or press ✕, to clear it.",
-    "bindc.shared": "A key that is already in use asks first: move it, or use it for both. A shared key does everything it is bound to, and each of its rows says what else it does. Keys inside a window (Escape, Enter, the arrows, a window’s own letters) belong to that window and are not listed here.",
+    "bindc.shared": "A key that is already in use asks first: move it, or use it for both. A shared key does everything it is bound to, and each of its rows says what else it does. Keys inside a window (Escape, Enter, the arrows, a window's own letters) belong to that window and are not listed here.",
     "bindc.confirm_hint": "Nothing is saved until you press {confirm}, Defaults included. Leave this page and your changes are dropped.",
     "bindc.primary": "Primary",
     "bindc.secondary": "Secondary",
@@ -4924,6 +4924,7 @@
     "val.town": "Town",
     "val.with_secrets": "With secrets",
     "val.with_shadows": "With shadows",
-    "val.your_screens": "Your screenshots"
+    "val.your_screens": "Your screenshots",
+    "val.default_4x": "Default (4x)"
   }
 }

@@ -3465,6 +3465,7 @@
     "val.town": "Город",
     "val.with_secrets": "С секретами",
     "val.with_shadows": "С тенями",
-    "val.your_screens": "Ваши снимки"
+    "val.your_screens": "Ваши снимки",
+    "val.default_4x": "По умолчанию (4x)"
   }
 }

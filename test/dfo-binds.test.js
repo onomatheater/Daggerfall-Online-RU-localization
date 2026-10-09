@@ -57,6 +57,7 @@ const NEED = [
   'val.closed', 'val.open', 'val.exact', 'val.few', 'val.many', 'val.some',
   'val.journal', 'val.magic_plus', 'val.rare_plus', 'val.night_sky', 'val.responsive',
   'val.town', 'val.with_secrets', 'val.with_shadows', 'val.your_screens',
+  'val.default_4x',
 ];
 
 test('binds batch: EN+RU share all keys, RU non-empty', () => {
