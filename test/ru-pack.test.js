@@ -14,6 +14,8 @@ test('pack builder assembles versioned directory with manifest', () => {
   for (const f of manifest.files) assert.equal(existsSync(join(out, f)), true, f);
   assert.ok(manifest.files.includes('ru.json'), 'tables included');
   assert.ok(manifest.files.some((f) => f.endsWith('.woff2')), 'font included');
+  assert.ok(manifest.files.some((f) => f.startsWith('quests/') && f.endsWith('-LOC.txt')), 'quests included');
+  assert.ok(manifest.files.some((f) => f.startsWith('books/') && f.endsWith('-LOC.txt')), 'books included');
 });
 
 test('demo page is self-contained (works from file://)', () => {
