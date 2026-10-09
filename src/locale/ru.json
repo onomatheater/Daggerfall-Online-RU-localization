@@ -2072,6 +2072,20 @@
     "menu.about": "Об игре",
     "menu.resume": "Продолжить",
     "menu.saveGame": "Сохранить игру",
-    "menu.begin": "Начать"
+    "menu.begin": "Начать",
+    "intro.skip": "Пропустить заставку",
+    "intro.continue": "Нажмите, чтобы продолжить",
+    "intro.preparing": "Готовим путешествие…",
+    "settings.Enhancements/LoiterLimitInHours": "Максимальное ожидание",
+    "settings.Enhancements/LypyL_GameConsole": "Консоль разработчика",
+    "settings.GUI/CanDropQuestItems": "Выбрасывать квестовые предметы",
+    "settings.GUI/QuestRumorWeight": "Вес слухов для квестов",
+    "settings.MeleeAttacks/MeleeAttackFriendlyProtection": "Щадить прохожих",
+    "settings.Startup/StartCellX": "Стартовая клетка X",
+    "settings.Startup/StartCellY": "Стартовая клетка Y",
+    "settings.Startup/StartInDungeon": "Начать в подземелье",
+    "settings.ChildGuard/PlayerNudity": "Показывать наготу",
+    "settings.Controls/AllowMagicRepairs": "Чинить магические предметы",
+    "settings.Controls/InstantRepairs": "Мгновенный ремонт"
   }
 }

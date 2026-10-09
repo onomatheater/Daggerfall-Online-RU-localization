@@ -26,3 +26,14 @@ export function t(rawKey, params = {}, locale = cur) {
   for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
   return s;
 }
+
+// tOr: перевод, а нет — переданный фолбэк (обычно исходный EN-лейбл),
+// без утечки ключа в UI и без варнинга: отсутствие — норма, не баг.
+export function tOr(rawKey, fallback, params = {}, locale = cur) {
+  const [table, key] = splitKey(rawKey);
+  const hit = tables[locale]?.[table]?.[key] ?? tables.en?.[table]?.[key];
+  let s = hit ?? fallback;
+  for (const v of Object.values(params)) s = s.replaceAll('%s', String(v));
+  for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
+  return s;
+}

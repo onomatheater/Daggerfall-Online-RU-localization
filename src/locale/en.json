@@ -3531,6 +3531,20 @@
     "menu.about": "About",
     "menu.resume": "Resume",
     "menu.saveGame": "Save Game",
-    "menu.begin": "Begin"
+    "menu.begin": "Begin",
+    "intro.skip": "Skip intro",
+    "intro.continue": "Tap to continue",
+    "intro.preparing": "Preparing the journey…",
+    "settings.Enhancements/LoiterLimitInHours": "Maximum Wait Time",
+    "settings.Enhancements/LypyL_GameConsole": "Developer Console",
+    "settings.GUI/CanDropQuestItems": "Drop Quest Items",
+    "settings.GUI/QuestRumorWeight": "Quest Rumour Weight",
+    "settings.MeleeAttacks/MeleeAttackFriendlyProtection": "Protect Bystanders",
+    "settings.Startup/StartCellX": "Start Map Square X",
+    "settings.Startup/StartCellY": "Start Map Square Y",
+    "settings.Startup/StartInDungeon": "Start In The Dungeon",
+    "settings.ChildGuard/PlayerNudity": "Show Nudity",
+    "settings.Controls/AllowMagicRepairs": "Repair Magic Items",
+    "settings.Controls/InstantRepairs": "Instant Repairs"
   }
 }
