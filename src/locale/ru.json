@@ -2076,17 +2076,17 @@
     "intro.skip": "Пропустить заставку",
     "intro.continue": "Нажмите, чтобы продолжить",
     "intro.preparing": "Готовим путешествие…",
-    "settings.Enhancements/LoiterLimitInHours": "Максимальное ожидание",
+    "settings.Enhancements/LoiterLimitInHours": "Предел ожидания",
     "settings.Enhancements/LypyL_GameConsole": "Консоль разработчика",
     "settings.GUI/CanDropQuestItems": "Выбрасывать квестовые предметы",
-    "settings.GUI/QuestRumorWeight": "Вес слухов для квестов",
-    "settings.MeleeAttacks/MeleeAttackFriendlyProtection": "Щадить прохожих",
+    "settings.GUI/QuestRumorWeight": "Частота слухов",
+    "settings.MeleeAttacks/MeleeAttackFriendlyProtection": "Не задевать прохожих",
     "settings.Startup/StartCellX": "Стартовая клетка X",
     "settings.Startup/StartCellY": "Стартовая клетка Y",
     "settings.Startup/StartInDungeon": "Начать в подземелье",
     "settings.ChildGuard/PlayerNudity": "Показывать наготу",
-    "settings.Controls/AllowMagicRepairs": "Чинить магические предметы",
-    "settings.Controls/InstantRepairs": "Мгновенный ремонт",
+    "settings.Controls/AllowMagicRepairs": "Разрешить ремонт магических предметов",
+    "settings.Controls/InstantRepairs": "Чинить сразу",
     "cat.game": "Игра",
     "cat.controls": "Управление",
     "cat.audio": "Звук",
@@ -2100,6 +2100,9 @@
     "catblurb.video": "Как выглядит игра, её яркость и нагрузка на машину.",
     "catblurb.interface": "Всё поверх мира: панели, иконки, подсказки и карты.",
     "catblurb.accessibility": "Комфорт и читаемость: движение, вспышки, мелкий текст.",
-    "catblurb.mods": "Где лежат файлы игры и переключатели модов DFU."
+    "catblurb.mods": "Где лежат файлы игры и переключатели модов DFU.",
+    "reset.title": "Сбросить всё",
+    "reset.confirm": "Сбросить",
+    "reset.body": "Вернуть все настройки как в Daggerfall Unity. Оформление интерфейса и размер шрифта не являются настройками и не изменятся."
   }
 }

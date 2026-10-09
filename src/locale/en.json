@@ -3559,6 +3559,9 @@
     "catblurb.video": "How the game looks, how bright it is, and how hard your machine has to work.",
     "catblurb.interface": "Everything drawn on top of the world: bars, icons, tooltips, prompts and maps.",
     "catblurb.accessibility": "Comfort and readability, for anyone bothered by motion, flashing or small text.",
-    "catblurb.mods": "Where the game files live and DFU mod switches."
+    "catblurb.mods": "Where the game files live and DFU mod switches.",
+    "reset.title": "Reset Everything",
+    "reset.confirm": "Reset",
+    "reset.body": "Put every setting back the way Daggerfall Unity ships it. Your UI Overhaul and text size are not settings and are left alone."
   }
 }
