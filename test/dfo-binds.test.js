@@ -51,7 +51,12 @@ const NEED = [
   'val.full', 'val.half', 'val.quarter', 'val.maximum', 'val.default', 'val.meadow',
   'val.pixel', 'val.smooth', 'val.none', 'val.vanilla', 'val.lowest', 'val.highest',
   'val.ultra', 'val.hq', 'val.invert', 'val.back', 'val.reset', 'val.minimal',
-  'val.large', 'val.colour', 'val.monochrome', 'val.primary', 'val.secondary',
+  'val.large', 'val.colour', 'val.monochrome',   'val.primary', 'val.secondary', 'val.minimal', 'val.large', 'val.colour',
+  'val.monochrome', 'val.hq', 'val.invert', 'val.back', 'val.reset',
+  'val.light', 'val.normal', 'val.heavy', 'val.abattoir', 'val.casual', 'val.hard',
+  'val.closed', 'val.open', 'val.exact', 'val.few', 'val.many', 'val.some',
+  'val.journal', 'val.magic_plus', 'val.rare_plus', 'val.night_sky', 'val.responsive',
+  'val.town', 'val.with_secrets', 'val.with_shadows', 'val.your_screens',
 ];
 
 test('binds batch: EN+RU share all keys, RU non-empty', () => {

@@ -26,6 +26,13 @@ const IDS = [
 ];
 
 const NEED = IDS.flatMap((id) => [`feat.${id}`, `feat.${id}.note`, `feat.${id}.effect`]);
+NEED.push(
+  'feat.landview.dag3', 'feat.landview.far6',
+  'kind.enhanced', 'kind.enhanced.blurb', 'kind.mod', 'kind.mod.blurb',
+  'kind.classic', 'kind.classic.blurb',
+  'featgroup.sight', 'featgroup.world', 'featgroup.loot', 'featgroup.combat',
+  'featgroup.character', 'featgroup.interface', 'featgroup.sound',
+);
 
 test('feats batch: EN+RU share all tile keys, RU non-empty', () => {
   for (const k of NEED) {
