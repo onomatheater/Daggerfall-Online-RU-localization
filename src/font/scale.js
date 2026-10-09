@@ -1,11 +1,12 @@
 // Прод-дизайн размера текста: замена зум-хака пробы (patch-fontscale.mjs).
-// Корень бага пробы: нестандартный `zoom` только на 2 селекторах
-// (.px-home .px-menu, .panes .list) — остальной UI (диалоги, чат, SDF-канвас)
-// масштаб не видели. Здесь — стандартный font-size через --ru-fs на :root,
-// покрытие всех текстовых поверхностей + адаптив (перенос вместо налезания
-// «строчки через текст» при 150%). Вес 600 по AGENTS.md §1 (500 пробы —
-// нечитаем), минимум 14px. Чисто клиентское состояние (AGENTS.md §2):
-// localStorage + CSS-переменная, сеть/сейвы не трогаем.
+// v1 била только по контейнерам — листья с собственным px-размером
+// (.railbtn .rk 15px, .px-menu button 28px, …) наследование глушат, и скрин
+// 150% показал частичный масштаб: рейлы мелкие, строки крупные. v2 доопределяет
+// КАЖДЫЙ лист абсолютным calc(base * var(--ru-fs)) — без двойного счёта —
+// с префиксом body (0,2,1 бьёт 0,2,0 апстрима); при 100% сток байт-в-байт.
+// Базы сверены с апстримом 15e6525cd (enhancedStyle/enhancedPlusStyle).
+// Вес 600 по AGENTS.md §1, минимум 14px. Чисто клиентское состояние (§2):
+// localStorage + CSS-переменная, сеть/сейвы не трогаем. Без `zoom`.
 export const SCALE_MIN = 80;
 export const SCALE_MAX = 150;
 export const SCALE_STEP = 5;
@@ -22,15 +23,40 @@ export function clampScale(v) {
 
 export const scaleVar = (v) => String(clampScale(v) / 100);
 
-// Один блок инжектится в boot (как HANDJET_FACE): @font-face идемпотентен,
-// CSS-переменная — тоже. Без `zoom`: масштабируем font-size корневого
-// контейнера, rem-единицы подхватывают всё дерево.
+const V = `var(${SCALE_VAR},1)`;
+const leaf = (sel, base) => `body ${sel}{font-size:calc(${base} * ${V});}`;
+
+// Один блок инжектится в boot (как HANDJET_FACE). Порядок: сначала контейнеры
+// (тянут безлистные наследники), потом листья (бьют px-правила апстрима).
 export function buildScaleCSS() {
   return [
     `:root{${SCALE_VAR}:${scaleVar(SCALE_DEFAULT)};--ru-base:14px;}`,
-    `.px-menu,.panes,.px-dialog,.px-chat,.row-name,.px-home,.panes .list{font-size:calc(var(--ru-base) * var(${SCALE_VAR},1));min-height:14px;}`,
-    `.px-menu .doorbtn,.railbtn .rk,.row-name,.px-divider .px-divword{font-weight:600;}`,
+    `.px-menu,.panes,.px-dialog,.px-chat,.row-name,.px-home,.panes .list{font-size:calc(var(--ru-base) * ${V});min-height:14px;}`,
+    leaf('.railbtn .rk', '15px'),
+    leaf('.subbtn', '14px'),
+    leaf('.subbtn .count', '11px'),
+    leaf('.packtab .count', '11px'),
+    leaf('.row-name', '14px'),
+    leaf('.px-sys .row-name', '15px'),
+    leaf('.px-setwrap .row-name', '15px'),
+    leaf('.row-note', '12.5px'),
+    leaf('.row-sub', '12.5px'),
+    leaf('.px-divword', '13px'),
+    leaf('.dcard h3', '22px'),
+    leaf('.shell .dcard h3', '20px'),
+    leaf('.dcard p', '13px'),
+    leaf('.dcard .status', '13px'),
+    leaf('.px-note', '17px'),
+    leaf('.px-menu button .px-c', '22px'),
+    // Десктопные двери: сток 28px (.px-menu button); телефонные 22px и
+    // компакт не трогаем — там свои законы (44px-тап, узкий стейдж).
+    `@media (min-width:481px){body .px-menu:not(.px-compact) button{font-size:calc(28px * ${V});}}`,
+    `body .px-menu .doorbtn,body .railbtn .rk,body .row-name,body .px-divword{font-weight:600;}`,
+    // Длинные RU-строки в фиксированных колонках: перенос вместо клипа
+    // (СЕТЕВАЯ ИГР…). При 100% и коротком тексте layout не меняется.
+    `body .px-menu button{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;}`,
     `.px-menu,.panes,.px-dialog,.px-chat{max-width:100%;flex-wrap:wrap;overflow-wrap:anywhere;word-break:break-word;}`,
-    `.row,.ru-fsrow{flex-wrap:wrap;max-width:100%;}`,
+    `.row,.ru-fsrow{flex-wrap:wrap;max-width:100%;min-width:0;}`,
+    `.row-main{min-width:0;}`,
   ].join('\n');
 }
