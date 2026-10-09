@@ -168,7 +168,7 @@ box.classList.add('on');
 `;
 
 test('rewrite replaces display literals with ruT keys, keeps code', () => {
-  const { code, table } = rewriteFile(RW, 'fict', { importFrom: '../locale/locale.js' });
+  const { code, table } = rewriteFile(RW, 'fict', { file: 'src/ui/fict.js', importFrom: '../locale/locale.js' });
   assert.equal(table.length, 1);
   assert.equal(table[0].en, 'Cancel');
   assert.equal(table[0].key, 'dfo:fict.cancel');
@@ -177,7 +177,15 @@ test('rewrite replaces display literals with ruT keys, keeps code', () => {
   assert.ok(code.includes(`import { t as ruT } from '../locale/locale.js';`), 'import added');
   assert.ok(code.includes(`classList.add('on')`), 'class untouched');
   // идемпотентность: второй прогон ничего не меняет
-  const again = rewriteFile(code, 'fict', { importFrom: '../locale/locale.js' });
+  const again = rewriteFile(code, 'fict', { file: 'src/ui/fict.js', importFrom: '../locale/locale.js' });
   assert.equal(again.code, code);
   assert.equal(again.table.length, 0);
+});
+
+test('rewrite requires file and defaults to UI scope', () => {
+  assert.throws(() => rewriteFile(RW, 'fict'), /opts\.file/,
+    'no file = throw, not gross-volume');
+  const out = rewriteFile(RW, 'fict', { file: 'src/net/x.js' });
+  assert.equal(out.table.length, 0, 'non-UI file untouched by default');
+  assert.equal(out.code, RW, 'code byte-identical');
 });

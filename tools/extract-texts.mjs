@@ -170,9 +170,15 @@ export function extractTexts(source, page = 'page', opts = {}) {
 // Возвращает { code, table } — table только переписанное (для en.json).
 // Не трогает: слоты классов, dev-строки, шаблоны ${}, тексты тегов, FONT/shorthand.
 // Идемпотентен: повторный прогон — no-op.
+// Слой показа по умолчанию: только UI-поверхности. Таблицы данных,
+// квест-макросы, бинды, контент диалогов идут своими пайплайнами.
+export const UI_SCOPE = ['src/ui/', 'src\\ui\\'];
+
 export function rewriteFile(source, page = 'page', opts = {}) {
+  if (!opts.file) throw new Error('rewriteFile: opts.file required (scope guard)');
+  const include = opts.include ?? UI_SCOPE;
   const importFrom = opts.importFrom ?? '../locale/locale.js';
-  const rows = extractTexts(source, page, opts);
+  const rows = extractTexts(source, page, { ...opts, include });
   const byEn = new Map(rows.map((r) => [r.en, r.key]));
   const edits = []; // { start, end, text }
   const table = [];
