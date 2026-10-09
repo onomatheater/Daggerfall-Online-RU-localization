@@ -51,6 +51,14 @@ export function buildScaleCSS() {
     // Десктопные двери: сток 28px (.px-menu button); телефонные 22px и
     // компакт не трогаем — там свои законы (44px-тап, узкий стейдж).
     `@media (min-width:481px){body .px-menu:not(.px-compact) button{font-size:calc(28px * ${V});}}`,
+    // v3: коробки растут вместе со шрифтом (иначе пропорции рвёт: большой
+    // текст в 44px-кнопке). Тот же body-префикс бьёт правила апстрима.
+    `body .row{gap:calc(14px * ${V});padding:calc(11px * ${V}) calc(18px * ${V});min-height:calc(52px * ${V});}`,
+    `body .row-main{padding:calc(6px * ${V}) 0;min-height:calc(44px * ${V});}`,
+    `body .subbtn{padding:calc(11px * ${V}) calc(16px * ${V});min-height:calc(46px * ${V});}`,
+    `body .px-home .px-menu{width:min(calc(384px * ${V}),100%);gap:calc(8px * ${V});}`,
+    `body .shell:not(.wizard) .railbtn{min-height:calc(44px * ${V});padding:calc(10px * ${V}) calc(16px * ${V});}`,
+    `@media (min-width:481px){body .px-menu .doorbtn{padding:calc(6px * ${V}) calc(24px * ${V});}}`,
     `body .px-menu .doorbtn,body .railbtn .rk,body .row-name,body .px-divword{font-weight:600;}`,
     // Длинные RU-строки в фиксированных колонках: перенос вместо клипа
     // (СЕТЕВАЯ ИГР…). При 100% и коротком тексте layout не меняется.
