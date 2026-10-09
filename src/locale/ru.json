@@ -2058,5 +2058,20 @@
     "enabled": "Включено",
     "disabled": "Отключено",
     "textureArrayInfo": "Улучшенная реализация текстур местности с лучшей производительностью и поддержкой модификации"
+  },
+  "dfo": {
+    "menu.continue": "Продолжить",
+    "menu.newGame": "Новая игра",
+    "menu.loadGame": "Загрузить игру",
+    "menu.online": "Сетевая игра",
+    "menu.testRoom": "Тестовая комната",
+    "menu.settings": "Настройки",
+    "menu.features": "Возможности",
+    "menu.overhauls": "Моды",
+    "menu.screenshots": "Скриншоты",
+    "menu.about": "Об игре",
+    "menu.resume": "Продолжить",
+    "menu.saveGame": "Сохранить игру",
+    "menu.begin": "Начать"
   }
 }

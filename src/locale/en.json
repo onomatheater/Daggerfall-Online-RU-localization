@@ -3517,5 +3517,20 @@
     "852": "Random Ruler",
     "853": "Random Knight",
     "977": "Secret of Oblivion"
+  },
+  "dfo": {
+    "menu.continue": "Continue",
+    "menu.newGame": "New Game",
+    "menu.loadGame": "Load Game",
+    "menu.online": "Online",
+    "menu.testRoom": "Test Room",
+    "menu.settings": "Settings",
+    "menu.features": "Features",
+    "menu.overhauls": "Overhauls",
+    "menu.screenshots": "Screenshots",
+    "menu.about": "About",
+    "menu.resume": "Resume",
+    "menu.saveGame": "Save Game",
+    "menu.begin": "Begin"
   }
 }
