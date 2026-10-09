@@ -35,6 +35,7 @@ const NEED = [
   'menu.fps_corner', 'menu.morrowind_note', 'menu.mw_players_simple', 'menu.hear_swings',
   'menu.hear_steps', 'menu.court_count', 'menu.stranger_spells', 'menu.rest_party',
   'menu.show_travellers', 'menu.night_clear', 'menu.near_graves',
+  'menu.delete_button', 'dlg.y_n_no',
 ];
 
 test('menu-finish batch: EN+RU share the new keys, RU non-empty', () => {
@@ -59,6 +60,8 @@ test('menu-finish exact RU values (QA-gated)', () => {
   eq('menu.delete_backup_arm', 'Удалить копию');
   eq('menu.court_count', 'Сколько игроков рисует Горящий двор. Ваш отряд виден всегда.');
   eq('menu.quality_preset_note', 'Дальность вида, трава, облака, чёткость земли и вода.');
+  eq('menu.delete_button', 'Удалить');
+  eq('dlg.y_n_no', 'Y — да   N — нет');
 });
 
 test('menu-finish renders in RU', () => {
