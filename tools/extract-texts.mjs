@@ -96,10 +96,17 @@ function isSkippable(raw) {
   if (!/[A-Za-zА-Яа-яЁё]{2}/.test(s)) return true; // короче двух букв подряд
   if (/\s/.test(s) === false && /[:/]/.test(s)) return true; // ID без пробелов (Section/Key, a:1)
   if (/^(aria|data)-[a-z-]+$/i.test(s)) return true; // имена атрибутов
-  if (/^[a-z]+(-[a-z0-9]+)+$/.test(s)) return true; // lowercase-дефис без пробелов (классы)
-  if (/^[a-z_$][\w$]*$/.test(s)) return true; // чистый код-идентификатор
+  if (/^-*[a-z][a-z0-9_$-]*$/.test(s)) return true; // одиночный строчный токен (классы, идентификаторы, css-переменные)
+  const toks = s.split(/\s+/);
+  if (toks.length <= 3 && toks.length > 1 && toks.every((t) => /^[a-z0-9][a-z0-9-]*$/.test(t)) && toks.some((t) => t.includes('-'))) return true; // class-комбо (px-a px-b)
+  if (!/\s/.test(s) && /[a-z][A-Z]/.test(s)) return true; // camelCase-ID (MoveForwards)
   if (/^\.[A-Za-z_-]/.test(s) && !/\s/.test(s)) return true; // селектор (.px-x)
-  if (!/\s/.test(s) && /^[A-Za-z_$][\w$]*(\.[\w$]+)+$/.test(s)) return true; // dotted-ID (menu.x)
+  if (!/[A-Z]/.test(s) && /(\.\w|#\w|\bbody\s)/.test(s)) return true; // селектор-комбинатор (body .x)
+  if (/^#[0-9a-f]{3,8}$/i.test(s)) return true; // hex-цвет
+  if (/^[\s.kfybo#]{8,}$/.test(s)) return true; // пиксель-арт (......kkkk......)
+  if (!/\s/.test(s) && /[.]/u.test(s) && !/^([A-Z][a-z]*\.)+$/.test(s)) return true; // dotted-ID (menu.x, A.CIF_1-0, 1.7.1)
+  if (/^(TODO|FIXME|XXX)\b/.test(s) || /^NOTE:/.test(s)) return true; // dev-пометки
+  if (/\b\d+(\.\d+)?px\b/.test(s)) return true; // font-шорткат (700 11px ...)
   const core = s.replace(/[?!…]+$/u, '');
   if (/[=<>!&|?;:(){}\[\]\\]/.test(core)) return true; // обрывки кода
   return false;
@@ -114,13 +121,27 @@ function inClassSlot(source, index, en) {
   if (/querySelector(All)?\(\s*['"]\.?$/.test(back)) return true;
   if (/class\s*=\s*['"]?$/.test(back)) return true;
   if (/classList\.\s*add\s*\(\s*['"]?$/.test(back)) return true;
+  if (/console\.\s*(log|warn|error|debug|info|trace)\s*\(\s*['"]?$/.test(back)) return true;
+  if (/throw\s+new\s+Error\s*\(\s*['"]?$/.test(back)) return true;
+  if (/(^|[^\w$])new\s+Error\s*\(\s*['"]?$/.test(back)) return true;
+  if (/\bassert\w*\([^()]*,\s*['"]?$/.test(back)) return true;
+  if (/createElement\s*\(\s*['"]?$/.test(back)) return true;
   if (/el\(\s*(['"])[^'"]*\1\s*,\s*['"]?$/.test(back)) {
     return /^[a-z0-9][a-z0-9-]*(\s+[a-z0-9][a-z0-9-]*)*$/.test(en);
   }
   return false;
 }
 
-export function extractTexts(source, page = 'page') {
+// Слой показа: по умолчанию берём всё, но звать надо с opts { file, include } —
+// таблицы данных (items/materials), квест-макросы, бинды, контент диалогов
+// идут своими пайплайнами (DFU-таблицы, -LOC), а не dfo-ключами.
+export function inScope(file = '', include = null) {
+  if (!include) return true;
+  return include.some((dir) => file.includes(dir));
+}
+
+export function extractTexts(source, page = 'page', opts = {}) {
+  if (opts.file && opts.include && !inScope(opts.file, opts.include)) return [];
   const found = new Map(); // en -> { key, en, line }
   const usedSlugs = new Set();
   for (const { raw, index } of scan(source)) {

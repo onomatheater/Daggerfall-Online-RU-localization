@@ -81,3 +81,74 @@ test('skips dotted ids, selectors, el() class slot', () => {
   assert.ok(byEn['On'], 'capitalized 2nd arg kept');
   assert.ok(!byEn['.intro-skip'], 'leading-dot skipped');
 });
+
+const SCOPE = `el('div', 'row', 'Hello');`;
+
+test('scope limits extraction to display layer', () => {
+  assert.equal(extractTexts(SCOPE, 'p', { file: 'src/net/x.js', include: ['src/ui/'] }).length, 0);
+  const rows = extractTexts(SCOPE, 'p', { file: 'src/ui/y.js', include: ['src/ui/'] });
+  assert.ok(rows.some((r) => r.en === 'Hello'));
+});
+
+const DEV = `
+console.log('boot done');
+console.warn('slow frame');
+throw new Error('bad internal state');
+assert(x, 'must hold');
+showError('save failed, retry');
+note = 'TODO: fix this';
+hex = '#f3cf86';
+art = '......kkkk......';
+sel = 'body .dfdecor-card';
+asset = 'BATTLEAXE.CIF_1-0';
+ver = '1.7.7184';
+bind = 'MoveForwards';
+keep1 = 'Settings';
+keep2 = 'St.';
+`;
+
+test('skips dev strings, colors, pixelart, selectors, asset ids, bind ids', () => {
+  const rows = extractTexts(DEV, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  for (const junk of ['boot done', 'slow frame', 'bad internal state', 'must hold', 'TODO: fix this',
+    '#f3cf86', '......kkkk......', 'body .dfdecor-card', 'BATTLEAXE.CIF_1-0',
+    '1.7.7184', 'MoveForwards']) {
+    assert.ok(!byEn[junk], 'skipped: ' + junk);
+  }
+  assert.ok(byEn['save failed, retry'], 'user-facing error kept');
+  assert.ok(byEn['Settings'], 'kept Settings');
+  assert.ok(byEn['St.'], 'kept St.');
+});
+
+const CLS = `
+a = 'px-home px-over lvl-shell';
+b = 'bounty-';
+c = 'micro-';
+d = 'saves are only in your backup';
+e = 'OK';
+`;
+
+test('skips class combos and lone lowercase tokens', () => {
+  const rows = extractTexts(CLS, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(!byEn['px-home px-over lvl-shell'], 'px combo skipped');
+  assert.ok(!byEn['bounty-'], 'class prefix skipped');
+  assert.ok(!byEn['micro-'], 'class prefix skipped');
+  assert.ok(byEn['saves are only in your backup'], 'hyphen-free sentence kept');
+  assert.ok(byEn['OK'], 'OK kept');
+  assert.ok(!extractTexts(`x = '--hud-scale';`, 'fict').length, 'css var skipped');
+});
+
+const MISC = `
+a = document.createElement('TEXTAREA');
+b = '700 11px Cormorant, Georgia, serif';
+c = 'Press a key...';
+`;
+
+test('skips tag names and font shorthands', () => {
+  const rows = extractTexts(MISC, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(!byEn['TEXTAREA'], 'createElement tag skipped');
+  assert.ok(!byEn['700 11px Cormorant, Georgia, serif'], 'font shorthand skipped');
+  assert.ok(byEn['Press a key...'], 'ellipsis text kept');
+});
