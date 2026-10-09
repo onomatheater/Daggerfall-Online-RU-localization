@@ -38,3 +38,43 @@ test('fontscale dfo keys exist in en+ru', async () => {
   assert.equal(en.dfo['fontscale.label'], 'Font size');
   assert.equal(ru.dfo['fontscale.label'], 'Размер шрифта');
 });
+
+// v2: листья с собственным px-размером глушат наследование от контейнера
+// (скрин 150%: рейлы мелкие, строки крупные). Переопределяем каждый лист
+// абсолютным calc(base * var(--ru-fs)) — без двойного масштабирования —
+// с префиксом body (0,2,1 бьёт 0,2,0 апстрима), сток при 100% — байт-в-байт.
+test('scale css beats upstream leaf specificity with stock bases', async () => {
+  const { buildScaleCSS } = await import('../src/font/scale.js');
+  const css = buildScaleCSS();
+  const leaves = [
+    ['body .railbtn .rk', '15px'],
+    ['body .subbtn', '14px'],
+    ['body .row-name', '14px'],
+    ['body .row-note', '12.5px'],
+    ['body .px-divword', '13px'],
+    ['body .dcard h3', '22px'],
+    ['body .dcard p', '13px'],
+    ['body .px-note', '17px'],
+  ];
+  for (const [sel, base] of leaves) {
+    const i = css.indexOf(sel);
+    assert.ok(i >= 0, `missing leaf ${sel}`);
+    const rule = css.slice(i, css.indexOf('}', i));
+    assert.match(rule, new RegExp(`calc\\(${base.replace('.', '\\.')} \\* var\\(--ru-fs`));
+  }
+  // doorbtn: десктопная база 28px (.px-menu button), телефонную 22px не трогаем.
+  assert.match(css, /min-width:\s*481px/);
+  assert.match(css, /px-compact/);
+});
+
+// v2: кнопки меню не режут текст (скрин: СЕТЕВАЯ ИГР…) — перенос внутри
+// фиксированной колонки вместо клипа; при 100% layout не меняется.
+test('scale css wraps long labels instead of clipping', async () => {
+  const { buildScaleCSS } = await import('../src/font/scale.js');
+  const css = buildScaleCSS();
+  const i = css.indexOf('.px-menu button');
+  assert.ok(i >= 0, 'missing doorbtn anti-clip rule');
+  const tail = css.slice(i);
+  assert.match(tail, /white-space:\s*normal/);
+  assert.match(tail, /min-width:\s*0/);
+});
