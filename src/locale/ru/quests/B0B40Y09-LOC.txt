@@ -1,0 +1,67 @@
+-- Quest: C:\QUESTS\WORKING\B0B40Y09.Qbn.
+-- StartsBy: NPC
+-- Questee: member
+-- Questor: knight
+-- Repute: 40
+-- QuestId: 9
+-- Edited for Daggerfall Unity by Jay_H
+Messages: 12
+Quest: B0B40Y09
+DisplayName: Убить великана
+-- Message panels
+QRC:
+
+QuestorOffer:  [1000]
+<ce> До меня дошли слухи о
+<ce> _monster_, разоряющем фермы
+<ce> и пожирающего скот. Мое имя?
+<ce> Тысячи извинений, %pcf.
+<ce> Я _qgiver_. Не согласитесь ли вы
+<ce> убить монстра _monster_?
+
+RefuseQuest:  [1001]
+<ce> Куда же подевались доблестные рыцари?
+<ce> Неужели они все исчезли из
+<ce> %reg? Уходите, %pcn.
+
+AcceptQuest:  [1002]
+<ce> _monster_ нашел себе логово в
+<ce> ___dungeon_. Идите туда
+<ce> и убейте его. Возможно вы найдете там
+<ce> и других представителей этого рода.
+<ce> Убейте и их, но убедитесь, что убили
+<ce> монстра со следами медвежьей челюсти на
+<ce> руке. Сроку вам =2dung_ дней.
+
+QuestComplete:  [1004]
+<ce> Теперь вы истинный _monster_-убийца,
+<ce> %pcf! Позвольте пожать вашу руку!
+
+RumorsDuringQuest:  [1005]
+Гиганты на самом деле не такие уж и агрессивные. Но один из них в ___dungeon_ совсем не такой.
+
+RumorsPostfailure:  [1006]
+Я слышал, что гигант из ___dungeon_ ушел куда-то на юг. Кому-то не повезло.
+
+RumorsPostsuccess:  [1007]
+%kno опять спас %reg. %ra из их ордена убил гиганта из ___dungeon_.
+
+QuestorPostsuccess:  [1008]
+Приветище, %pcf - Убийца Гигантов. Что я могу сделать для вас?
+
+QuestorPostfailure:  [1009]
+Возвращайтесь, когда будете уметь убивать паршивых гигантов, %pcf.
+
+QuestLogEntry:  [1010]
+%qdt:
+ _qgiver_ из
+ __qgiver_ в ___qgiver_
+ рассказал мне, что в ___dungeon_
+ живет _monster_, которого нужно убить.
+ У меня ровно =2dung_ дня на работу.
+
+Message:  1011
+<ce> На запястье _monster_ отчетливо
+<ce> виден след от медвежьих челюстей.
+<ce> Должно быть это тот самый о
+<ce> котором говорил _qgiver_.

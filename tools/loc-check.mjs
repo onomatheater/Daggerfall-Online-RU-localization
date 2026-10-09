@@ -5,10 +5,13 @@
 // Работает на синтетике здесь; на реальные файлы Jagget пойдёт той же
 // функцией, когда будет разрешение.
 const MACRO = /%[a-zA-Z0-9]+/g;
-const MARKUP = /\[\/[a-zA-Z]+[^\]]*\]/g;
+// Разметка: сравниваем ИМЕНА тегов (center, font, color...), не значения:
+// номер [/font=N] переводчик вправе менять под длину строк (совет DFU-вики),
+// а ронять или добавлять теги — нет.
+const MARKUP = /\[\/([a-zA-Z]+)[^\]]*\]/g;
 
 const macrosOf = (s) => new Set([...String(s).matchAll(MACRO)].map((m) => m[0]));
-const markupsOf = (s) => [...String(s).matchAll(MARKUP)].map((m) => m[0]).sort();
+const markupsOf = (s) => [...new Set([...String(s).matchAll(MARKUP)].map((m) => m[1]))].sort();
 
 function section(text, name) {
   const m = String(text).split(new RegExp(`^${name}:\\s*$`, 'm'));

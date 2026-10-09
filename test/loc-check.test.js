@@ -54,5 +54,10 @@ test('book: tags intact, markup intact', () => {
   assert.deepEqual(errs, []);
   const bad = checkBook('Title: X\n[/center]Текст[/center]\n', 'Заголовок: Х\nТекст\n');
   assert.ok(bad.some((e) => e.includes('Title:')), 'tag translated: ' + bad);
-  assert.ok(bad.some((e) => e.includes('[/center]')), 'markup lost');
+  assert.ok(bad.some((e) => e.includes('markup')), 'markup lost');
+});
+
+test('book: font number may change, tags may not drop', () => {
+  assert.deepEqual(checkBook('[/font=2]\n[/center]T\n', '[/font=1]\n[/center]Т\n'), []);
+  assert.ok(checkBook('[/font=2]\n[/center]T\n', '[/center]Т\n').some((e) => e.includes('markup')));
 });
