@@ -30,6 +30,17 @@ test('menu-cover: detects an uncovered display string', () => {
   const misses = coverReport(dir, new Set(['Existing']));
   assert.equal(misses.length, 1);
   assert.equal(misses[0].en, 'Zzz brand new upstream string');
+  assert.equal(misses[0].risk, null);
+});
+
+test('menu-cover: risk-flagged strings are reported, not silently dropped', () => {
+  const dir = fixtureDir({
+    // double space trips the template-part risk rule.
+    'enhancedMenu.js': `el('button', 'act', 'A picture  doubled');`,
+  });
+  const misses = coverReport(dir, new Set());
+  assert.equal(misses.length, 1);
+  assert.equal(misses[0].risk, 'template-part');
 });
 
 test('menu-cover: covered and skipped strings stay silent', () => {
@@ -40,5 +51,5 @@ test('menu-cover: covered and skipped strings stay silent', () => {
     ].join('\n'),
   });
   const misses = coverReport(dir, new Set(['Already covered']));
-  assert.equal(misses.length, 0);
+  assert.equal(misses.filter((m) => !m.risk).length, 0);
 });

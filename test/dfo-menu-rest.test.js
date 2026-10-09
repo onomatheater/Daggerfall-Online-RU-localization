@@ -30,7 +30,7 @@ const NEED = [
   'menu.activate_master_skills_confirm',
   // keyed upstream already, pinned against EN-sync regressions:
   'menu.controller_cursor_note', 'menu.hear_swings', 'menu.hear_steps',
-  'menu.show_travellers',
+  'menu.show_travellers', 'menu.show_travellers_tail',
 ];
 
 test('menu-rest batch: EN+RU share the new keys, RU non-empty', () => {
@@ -54,6 +54,7 @@ test('menu-rest exact RU values (QA-gated)', () => {
   eq('menu.activate_master_skills_confirm', 'Включить мастерские навыки?');
   eq('menu.hear_swings', 'Слышать взмахи оружия других игроков.');
   eq('menu.show_travellers', 'На улице игроки вашей области видят вас на карте. ');
+  eq('menu.show_travellers_tail', 'Из помещений не передаётся ничего, кроме группы. Хранится на этом устройстве.');
 });
 
 test('menu-rest renders in RU', () => {

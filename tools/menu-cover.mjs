@@ -40,8 +40,11 @@ export function coverReport(dfjsDir, haveSet) {
     if (!fs.existsSync(p)) { misses.push({ file: f, line: 0, en: '<NO FILE>' }); continue; }
     const src = fs.readFileSync(p, 'utf8');
     for (const r of extractTexts(src, 'x', { file: 'src/' + f.replace(/\\/g, '/') })
-      .filter((x) => !x.risk && !SKIP_STRINGS.has(x.en) && !haveTrimmed.has(x.en))) {
-      misses.push({ file: f, line: r.line, en: r.en });
+      .filter((x) => !SKIP_STRINGS.has(x.en) && !haveTrimmed.has(x.en))) {
+      // risk-flagged rows are NOT misses (review queue owns them) but they
+      // must be visible: a silent filter is a blind spot for placeholder
+      // strings (saveTile plurals class). Callers split on m.risk.
+      misses.push({ file: f, line: r.line, en: r.en, risk: r.risk ?? null });
     }
   }
   return misses;
@@ -51,7 +54,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dfjsDir = process.argv[2] ?? 'C:/Users/kblue/AppData/Local/Temp/opencode/dfjs/src';
   const en = JSON.parse(fs.readFileSync(new URL('../src/locale/en.json', import.meta.url), 'utf8'));
   const misses = coverReport(dfjsDir, new Set(Object.values(en.dfo)));
-  for (const m of misses) console.log(`MISS ${m.file}:${m.line} | ${JSON.stringify(String(m.en).slice(0, 80))}`);
-  console.log(misses.length === 0 ? 'MENU-COVER OK' : `MENU-COVER FAIL: ${misses.length} missing`);
-  process.exit(misses.length === 0 ? 0 : 1);
+  const hard = misses.filter((m) => !m.risk);
+  const risky = misses.filter((m) => m.risk);
+  for (const m of hard) console.log(`MISS ${m.file}:${m.line} | ${JSON.stringify(String(m.en).slice(0, 80))}`);
+  for (const m of risky) console.log(`RISK(${m.risk}) ${m.file}:${m.line} | ${JSON.stringify(String(m.en).slice(0, 80))}`);
+  console.log(hard.length === 0 ? `MENU-COVER OK (${risky.length} review-risk noted)` : `MENU-COVER FAIL: ${hard.length} missing`);
+  process.exit(hard.length === 0 ? 0 : 1);
 }

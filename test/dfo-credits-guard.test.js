@@ -58,3 +58,15 @@ test('credits triage: proper names are never translated', () => {
     if (ruByEn.has(n)) assert.equal(ruByEn.get(n), n, 'translated proper name: ' + n);
   }
 });
+
+test('credits triage: no RU value smuggles a proper name inside translated prose', () => {
+  const short = PROPER_NAMES.filter((n) => n.length < 60 && !n.includes('through the') && !n.includes('(') && !n.includes('@') && !n.includes('org'));
+  assert.ok(short.length > 20);
+  for (const k of Object.keys(en.dfo)) {
+    for (const n of short) {
+      if (ru.dfo[k]?.includes(n) && !en.dfo[k]?.includes(n)) {
+        assert.fail(`RU smuggles proper name ${JSON.stringify(n)} in ${k}`);
+      }
+    }
+  }
+});

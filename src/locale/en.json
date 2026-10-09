@@ -4456,6 +4456,7 @@
     "menu.stranger_spells": "Let players outside your party cast healing and protective spells on you.",
     "menu.rest_party": "Sleep when a party member within 15 m sleeps at a fire, a tent or a bed.",
     "menu.show_travellers": "Outdoors, players in your region see you on the overworld and the map. ",
+    "menu.show_travellers_tail": "Nothing is shared from indoors except with your party. Kept on this device.",
     "menu.night_clear": "Outdoors on clear nights.",
     "menu.near_graves": "Near graveyards.",
     "menu.delete_button": "Delete",
