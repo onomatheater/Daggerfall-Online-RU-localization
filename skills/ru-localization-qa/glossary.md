@@ -1,5 +1,8 @@
 # Глоссарий игровых терминов EN → RU (канон; синонимы запрещены)
 
+> Для классического контента канон — Jagget Daggerfall-Rus (пин `JAGGET_PIN`
+> в `tools/jagget-import.mjs`); современный TES-канон — только с явной пометкой.
+
 ## Графика
 VSync → Вертикальная синхронизация
 Frame Rate Cap → Ограничение частоты кадров
@@ -46,7 +49,7 @@ Burden / Encumbrance → Ноша / Перегрузка
 ## Сеть и файлы
 Realm → Мир (сетевой)
 Offline / Online → Офлайн / Сетевой (прил.), офлайн / в сети (обст.)
-Download / Upload → Скачать / Выгрузить (файл вниз/вверх)
+Download / Upload → Скачать / Загрузить (файл вниз/вверх)
 Update → Обновление
 Mod → Мод
 Launcher → Лаунчер
@@ -61,11 +64,11 @@ Iron → Железо
 Steel → Сталь
 Silver → Серебро
 Elven → Эльфийский
-Dwarven → Двемерский
+Dwarven → Гномский (канон DF-линии по Jagget; современный TES — «двемерский», здесь не использовать)
 Mithril → Мифрил
-Adamantium → Адамантин
+Adamantium → Адамант
 Ebony → Эбонит
-Orcish → Орочий
+Orcish → Оркский
 Daedric → Даэдрический
 
 ## Доспехи и одежда
@@ -83,7 +86,7 @@ Ring → Кольцо
 ## Школы магии
 Destruction → Разрушение
 Restoration → Восстановление
-Illusion → Иллюзия
+Illusion → Иллюзии (школа — мн.ч. по Jagget)
 Alteration → Изменение
 Thaumaturgy → Тауматургия
 Mysticism → Мистицизм
@@ -97,11 +100,11 @@ Poison → Яд
 Disease → Болезнь
 Levitate → Левитация
 Charm → Очарование (глагол: Зачаровать)
-Paralyze → Паралич
-Silence → Тишина
+Paralyze → Парализовать
+Silence → Тишина (эффект и школа по Jagget; Oblivion-канон «Безмолвие» здесь не использовать — см. youAreSilenced «Вы онемели»)
 Light → Свет
 Lock → Замок
-Water Breathing → Дыхание под водой
+Water Breathing (имя заклинания) → Жабры (по Jagget; strings:waterBreathing «Водное дыхание» — другой контекст)
 Water Walking → Хождение по воде
 
 ## Фракции
