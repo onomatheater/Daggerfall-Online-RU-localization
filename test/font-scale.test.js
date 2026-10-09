@@ -78,3 +78,26 @@ test('scale css wraps long labels instead of clipping', async () => {
   assert.match(tail, /white-space:\s*normal/);
   assert.match(tail, /min-width:\s*0/);
 });
+
+// v3: относительный скейл — коробки растут вместе со шрифтом, пропорции
+// целы (паттерн апстрима: --dfchat-scale во всех размерных свойствах чата).
+// Базы: .row 14/11/18/52, .row-main 6/44, .subbtn 11/16/46,
+// .px-home .px-menu 384/8, .doorbtn 6/24, railbtn 44/10/16.
+test('scale css scales boxes with fonts, ratios intact', async () => {
+  const { buildScaleCSS } = await import('../src/font/scale.js');
+  const css = buildScaleCSS();
+  const boxes = [
+    ['body .row{', 'gap:calc(14px'],
+    ['body .row{', 'padding:calc(11px'],
+    ['body .row{', 'min-height:calc(52px'],
+    ['body .row-main{', 'min-height:calc(44px'],
+    ['body .subbtn{padding:calc(11px', 'min-height:calc(46px'],
+    ['body .px-home .px-menu{', 'min(calc(384px'],
+    ['body .px-home .px-menu{', 'gap:calc(8px'],
+  ];
+  for (const [sel, prop] of boxes) {
+    const i = css.indexOf(sel);
+    assert.ok(i >= 0, `missing box rule ${sel}`);
+    assert.ok(css.slice(i, css.indexOf('}', i)).includes(prop), `${sel} lacks ${prop}`);
+  }
+});
