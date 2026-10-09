@@ -1,7 +1,7 @@
 // Сборка ru-пака: версионированная директория + манифест.
 // Зипование — шаг релиза (CI: zip -r ru-pack.zip <dir>), здесь только
 // детерминированная раскладка: таблицы, шрифт, манифест с file list.
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { HANDJET_FILES } from '../src/font/handjet.js';
 
@@ -17,6 +17,12 @@ export function pack({ out, version, root = new URL('..', import.meta.url) }) {
   };
   put('src/locale/ru.json', 'ru.json');
   for (const f of HANDJET_FILES) put(`vendor/handjet/${f}`, `fonts/${f}`);
+  for (const dir of ['quests', 'books']) {
+    const srcDir = new URL(`src/locale/ru/${dir}/`, root);
+    for (const f of readdirSync(srcDir).filter((f) => f.endsWith('-LOC.txt'))) {
+      put(`src/locale/ru/${dir}/${f}`, `${dir}/${f}`);
+    }
+  }
   const manifest = { locale: 'ru', version, files };
   writeFileSync(join(out, 'locale-version.json'), JSON.stringify(manifest, null, 2) + '\n');
   return manifest;
