@@ -1,1 +1,1 @@
-{"name": "rudaggerfall-locale", "private": true, "type": "module", "scripts": {"test": "node --test test/"}, "engines": {"node": ">=20"}}
+{"name": "rudaggerfall-locale", "private": true, "type": "module", "scripts": {"test": "node --test \"test/*.test.js\""}, "engines": {"node": ">=20"}}

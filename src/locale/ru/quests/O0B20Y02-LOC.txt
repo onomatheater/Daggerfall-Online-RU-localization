@@ -1,0 +1,67 @@
+-- Quest: C:\QUESTS\WORKING\O0B20Y02.Qbn.
+-- StartsBy: NPC
+-- Questee: member
+-- Questor: thief
+-- Repute: 20
+-- QuestId: 2
+Messages: 11
+Quest: O0B20Y02
+DisplayName: Ценный предмет
+-- Message panels
+QRC:
+
+QuestorOffer:  [1000]
+<ce> Тише, тише. Меня называют...
+<ce> неважно, просто зови меня
+<ce> _qgiver_. Для тебя есть
+<ce> работенка на гильдию. Плата
+<ce> обычная. Займешься?
+
+RefuseQuest:  [1001]
+<ce> Хорошо, что я не рассказываю
+<ce> все подробности сразу. Иди отсюда.
+
+AcceptQuest:  [1002]
+<ce> Вообще-то мне не нравится все
+<ce> волшебное, но долг требует..
+<ce> Тебе нужно будет украсть одну
+<ce> магическую безделушку,-_magicitem_
+<ce> из дома _mansion_ в городке
+<ce> __mansion_. Сделка наша будет
+<ce> расторгнута через =traveltime_ дней.
+<ce> Успеешь?. Ах да... Дом хорошо охраняется.
+
+QuestComplete:  [1004]
+<ce> Товар здесь? Отлично.
+<ce> Обычная цена за такую работу
+<ce> _gold_ золотых. И никому и
+<ce> нигде не рассказывай об этом деле.
+
+RumorsDuringQuest:  [1005]
+В особняке _mansion_ в городе __mansion_ хранится большая коллекция магических предметов.
+
+RumorsPostfailure:  [1006]
+_magicitem_ убрали из дома _mansion_  для большей безопасности.
+
+RumorsPostsuccess:  [1007]
+_magicitem_ украли из особняка _mansion_.  Какой скандал.
+
+QuestorPostsuccess:  [1008]
+Странно видеть меня тут, %pcf? Думаешь, я убегу вместе с этой вещью,- _magicitem_?
+
+QuestorPostfailure:  [1009]
+<ce> _magicitem_ унесли из особняка
+<ce> _mansion_, %pcf. Другими словами.
+<ce> твоя задача провалена.
+<ce> Уходи.
+
+QuestLogEntry:  [1010]
+%qdt:
+ _qgiver_, (так %g называет себя)
+ из Гильдии заключает со мной сделку
+ на доставку магической вещицы из дома
+ _mansion_ в местечке
+ __mansion_. _magicitem_ хорошо охраняют.
+ У меня есть =traveltime_ дней
+ чтобы принести эту штуку в город
+ ___qgiver_ в место __qgiver_.
