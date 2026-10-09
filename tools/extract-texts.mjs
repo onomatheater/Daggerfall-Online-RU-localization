@@ -154,6 +154,13 @@ function inClassSlot(source, index, en) {
   const back = source.slice(Math.max(0, index - 80), index);
   if (/querySelector(All)?\(\s*['"]\.?$/.test(back)) return true;
   if (/class\s*=\s*['"]?$/.test(back)) return true;
+  // className = 'a b' — слот классов, но только class-shaped:
+  // x.className = 'Settings' не бывает, а x.textContent = 'Settings' — текст.
+  if (/className\s*=\s*['"]?$/.test(back)) {
+    return /^[a-z0-9][a-z0-9-]*(\s+[a-z0-9][a-z0-9-]*)*$/.test(en);
+  }
+  // ini-доступ: первый аргумент — секция/ключ, никогда не текст.
+  if (/(setValue|getValue|effBool)\(\s*['"]?$/.test(back)) return true;
   if (/classList\.\s*add\s*\(\s*['"]?$/.test(back)) return true;
   if (/console\.\s*(log|warn|error|debug|info|trace)\s*\(\s*['"]?$/.test(back)) return true;
   if (/throw\s+new\s+Error\s*\(\s*['"]?$/.test(back)) return true;
@@ -197,6 +204,7 @@ export function extractTexts(source, page = 'page', opts = {}) {
   const found = new Map(); // en -> { key, en, line }
   const usedSlugs = new Set();
   for (const { raw, index } of scan(source)) {
+    if (String(raw).includes('\u0000')) continue; // шаблон с ${} — целиком руками, обрезок вроде SAVE из `SAVE${key}` не предлагаем
     const en = String(raw).replace(/\u0000/g, '').trim();
     if (isSkippable(en) || inClassSlot(source, index, en) || found.has(en)) continue;
     let slug = slugify(en) || 'text';

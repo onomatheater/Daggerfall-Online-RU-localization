@@ -242,3 +242,24 @@ test('rewrite requires file and defaults to UI scope', () => {
   assert.equal(out.table.length, 0, 'non-UI file untouched by default');
   assert.equal(out.code, RW, 'code byte-identical');
 });
+
+const PROBE_NOISE = `
+root.className = 'inputbox yesnobox';
+x.textContent = 'Settings';
+folder = \`SAVE\${key}\`;
+setValue('GUI', 'LargeHUD', effBool('GUI', 'LargeHUD') ? 'False' : 'True');
+showError('save failed, retry');
+ok = 'OK';
+`;
+
+test('skips className slots, template-folder consts, ini-section args', () => {
+  const rows = extractTexts(PROBE_NOISE, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(!byEn['inputbox yesnobox'], 'className combo skipped');
+  assert.ok(byEn['Settings'], 'textContent assignment kept');
+  assert.ok(!byEn['SAVE'], 'template folder const skipped');
+  assert.ok(!byEn['GUI'], 'ini section arg skipped');
+  assert.ok(!byEn['LargeHUD'], 'ini key arg skipped');
+  assert.ok(byEn['save failed, retry'], 'user-facing error kept');
+  assert.ok(byEn['OK'], 'OK kept');
+});
