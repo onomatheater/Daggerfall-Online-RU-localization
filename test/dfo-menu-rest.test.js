@@ -31,6 +31,7 @@ const NEED = [
   // keyed upstream already, pinned against EN-sync regressions:
   'menu.controller_cursor_note', 'menu.hear_swings', 'menu.hear_steps',
   'menu.show_travellers', 'menu.show_travellers_tail',
+  'sec.interface.sheet',
 ];
 
 test('menu-rest batch: EN+RU share the new keys, RU non-empty', () => {
@@ -55,6 +56,7 @@ test('menu-rest exact RU values (QA-gated)', () => {
   eq('menu.hear_swings', 'Слышать взмахи оружия других игроков.');
   eq('menu.show_travellers', 'На улице игроки вашей области видят вас на карте. ');
   eq('menu.show_travellers_tail', 'Из помещений не передаётся ничего, кроме группы. Хранится на этом устройстве.');
+  eq('sec.interface.sheet', 'Лист персонажа');
 });
 
 test('menu-rest renders in RU', () => {
