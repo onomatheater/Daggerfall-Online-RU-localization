@@ -56,7 +56,7 @@ const TERMS = {
   'menu.replacement_packs': 'Паки-замены',
   'menu.nothing_here_matches_that_try_a_shorter_word_or_': 'Ничего не подошло. Попробуйте короче или спросите автора мода.',
   'menu.underworld': 'Преступный мир',
-  'menu.encumbrance': 'Перегрузка',
+  'menu.encumbrance': 'Переносимый вес',
   'menu.off_your_skills_stop_at_100_as_in_daggerfall': 'Выкл — навыки не растут выше 100, как в Daggerfall.',
   'menu.you_can_turn_it_off_here_at_any_time': 'Выключить можно здесь в любой момент.',
   'menu.enter_as': 'Играть за {label}',

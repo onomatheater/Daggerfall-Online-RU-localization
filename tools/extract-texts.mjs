@@ -73,6 +73,31 @@ function scan(source) {
       i += 2;
       continue;
     }
+    // regex-литерал: бэктик/кавычка внутри /.../ рассинхронизирует скан.
+    // Эвристика старта: предыдущий значимый символ — (,=:[!&|?{}; или начало.
+    if (c === '/' && nx !== '/' && nx !== '*') {
+      let j = i - 1;
+      while (j >= 0 && (source[j] === ' ' || source[j] === '\t' || source[j] === '\n' || source[j] === '\r')) j--;
+      const prev = j < 0 ? '' : source[j];
+      if (prev === '' || ' (,=:[!&|?{};'.includes(prev)) {
+        // /= — деление с присваиванием, не regex
+        if (nx === '=') { i += 2; continue; }
+        i++;
+        let inClass = false;
+        while (i < n) {
+          const d = source[i];
+          if (d === '\\') { i += 2; continue; }
+          if (d === '[') inClass = true;
+          else if (d === ']') inClass = false;
+          else if (d === '/' && !inClass) break;
+          else if ((d === '\n' || d === '\r') && !inClass) break;
+          i++;
+        }
+        i++; // за закрывающий /
+        while (i < n && /[a-z]/.test(source[i])) i++; // флаги
+        continue;
+      }
+    }
     if (c === "'" || c === '"' || c === '`') { pushQuoted(c); continue; }
     // текст между тегами: >text< (HTML-поверхности)
     if (c === '>') {

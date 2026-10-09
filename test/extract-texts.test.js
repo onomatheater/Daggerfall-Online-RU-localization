@@ -205,6 +205,16 @@ test('decodes JS escapes in literals', () => {
   assert.ok(byEn['it\'s'], 'escaped quote kept whole');
 });
 
+const REGEXQ = "const t = s.replace(/`([^`]*)`/g, '$1');\nconst w = 'Hello';\nconst q = a / b;\nconst d = x /= 2;";
+
+test('regex literals do not desync the scan', () => {
+  const rows = extractTexts(REGEXQ, 'fict');
+  const byEn = Object.fromEntries(rows.map((r) => [r.en, r.key]));
+  assert.ok(byEn['Hello'], 'string after regex kept');
+  assert.ok(!byEn['$1'], '$1 has no letters, correctly ignored');
+  assert.ok(!Object.keys(byEn).some((k) => k.includes('forEach') || k.length > 60), 'no swallowed code');
+});
+
 const RW = `el('div', 'row', 'Cancel');
 el('div', 'row', 'Cancel');
 box.classList.add('on');
