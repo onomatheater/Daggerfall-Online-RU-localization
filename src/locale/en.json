@@ -3517,5 +3517,8 @@
     "852": "Random Ruler",
     "853": "Random Knight",
     "977": "Secret of Oblivion"
+  },
+  "dfo": {
+    "fontscale.label": "Font size"
   }
 }
