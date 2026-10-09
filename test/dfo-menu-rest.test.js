@@ -50,7 +50,7 @@ test('menu-rest exact RU values (QA-gated)', () => {
   eq('save.backed_up', 'Есть копия');
   eq('save.backup_failed', 'Не удалось скопировать');
   eq('dlg.quit_confirm', 'Точно выйти из игры?');
-  eq('menu.modules', 'Модули.');
+  eq('menu.modules', 'Модули');
   eq('menu.activate_master_skills_confirm', 'Включить мастерские навыки?');
   eq('menu.hear_swings', 'Слышать взмахи оружия других игроков.');
   eq('menu.show_travellers', 'На улице игроки вашей области видят вас на карте. ');
@@ -61,6 +61,6 @@ test('menu-rest renders in RU', () => {
   assert.equal(t('dfo:shots.empty'), 'Нет снимков');
   assert.equal(t('dfo:save.just_now'), 'только что');
   assert.equal(t('dfo:dlg.quit_confirm'), 'Точно выйти из игры?');
-  assert.equal(t('dfo:menu.modules'), 'Модули.');
+  assert.equal(t('dfo:menu.modules'), 'Модули');
   setLocale('en');
 });
