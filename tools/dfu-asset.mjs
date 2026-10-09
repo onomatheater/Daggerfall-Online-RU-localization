@@ -2,6 +2,7 @@
 // *_en.asset даёт Id→EN-строку. joinTable склеивает в Key→EN для en.json.
 // Многострочные m_Localized склеиваем пробелом (редакторный воздух, как и
 // буквальные \n в CSV DFU-конвертера).
+export const DFU_PIN = '2343305d1d83ccc0de57a81e3b1e61188a997e34';
 export function parseShared(text) {
   const out = {};
   const re = /- m_Id:\s*(\d+)\s*\n\s*m_Key:\s*(\S+)/g;

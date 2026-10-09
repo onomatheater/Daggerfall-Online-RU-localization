@@ -64,12 +64,29 @@ export function csvToJson(rows) {
   return { ru, en };
 }
 
+// Откат импорта: если автор запретит таблицу или ответ разработчиков
+// потребует её убрать — одна команда, остальное не трогаем.
+export function dropTable(all, table) {
+  const out = { ...(all ?? {}) };
+  delete out[table];
+  return out;
+}
+
 // CLI: node tools/jagget-import.mjs --src <csv> --table <name>
 //      --ru <ru.json> --en <en.json>
+//      node tools/jagget-import.mjs --drop <name> --ru <ru.json> --en <en.json>
 if (process.argv[1]?.endsWith('jagget-import.mjs')) {
   const { readFileSync, writeFileSync } = await import('node:fs');
   const args = process.argv.slice(2);
   const get = (f) => args[args.indexOf(f) + 1];
+  if (args.includes('--drop')) {
+    const table = get('--drop');
+    for (const f of [get('--ru'), get('--en')].filter(Boolean)) {
+      writeFileSync(f, JSON.stringify(dropTable(JSON.parse(readFileSync(f, 'utf8')), table), null, 2) + '\n');
+    }
+    console.log(`dropped table ${table}`);
+    process.exit(0);
+  }
   const table = get('--table') || 'strings';
   const { ru, en } = csvToJson(parseCsv(readFileSync(get('--src'), 'utf8')));
   const ruAll = JSON.parse(readFileSync(get('--ru'), 'utf8'));
