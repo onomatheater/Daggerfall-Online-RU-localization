@@ -3545,6 +3545,20 @@
     "settings.Startup/StartInDungeon": "Start In The Dungeon",
     "settings.ChildGuard/PlayerNudity": "Show Nudity",
     "settings.Controls/AllowMagicRepairs": "Repair Magic Items",
-    "settings.Controls/InstantRepairs": "Instant Repairs"
+    "settings.Controls/InstantRepairs": "Instant Repairs",
+    "cat.game": "Game",
+    "cat.controls": "Controls",
+    "cat.audio": "Audio",
+    "cat.video": "Video",
+    "cat.interface": "Interface",
+    "cat.accessibility": "Accessibility",
+    "cat.mods": "Data & Mods",
+    "catblurb.game": "How the world plays: fighting, dungeons, repairs and the rules you start out with.",
+    "catblurb.controls": "Looking, moving and swinging, whether you play with a mouse, a keyboard or a touchscreen.",
+    "catblurb.audio": "Music, sound effects and the noises people make in a fight.",
+    "catblurb.video": "How the game looks, how bright it is, and how hard your machine has to work.",
+    "catblurb.interface": "Everything drawn on top of the world: bars, icons, tooltips, prompts and maps.",
+    "catblurb.accessibility": "Comfort and readability, for anyone bothered by motion, flashing or small text.",
+    "catblurb.mods": "Where the game files live and DFU mod switches."
   }
 }

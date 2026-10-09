@@ -2086,6 +2086,20 @@
     "settings.Startup/StartInDungeon": "Начать в подземелье",
     "settings.ChildGuard/PlayerNudity": "Показывать наготу",
     "settings.Controls/AllowMagicRepairs": "Чинить магические предметы",
-    "settings.Controls/InstantRepairs": "Мгновенный ремонт"
+    "settings.Controls/InstantRepairs": "Мгновенный ремонт",
+    "cat.game": "Игра",
+    "cat.controls": "Управление",
+    "cat.audio": "Звук",
+    "cat.video": "Видео",
+    "cat.interface": "Интерфейс",
+    "cat.accessibility": "Доступность",
+    "cat.mods": "Данные и моды",
+    "catblurb.game": "Как играется мир: бои, подземелья, ремонт и стартовые правила.",
+    "catblurb.controls": "Осмотр, движение и взмахи — мышью, клавиатурой или тачскрином.",
+    "catblurb.audio": "Музыка, звуки и шумы драки.",
+    "catblurb.video": "Как выглядит игра, её яркость и нагрузка на машину.",
+    "catblurb.interface": "Всё поверх мира: панели, иконки, подсказки и карты.",
+    "catblurb.accessibility": "Комфорт и читаемость: движение, вспышки, мелкий текст.",
+    "catblurb.mods": "Где лежат файлы игры и переключатели модов DFU."
   }
 }
