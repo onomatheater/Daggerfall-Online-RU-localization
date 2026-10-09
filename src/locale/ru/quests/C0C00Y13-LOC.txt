@@ -1,0 +1,72 @@
+-- Quest: C:\QUESTS\WORKING\C0C00Y13.Qbn.
+-- StartsBy: NPC
+-- Questee: anyone
+-- Questor: temple
+-- Repute: 0
+-- QuestId: 13
+Messages: 12
+Quest: C0C00Y13
+DisplayName: Поручение
+-- Message panels
+QRC:
+
+QuestorOffer:  [1000]
+<ce> Благословение с вами, %pcn,
+<ce> даже если вы не собираетесь
+<ce> посещать наш храм. Меня зовут
+<ce> _qgiver_. Значит вы
+<ce> ищете способ улучшить отношения
+<ce> с __qgiver_.
+<ce> Доставьте одну вещицу:
+<ce> _religitem_, в ___priest_
+<ce> в течение =traveltime_ дней,
+<ce> потом я поговорю с вами.
+
+RefuseQuest:  [1001]
+<ce> Это ваши проблемы. Больше не
+<ce> пытайтесь заслужить доверия у
+<ce> нас, %pcn.
+
+AcceptQuest:  [1002]
+<ce> Вот _religitem_.
+<ce> Отнесите это к _priest_
+<ce> из __priest_ в ___priest_.
+<ce> О, чуть не забыл, конкурирующий
+<ce> храм может нанять бандитов
+<ce> по вашу душу.
+
+QuestComplete:  [1004]
+<ce> Да пребудет с вами божье
+<ce> благословение, %pcn.
+<ce> _religitem_ очень
+<ce> необходим здесь.
+
+RumorsDuringQuest:  [1005]
+Какие-то странные гонки между двух храмов за _religitem_.
+
+RumorsPostfailure:  [1006]
+_priest_ никогда не получит _religitem_, а _qgiver_ будет недоволен.
+
+RumorsPostsuccess:  [1007]
+_priest_ и __qgiver_ позаботились, чтобы вернуть _religitem_, благодаря храброму %ra.
+
+QuestorPostsuccess:  [1008]
+%god с вами, конечно же я помню вас, %pcf. Как поживаете, дитя мое?
+
+QuestorPostfailure:  [1009]
+_priest_ никогда не получит _religitem_ и я не удивлен этим.
+
+QuestLogEntry:  [1010]
+%qdt:
+ _qgiver_, из __qgiver_,
+ дал мне задание доставить
+ _religitem_ к _priest_
+ в __priest_ в ___priest_.
+ Работу необходимо завершить в течение
+ =traveltime_ дней.
+
+Message:  1011
+<ce> _religitem_ никогда
+<ce> не вернется в __priest_.
+<ce> Вместо этого, я пошлю им
+<ce> вашу голову!
