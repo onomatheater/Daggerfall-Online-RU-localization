@@ -53,4 +53,61 @@ Launcher → Лаунчер
 
 ## Не переводить никогда
 Steam, GOG, Daggerfall, Daggerfall Unity, Nexus Mods, Eye of the Beholder,
+Daedra-принцы и регионы (имена собственные — латиница),
 пути и имена файлов, ini-секции и ключи, ID предметов/квестов, версии (v0.1.x)
+
+## Материалы (сущ.; прил. по роду: Эльфийский/ая/ое)
+Iron → Железо
+Steel → Сталь
+Silver → Серебро
+Elven → Эльфийский
+Dwarven → Двемерский
+Mithril → Мифрил
+Adamantium → Адамантин
+Ebony → Эбонит
+Orcish → Орочий
+Daedric → Даэдрический
+
+## Доспехи и одежда
+Cuirass → Кираса
+Greaves → Поножи
+Pauldrons → Наплечники
+Gauntlets → Перчатки
+Helm → Шлем
+Shield → Щит
+Boots → Сапоги
+Cloak → Плащ
+Amulet → Амулет
+Ring → Кольцо
+
+## Школы магии
+Destruction → Разрушение
+Restoration → Восстановление
+Illusion → Иллюзия
+Alteration → Изменение
+Thaumaturgy → Тауматургия
+Mysticism → Мистицизм
+
+## Эффекты и алхимия
+Spell (сущ.) → Заклинание (всегда -ание, никогда «заклятие»)
+Heal (сущ.) / Cure (глагол) → Исцеление / Лечить
+Resist → Сопротивление
+Fortify → Укрепление
+Poison → Яд
+Disease → Болезнь
+Levitate → Левитация
+Charm → Очарование (глагол: Зачаровать)
+Paralyze → Паралич
+Silence → Тишина
+Light → Свет
+Lock → Замок
+Water Breathing → Дыхание под водой
+Water Walking → Хождение по воде
+
+## Фракции
+Fighters Guild → Гильдия бойцов
+Mages Guild → Гильдия магов
+Thieves Guild → Гильдия воров
+Dark Brotherhood → Тёмное братство
+Храмы Девяти: Akatosh → Акатош, Arkay → Аркей, Dibella → Дибелла, Julianos → Джулианос, Kynareth → Кинарет, Mara → Мара, Stendarr → Стендарр, Zenithar → Зенитар, Talos → Талос
+Ордена/рыцари: структура «Орден/Рыцари + русское имя» (Order of Arkay → Орден Аркея)
