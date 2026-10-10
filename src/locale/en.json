@@ -4326,6 +4326,7 @@
     "sec.world.travel": "Travel",
     "sec.world.sea": "The sea & ships",
     "sec.interface.hud": "HUD",
+    "sec.interface.sheet": "Character sheet",
     "sec.interface.messages": "Messages & prompts",
     "sec.interface.quests": "Quest help",
     "sec.interface.dungeons": "Dungeon help",
