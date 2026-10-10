@@ -3594,6 +3594,7 @@
     "charsheet.risen_title": "Вы получили уровень",
     "charsheet.risen_text": "Вы получили уровень.",
     "settings.unavailable_port": "нет в этом порте",
-    "settings.blocked_here": "нет здесь"
+    "settings.blocked_here": "нет здесь",
+    "boss.count_fell": "Бой засчитал ваше падение."
   }
 }

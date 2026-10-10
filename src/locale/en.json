@@ -5053,6 +5053,7 @@
     "charsheet.risen_title": "You have risen",
     "charsheet.risen_text": "You have risen.",
     "settings.unavailable_port": "not available in this port",
-    "settings.blocked_here": "not here"
+    "settings.blocked_here": "not here",
+    "boss.count_fell": "The fight counts you fallen."
   }
 }
