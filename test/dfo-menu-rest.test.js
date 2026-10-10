@@ -54,7 +54,7 @@ test('menu-rest exact RU values (QA-gated)', () => {
   eq('menu.modules', 'Модули');
   eq('menu.activate_master_skills_confirm', 'Включить мастерские навыки?');
   eq('menu.hear_swings', 'Слышать взмахи оружия других игроков.');
-  eq('menu.show_travellers', 'На улице игроки вашей области видят вас на карте. ');
+  eq('menu.show_travellers', 'Вне помещений игроки вашей области видят вас на карте. ');
   eq('menu.show_travellers_tail', 'Из помещений не передаётся ничего, кроме группы. Хранится на этом устройстве.');
   eq('sec.interface.sheet', 'Лист персонажа');
 });
@@ -101,7 +101,7 @@ test('wave1 exact RU values (QA-gated)', () => {
   eq('menu.between_the_website_and_the_app', 'Между сайтом и приложением');
   eq('menu.export_all_saves', 'Экспорт всех сохранений');
   eq('menu.import_a_zip', 'Импортировать zip');
-  eq('menu.import_a_saves_folder', 'Ввезти папку Saves');
+  eq('menu.import_a_saves_folder', 'Импортировать папку Saves');
 });
 
 test('wave1 renders in RU', () => {
