@@ -52,7 +52,7 @@ test('menu-finish exact RU values (QA-gated)', () => {
   eq('save.overwrite_confirm', 'Перезаписать это сохранение?');
   eq('account.username_hint', 'Одно слово, 3–24 символа, начинается с буквы.');
   eq('account.wearing_title', 'Выбран титул: {title}.');
-  eq('account.patreon_linked_title', 'Patreon привязан. Титул выбирается в разделе Title.');
+  eq('account.patreon_linked_title', 'Patreon привязан. Титул выбирается в разделе «Титул».');
   eq('dlg.ok', 'ОК');
   eq('dlg.y_yes', 'Y — да');
   eq('dlg.enter_accept', 'Enter — принять · Escape — отмена');
@@ -69,6 +69,6 @@ test('menu-finish renders in RU', () => {
   assert.equal(t('dfo:save.rename'), 'Переименовать');
   assert.equal(t('dfo:account.password'), 'Пароль');
   assert.equal(t('dfo:dlg.ok'), 'ОК');
-  assert.equal(t('dfo:menu.preset_custom'), 'Свой');
+  assert.equal(t('dfo:menu.preset_custom'), 'Пользовательский');
   setLocale('en');
 });
