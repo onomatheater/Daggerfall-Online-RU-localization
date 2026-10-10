@@ -55,5 +55,9 @@ test('launcher detail lines read as Russian, not calques', () => {
     t('dfo:launcher.detail.same_version'),
     'Установится перед запуском игры, чтобы у вас была та же версия, что у всех в сети.'
   );
+  assert.equal(
+    t('dfo:launcher.news.no_check'),
+    'Заметки к патчу приходят с проверкой обновлений, а она выключена.'
+  );
   setLocale('en');
 });

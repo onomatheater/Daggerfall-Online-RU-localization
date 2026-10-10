@@ -2734,7 +2734,7 @@
     "launcher.news.title": "Заметки к патчу",
     "launcher.news.loading": "Загрузка заметок к патчу",
     "launcher.news.offline": "Не удалось загрузить заметки к патчу — GitHub не ответил.",
-    "launcher.news.no_check": "Новости приходят с проверкой обновлений, а она выключена.",
+    "launcher.news.no_check": "Заметки к патчу приходят с проверкой обновлений, а она выключена.",
     "launcher.news.none": "Заметок к патчу пока нет.",
     "launcher.badge.new": "Новое",
     "launcher.badge.update": "Обновление",
