@@ -2974,7 +2974,7 @@
     "tip.Video/RetroRenderingMode": "Рисует мир в пониженном разрешении.",
     "menu.delete_backup_arm": "Удалить копию",
     "menu.quality_preset": "Пресет качества",
-    "menu.quality_preset_note": "Дальность вида, трава, облака, чёткость земли и вода.",
+    "menu.quality_preset_note": "Дальность вида, трава, облака, чёткость земли, вода и окна.",
     "menu.preset_custom": "Свой",
     "menu.open_overhauls": "Открыть",
     "menu.hud_elements_note": "Компас, полосы и значки эффектов.",
