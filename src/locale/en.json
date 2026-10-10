@@ -5054,6 +5054,11 @@
     "charsheet.risen_text": "You have risen.",
     "settings.unavailable_port": "not available in this port",
     "settings.blocked_here": "not here",
-    "boss.count_fell": "The fight counts you fallen."
+    "boss.count_fell": "The fight counts you fallen.",
+    "shots.kept_count": "{count} of {max} kept in this browser - never uploaded. ",
+    "shots.press_key": "Press {key} in the world to take one.",
+    "shots.empty_hint": "Press {key} anywhere in the world. Up to {max} shots are kept here, and can stand on the loading screens.",
+    "shots.download_line": "Also save each shot as a file: {state}",
+    "menu.outdoors_note": "Pick a season and a weather, and drop into a random town. A test door: it stores nothing, and it names the town in the console."
   }
 }
