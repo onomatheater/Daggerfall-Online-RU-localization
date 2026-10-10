@@ -9,8 +9,15 @@ const ru = JSON.parse(fs.readFileSync(new URL('../src/locale/ru.json', import.me
 // Wave 2 batch 3: online rail pane — explainer halves (split around the
 // runtime skyDayWords() call) + bring-offline heading. Everything else on
 // the pane already has keys (menu.* flow) and only needs probe wiring.
+// NEED (wiring batch 11.10, RED увиден в DOM-PROBE: online-open показал
+// голые EN-литералы): empty() и undo/copy-диалоги в enhancedMenu.js
+// вяжутся ТОЛЬКО на эти ключи, новых не заводим (probe: patch-*.mjs).
 const NEED = [
   'online.explainer_shared', 'online.explainer_clock', 'online.bring_offline_once',
+  'menu.no_saved_games', 'menu.an_offline_character_the_realm_knew_before_it_op',
+  'menu.sign_in_or_continue_as_guest', 'menu.bring_online', 'menu.undo',
+  'realm.undo_ask', 'realm.undo_body', 'realm.undo_done', 'realm.copy_done',
+  'realm.undo_button',
 ];
 
 test('online batch: EN+RU share the new keys, RU non-empty', () => {
@@ -29,5 +36,14 @@ test('online exact RU values (QA-gated)', () => {
 test('online renders in RU', () => {
   setLocale('ru');
   assert.equal(t('dfo:online.bring_offline_once'), 'Привести офлайн-персонажа (однократно)');
+  assert.equal(t('dfo:menu.no_saved_games'), 'Сохранений нет');
+  assert.equal(
+    t('dfo:menu.an_offline_character_the_realm_knew_before_it_op'),
+    'Персонажа, которого мир знал до открытия, можно ввести отсюда один раз.',
+  );
+  assert.equal(t('dfo:realm.undo_ask', { name: 'Тест' }), 'Отменить перенос Тест в мир?');
+  assert.equal(t('dfo:realm.undo_button'), 'Отменить перенос');
+  assert.equal(t('dfo:menu.undo'), 'Отменить');
+  assert.equal(t('dfo:menu.bring_online'), 'Ввести в мир');
   setLocale('en');
 });
