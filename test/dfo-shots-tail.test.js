@@ -15,11 +15,11 @@ const EN = {
 };
 
 const RU = {
-  'shots.kept_count': '{count} из {max} хранятся в этом браузере и никуда не выгружаются. ',
+  'shots.kept_count': 'В этом браузере: {count} из {max}. Никуда не отправляются. ',
   'shots.press_key': 'Нажмите {key} в мире, чтобы сделать снимок.',
-  'shots.empty_hint': 'Нажмите {key} в любом месте мира. До {max} снимков хранятся здесь и могут показываться на экранах загрузки.',
+  'shots.empty_hint': 'Нажмите {key} в любом месте мира. Здесь хранится до {max} снимков, они могут появляться на экранах загрузки.',
   'shots.download_line': 'Также сохранять каждый снимок файлом: {state}',
-  'menu.outdoors_note': 'Выберите сезон и погоду и окажитесь в случайном городе. Это тестовая дверь: она ничего не сохраняет, а город называет в консоли.',
+  'menu.outdoors_note': 'Выберите сезон и погоду и окажитесь в случайном городе. Это тестовая дверь: она ничего не сохраняет, а название города выводит в консоль.',
 };
 
 test('shots-tail: exact EN+RU (+trailing space parity)', () => {
@@ -38,6 +38,6 @@ test('shots-tail: placeholders interpolate', () => {
     t('dfo:shots.download_line', { state: t('dfo:val.off') }),
     'Также сохранять каждый снимок файлом: Выкл',
   );
-  assert.ok(t('dfo:shots.kept_count', { count: 0, max: 128 }).startsWith('0 из 128 '));
+  assert.ok(t('dfo:shots.kept_count', { count: 0, max: 128 }).startsWith('В этом браузере: 0 из 128'));
   setLocale('en');
 });
