@@ -4955,6 +4955,11 @@
     "dlg.quit_confirm": "Are you sure you want to quit?",
     "menu.overhauls_blurb": "Whole looks for the world, its sounds and the interface - Vanilla Enhanced’s textures and the rest - are chosen on the Overhauls page.",
     "menu.skills_back": "‹ Skills",
-    "menu.activate_master_skills_confirm": "Activate Master Skills?"
+    "menu.activate_master_skills_confirm": "Activate Master Skills?",
+    "online.sky_day_hour": "A day in the world is an hour of real time: {day}.",
+    "online.sky_day_two": "A day in the world is two hours of real time until {date}; from then on it is an hour: {day}.",
+    "online.sky_midnight_hour": "midnight falls on the hour",
+    "online.sky_midnight_at": "midnight falls at {t}",
+    "online.sky_dusk": "and dusk at {t}"
   }
 }

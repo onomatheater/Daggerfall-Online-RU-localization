@@ -45,6 +45,7 @@ test('feats exact RU values (QA-gated)', () => {
   const eq = (k, v) => assert.equal(ru.dfo[k], v, k);
   eq('feat.render-scale', 'Масштаб рендера');
   eq('feat.render-scale.effect', 'Вступает в силу сразу.');
+  eq('feat.land-view-distance', 'Дальность прорисовки земли');
   eq('feat.land-view-distance.effect', 'Вступит в силу при следующей загрузке мира.');
   eq('feat.loot-rarity', 'Редкость добычи');
   eq('feat.town-watch', 'Стража защищает город');
