@@ -77,3 +77,12 @@ test('wire-check: files without locale import are skipped (aetheric lesson)', ()
   assert.deepEqual(r.errors, []);
   assert.deepEqual(r.warnings, []);
 });
+
+test('wire-check: nested call inside params keeps top-level names only', () => {
+  const tables = {
+    en: { dfo: { 'shots.download_line': 'Also save each shot as a file: {state}' } },
+    ru: { dfo: { 'shots.download_line': 'Также сохранять каждый снимок файлом: {state}' } },
+  };
+  const src = IMP + `x(ruTOr('dfo:shots.download_line', 'Also save each shot as a file: {state}', { state: ruTOr(dl ? 'dfo:val.on' : 'dfo:val.off', dl ? 'On' : 'Off') }));`;
+  assert.deepEqual(checkWiring([{ name: 'a.js', src }], tables).errors, []);
+});

@@ -65,6 +65,41 @@ function placeholders(s) {
   return [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
 }
 
+// `{...}` с учётом вложенности (ruTOr внутри params): возвращает имена
+// верхнеуровневых свойств или [] если дальше не объект.
+function parseParams(src, i) {
+  if (src[i] !== '{') return [];
+  let j = i + 1;
+  let depth = 1;
+  let cur = '';
+  const parts = [];
+  let quote = null;
+  while (j < src.length && depth > 0) {
+    const c = src[j];
+    if (quote) {
+      cur += c;
+      if (c === '\\') { cur += src[j + 1] ?? ''; j += 2; continue; }
+      if (c === quote) quote = null;
+      j++;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { quote = c; cur += c; j++; continue; }
+    if (c === '{' || c === '(' || c === '[') depth++;
+    else if (c === '}' || c === ')' || c === ']') {
+      depth--;
+      if (depth === 0) break;
+    }
+    // NOTE: упрощение — все скобки одним счётчиком; для params-объектов
+    // (плоские {k: v} с вызовами внутри) корректно.
+    if (c === ',' && depth === 1) { parts.push(cur); cur = ''; j++; continue; }
+    cur += c;
+    j++;
+  }
+  if (depth !== 0) return [];
+  parts.push(cur);
+  return parts.map((p) => /^\s*(\w+)/.exec(p)?.[1]).filter(Boolean);
+}
+
 export function extractCalls(src) {
   // Возвращает [{ key|null(dynamic), def|undefined(absent)|null(undef-literal), params[], index }]
   const out = [];
@@ -93,13 +128,7 @@ export function extractCalls(src) {
           if (d) { def = d[0]; i = d[1]; }
           const k = skipWs(src, i);
           if (src[k] === ',') {
-            const pm = /^\{([^}]*)\}/.exec(src.slice(skipWs(src, k + 1)));
-            // Именованные (k: v) и shorthand ({ h, m }) — верхнеуровневые.
-            if (pm) {
-              params = pm[1].split(',')
-                .map((p) => /^\s*(\w+)/.exec(p)?.[1])
-                .filter(Boolean);
-            }
+            params = parseParams(src, skipWs(src, k + 1));
           }
         }
       }
