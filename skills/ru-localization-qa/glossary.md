@@ -51,12 +51,31 @@ Encumbrance (характеристика максимума) → Перенос
 Перегруз — только состояние превышения, не характеристика
 
 ## Сеть и файлы
-Realm → Мир (сетевой)
+Realm → Мир (сетевой; лорное «мир» в `-LOC` при Фазе 6 сверить grep'ом на коллизию)
 Offline / Online → Офлайн / Сетевой (прил.), офлайн / в сети (обст.)
 Download / Upload → Скачать / Загрузить (файл вниз/вверх)
 Update → Обновление
 Mod → Мод
 Launcher → Лаунчер
+
+## База интерфейса (канон сверен с влитыми dfo/strings 11.10; синонимы запрещены)
+Settings → Настройки
+Continue → Продолжить
+Cancel → Отмена
+Exit (глагол, menu) → Выйти / Exit (сущ., strings) → Выход
+Back / Previous → Назад
+Play → Играть
+Save → Сохранить / Load → Загрузить (сущ.: Сохранение / Загрузка)
+Delete → Удалить
+Rename → Переименовать
+Done → Готово
+Yes → Да / No → Нет
+Next → Далее
+Undo → Отменить
+Confirm → Подтвердить
+Restore → Восстановить
+All → Все
+Overwrite → Перезаписать
 
 ## Не переводить никогда
 Steam, GOG, Daggerfall, Daggerfall Unity, Nexus Mods, Eye of the Beholder,
