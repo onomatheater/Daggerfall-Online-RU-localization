@@ -67,3 +67,47 @@ test('menu-rest renders in RU', () => {
   assert.equal(t('dfo:menu.modules'), 'Модули');
   setLocale('en');
 });
+
+// Wave 1 (fact-check 10.10): keys that existed in tables but were NEVER pinned
+// by any test — and never wired in the probe (screenshots proved EN on screen).
+// Presence here is the contract the probe wiring relies on.
+const WAVE1_NEED = [
+  'menu.continue', 'menu.begin', 'menu.back_up', 'menu.load',
+  'menu.health', 'menu.gold', 'menu.a_new_character',
+  'menu.race_class_biography_face_skills', 'menu.where_you_wake_up',
+  'menu.move_saves', 'menu.between_the_website_and_the_app',
+  'menu.export_all_saves', 'menu.import_a_zip', 'menu.import_a_saves_folder',
+];
+
+test('wave1 pins: EN+RU share the pre-existing menu keys', () => {
+  for (const k of WAVE1_NEED) {
+    assert.ok(en.dfo?.[k], 'en has ' + k);
+    assert.ok(ru.dfo?.[k]?.length > 0, 'ru has ' + k);
+  }
+});
+
+test('wave1 exact RU values (QA-gated)', () => {
+  const eq = (k, v) => assert.equal(ru.dfo[k], v, k);
+  eq('menu.continue', 'Продолжить');
+  eq('menu.begin', 'Начать');
+  eq('menu.back_up', 'Сделать копию');
+  eq('menu.load', 'Загрузить');
+  eq('menu.health', 'Здоровье');
+  eq('menu.gold', 'Золото');
+  eq('menu.a_new_character', 'Новый персонаж');
+  eq('menu.race_class_biography_face_skills', 'Раса, класс, биография, лицо, навыки.');
+  eq('menu.where_you_wake_up', 'Где вы очнётесь');
+  eq('menu.move_saves', 'Перенести сохранения');
+  eq('menu.between_the_website_and_the_app', 'Между сайтом и приложением');
+  eq('menu.export_all_saves', 'Экспорт всех сохранений');
+  eq('menu.import_a_zip', 'Импортировать zip');
+  eq('menu.import_a_saves_folder', 'Ввезти папку Saves');
+});
+
+test('wave1 renders in RU', () => {
+  setLocale('ru');
+  assert.equal(t('dfo:menu.continue'), 'Продолжить');
+  assert.equal(t('dfo:menu.back_up'), 'Сделать копию');
+  assert.equal(t('dfo:menu.move_saves'), 'Перенести сохранения');
+  setLocale('en');
+});
