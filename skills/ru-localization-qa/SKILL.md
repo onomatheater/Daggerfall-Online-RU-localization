@@ -16,11 +16,14 @@ A mistranslated UI string ships to every player. Every RU string passes the four
 When NOT to use: proper nouns, paths, IDs, ini keys, save/network content — those are never translated.
 
 ## The Gate
+0. **Context before translation.** Read the note/help/code comment and sibling keys BEFORE choosing RU. A literal translation without context is a bug, not a translation («Land view distance» → «Дальность земли» ✗, note says "how far the land is drawn" → «Дальность прорисовки земли» ✓; sibling key already had it right).
 1. **Glossary first.** EN term in `glossary.md` → use that RU verbatim. No synonyms, no improvisation.
 2. **Back-translate.** Render the RU back into English. If the meaning drifted, rewrite. («Установится до игры» → "will install until the game" ✗; «Установится перед запуском игры» ✓)
 3. **Register: neutral-helpful.** No slang («сгинул»), no cuteness («парадная»), no mixed language («Проверить outdoors»), no verb-neologisms («Появить», «Ввезти» — rephrase with a noun: «Создание», «Импорт»). Short labels stay short.
-4. **Consistency.** Same EN term **in the same context** → same RU in every table (grep). Divergences go to review, never auto-merged. Placeholders `{x}`/`%s` identical EN↔RU. Ё/ё where orthography demands.
+4. **Consistency (case-insensitive).** Same EN term **in the same context** → same RU in every table (grep IGNORING case: "Land View Distance" must hit "Land view distance"). Divergences go to review, never auto-merged. Placeholders `{x}`/`%s` identical EN↔RU. Ё/ё where orthography demands.
 5. **Structural parity.** EN artifacts are data, not text: `\r`, RSC quotes, trailing spaces, date/number format slots (`{5}`-style) stay byte-identical unless the formatter is verified. RU must not be shorter than EN by >20% (truncation flag) and must carry the same placeholder set.
+6. **Transitive interpolation closure.** A wired string is not done until every piece it renders is a key: `${x}`, function calls (`skyDayWords()` rendered raw EN mid-paragraph), `+`-chains, ternaries. For each interpolation ask: static → key now; runtime value (name/date/count) → `{param}` key; computed prose → split into param-keys. An unwired interpolation is a shipped EN fragment.
+7. **Render proof, not table proof.** A key in `ru.json` is NOT a translated screen. Done = the key's marker found in the built bundle (`dist/assets/*.js`) + eye-check. Keep an explicit unwired-list per batch; anything on it is open work, not "99%".
 
 ## Quick Reference
 | Check | How |
@@ -44,8 +47,11 @@ When NOT to use: proper nouns, paths, IDs, ini keys, save/network content — th
 
 ## Red Flags — STOP and re-run the Gate
 - «И так поймут» / «дословно точнее»
+- Translated without reading the note/comment/siblings (Gate 0)
 - Term missing from glossary → added it first, then used it
 - Back-translation skipped («очевидно же»)
-- Same EN term translated two ways in the same context
+- Same EN term translated two ways in the same context (grep case-insensitively)
 - Placeholder added/removed/dropped vs EN
 - RU visibly shorter than EN with no note → check truncation, not style
+- «Ключ в таблице = переведено» — without a bundle marker + eye-check it is open work
+- Wired `A + f() + B` without resolving what `f()` renders (Gate 6)
