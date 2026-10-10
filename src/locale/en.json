@@ -5004,6 +5004,9 @@
     "pad.reset_plus": "Reset to Plus defaults",
     "pad.layout_back": "The Enhanced Plus layout is back.",
     "pad.crouch_sneak": "Crouch and sneak",
-    "pad.interact_use": "Interact (the use key)"
+    "pad.interact_use": "Interact (the use key)",
+    "online.explainer_shared": "Everyone plays their own save, and you can see and talk to each other anywhere. Privateer’s Hold, where every character begins, is each player’s own. Dungeons and buildings are shared: enemies, doors, levers and every chest, shelf or cupboard someone has opened are the same for everyone, and stay that way. In towns and the wilds you share who is around: what one player meets, everyone nearby sees and can fight, and those monsters can hurt you too.",
+    "online.explainer_clock": "The world’s clock and sky run on real time: resting, travelling, jail time or training don’t move them, so a quest that waits for a time of day waits for the world’s, and a full moon holds a lycanthrope for its night alone. Your character also keeps their own time: it runs while you play, resting, travelling, jail time and training use it, and it stops while you are logged off. Your wounds, spells, hunger, diseases, curses, guild ranks, rented rooms, loans and repairs run on it. Quest timers run on the world’s clock while you play: resting, waiting and travelling don’t spend a quest’s days, and time logged off never counts. A quest that only makes you wait - a letter, a meeting, “come back in a few days” - moves on after a couple of minutes of play. You rest at a fire, a tent or a bed: a night passes at once, at most once every ten minutes of play, and your party within 15 metres sleeps it with you. Every enhancement is on for everyone in the shared world, but your UI is your own, with chat, friends, the party and trading in their own panels. Most mods stay your choice online. A few are the room’s: the ones that change the ground, the ones that change monsters and loot, and the rules everyone plays by. The Mods page marks each one.",
+    "online.bring_offline_once": "Bring an offline character in (once)"
   }
 }
