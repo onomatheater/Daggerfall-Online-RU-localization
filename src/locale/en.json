@@ -5024,6 +5024,11 @@
     "ovh.ui.port_by": "The port",
     "ovh.ui.port_blurb": "New and improved UI for adventurers who want a more modern feel. Everything is built for playing with a mouse and keyboard, pad, controller or even a phone. You can tweak some settings the way you want and also tweak the controller bindings.",
     "ovh.tex.err_read": "the browser could not read the stored file - remove it and add it again",
-    "ovh.tex.err_memory": "ran out of memory - lower Texture detail, or attach fewer mods"
+    "ovh.tex.err_memory": "ran out of memory - lower Texture detail, or attach fewer mods",
+    "online.sky_day_hour": "A day in the world is an hour of real time: {day}.",
+    "online.sky_day_two": "A day in the world is two hours of real time until {date}; from then on it is an hour: {day}.",
+    "online.sky_midnight_hour": "midnight falls on the hour",
+    "online.sky_midnight_at": "midnight falls at {t}",
+    "online.sky_dusk": "and dusk at {t}"
   }
 }
