@@ -59,7 +59,7 @@ test('menu-finish exact RU values (QA-gated)', () => {
   eq('tier.restart', 'Вступит в силу при следующем запуске.');
   eq('menu.delete_backup_arm', 'Удалить копию');
   eq('menu.court_count', 'Сколько игроков рисует Горящий двор. Ваш отряд виден всегда.');
-  eq('menu.quality_preset_note', 'Дальность вида, трава, облака, чёткость земли и вода.');
+  eq('menu.quality_preset_note', 'Дальность вида, трава, облака, чёткость земли, вода и окна.');
   eq('menu.delete_button', 'Удалить');
   eq('dlg.y_n_no', 'Y — да   N — нет');
 });

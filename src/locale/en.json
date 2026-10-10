@@ -4432,7 +4432,7 @@
     "tip.Video/RetroRenderingMode": "Renders world at lower resolutions",
     "menu.delete_backup_arm": "Delete backup",
     "menu.quality_preset": "Quality preset",
-    "menu.quality_preset_note": "View distance, grass, clouds, ground sharpness and water.",
+    "menu.quality_preset_note": "View distance, grass, clouds, ground sharpness, water and windows.",
     "menu.preset_custom": "Custom",
     "menu.open_overhauls": "Open",
     "menu.hud_elements_note": "Compass, bars and effect icons.",
