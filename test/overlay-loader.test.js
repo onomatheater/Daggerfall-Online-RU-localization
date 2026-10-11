@@ -43,6 +43,24 @@ test('manifest gate: parse + compatible + choose newest', () => {
   assert.equal(choosePack(packs, '0000'), null);
 });
 
+test('range gate: gameMin/gameMax inclusive, invalid range rejected', () => {
+  const ranged = { locale: 'ru', version: '1.3.0', gameMin: '7506', gameMax: '7553', files: [] };
+  assert.ok(isCompatible(ranged, '7506'), 'min boundary');
+  assert.ok(isCompatible(ranged, '7553'), 'max boundary');
+  assert.ok(isCompatible(ranged, '7524'), 'inside range');
+  assert.ok(!isCompatible(ranged, '7505'), 'below range');
+  assert.ok(!isCompatible(ranged, '7815'), 'above range');
+  assert.ok(!isCompatible({ locale: 'ru', version: '1.0', gameMin: '7553', gameMax: '7506', files: [] }, '7524'), 'inverted range never compatible');
+  assert.ok(!isCompatible({ locale: 'ru', version: '1.0', files: [] }, '7553'), 'no game claim never compatible');
+  assert.ok(isCompatible({ locale: 'ru', version: '1.0', gameMin: '0.1.7506', gameMax: '0.1.7553', files: [] }, '0.1.7524'), 'dotted tags compare');
+});
+
+test('splitKey is single-sourced with locale.js', async () => {
+  const locale = await import('../src/locale/locale.js');
+  const loader = await import('../src/locale/loader.js');
+  assert.equal(loader.splitKey, locale.splitKey, 'no forked copy');
+});
+
 test('unknown locale falls back to en, never crashes', () => {
   const ov = createOverlay({ en: EN });
   assert.equal(ov.resolve('strings:hello', { s: 'x' }, 'de'), 'Hello x.');
