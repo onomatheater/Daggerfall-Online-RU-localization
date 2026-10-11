@@ -1,0 +1,44 @@
+// NEED: апдейтер сам узнаёт версию игры из установки, руками не передаём.
+// - package.json с version -> {version, source: 'package.json'}.
+// - иначе app-update.yml со строкой version: -> {version, source: 'app-update.yml'}.
+// - нет ни того ни другого / битый JSON -> {version: null, reason} (не throw,
+//   селектор дальше даст null и клиент останется на старом паке / EN).
+// Ноль зависимостей: asar не парсим (это делает установка/лаунчер до нас);
+// смотрим только обычные файлы рядом. Сети нет.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { detectGameVersion } from '../tools/detect-game.mjs';
+
+const mk = () => mkdtempSync(join(tmpdir(), 'rugame-'));
+
+test('detects version from package.json first', () => {
+  const dir = mk();
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'daggerfall-js-app', version: '0.1.7553' }));
+  writeFileSync(join(dir, 'app-update.yml'), 'version: 0.1.0000\n');
+  const hit = detectGameVersion(dir);
+  assert.equal(hit.version, '0.1.7553');
+  assert.equal(hit.source, 'package.json');
+});
+
+test('falls back to app-update.yml', () => {
+  const dir = mk();
+  writeFileSync(join(dir, 'app-update.yml'), 'provider: generic\nversion: 0.1.7553\n');
+  const hit = detectGameVersion(dir);
+  assert.equal(hit.version, '0.1.7553');
+  assert.equal(hit.source, 'app-update.yml');
+});
+
+test('missing or broken sources give null with reason, never throw', () => {
+  const empty = mk();
+  const noHit = detectGameVersion(empty);
+  assert.equal(noHit.version, null);
+  assert.ok(typeof noHit.reason === 'string' && noHit.reason.length > 0, 'reason present');
+  const broken = mk();
+  writeFileSync(join(broken, 'package.json'), 'not json{');
+  const badHit = detectGameVersion(broken);
+  assert.equal(badHit.version, null);
+  assert.ok(badHit.reason.length > 0, 'reason present');
+});

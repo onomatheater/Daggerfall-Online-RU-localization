@@ -1,11 +1,29 @@
 // Установка пака: только гейт verifyPack поверх директории.
 // Скачивание (GET zip -> распаковать) — тонкий слой релиз-инфры и лаунчера,
 // сюда не едет: установщик не ходит в сеть и не собирает ничего о пользователе.
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { verifyPack } from './verify-pack.mjs';
 
 export function installPack(packDir) {
   const { errors, stats } = verifyPack(packDir);
   return { ok: errors.length === 0, errors, stats };
+}
+
+// Сверка скачанного zip с sha из фида — до распаковки и installPack.
+// Подменённый/битый файл дальше не идёт. Файла нет -> {ok:false}, не throw.
+export function verifyFileSha(path, expected) {
+  let bytes;
+  try {
+    bytes = readFileSync(path);
+  } catch {
+    return { ok: false, reason: `missing file: ${path}` };
+  }
+  const actual = createHash('sha256').update(bytes).digest('hex');
+  if (actual !== String(expected).toLowerCase()) {
+    return { ok: false, reason: `sha mismatch: expected ${expected}, got ${actual}` };
+  }
+  return { ok: true, sha: actual };
 }
 
 if (process.argv[1]?.endsWith('update-ru.mjs')) {
