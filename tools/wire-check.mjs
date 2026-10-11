@@ -41,13 +41,15 @@ function readString(src, i) {
     if (c === q) return [unescapeJs(raw), j + 1];
     if (q === '`' && c === '$' && src[j + 1] === '{') {
       let depth = 1;
+      let expr = '';
       j += 2;
       while (j < src.length && depth > 0) {
         if (src[j] === '{') depth++;
         else if (src[j] === '}') depth--;
+        if (depth > 0) expr += src[j];
         j++;
       }
-      raw += '{?}';
+      raw += `{?${expr.trim()}?}`;
       continue;
     }
     raw += c;
@@ -62,7 +64,31 @@ function skipWs(src, i) {
 }
 
 function placeholders(s) {
-  return [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
+  const text = String(s);
+  const pct = (text.match(/%s/g) || []).length;
+  const named = [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+  return { pct, named };
+}
+
+function samePlaceholders(a, b) {
+  return a.pct === b.pct && a.named.join(',') === b.named.join(',');
+}
+
+function phText(p) {
+  return `%s×${p.pct} {${p.named.join(',')}}`;
+}
+
+// Модульные `const NAME = 'literal'` файла — для подстановки в template-дефолты
+// (`Nothing ${CONFIRM_LABEL}` сворачивается до проверки паритета).
+function moduleConsts(src) {
+  const out = {};
+  const re = /(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*=\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const body = m[2].slice(1, -1);
+    if (!(m[1] in out)) out[m[1]] = unescapeJs(body);
+  }
+  return out;
 }
 
 // `{...}` с учётом вложенности (ruTOr внутри params): возвращает имена
@@ -169,15 +195,31 @@ export function checkWiring(files, tables) {
       }
       if (c.def === null) {
         errors.push(`${where} undefined default: ${c.key}`);
-      } else if (c.def !== 'ABSENT' && c.def !== enVal) {
+        continue;
+      }
+      // Template-дефолты сворачиваем через модульные константы до сравнения.
+      const consts = moduleConsts(src);
+      const def = c.def === 'ABSENT'
+        ? 'ABSENT'
+        : c.def.replace(/\{\?([^{}]+)\?\}/g, (m, e) => (e.trim() in consts ? consts[e.trim()] : '{?}'));
+      if (def !== 'ABSENT' && def !== enVal) {
         errors.push(`${where} stale default: ${c.key} (call has ${JSON.stringify(c.def.slice(0, 60))})`);
       }
-      if (c.def !== 'ABSENT' && c.def !== null) {
+      if (def !== 'ABSENT') {
         const want = placeholders(enVal);
-        if (placeholders(c.def) !== want || (c.params.length && c.params.slice().sort().join(',') !== want)) {
-          errors.push(`${where} placeholder mismatch: ${c.key} (table {${want}})`);
+        if (!samePlaceholders(placeholders(def), want)) {
+          errors.push(`${where} placeholder mismatch: ${c.key} (table {${phText(want)}})`);
+        } else if (c.params.length) {
+          const pset = new Set(c.params);
+          const namedOk = want.named.every((n) => pset.has(n));
+          const countOk = want.pct === 0
+            ? c.params.length === want.named.length
+            : c.params.length === want.pct + want.named.length;
+          if (!namedOk || !countOk) {
+            errors.push(`${where} placeholder mismatch: ${c.key} (table {${phText(want)}})`);
+          }
         }
-        if (ruVal !== undefined && placeholders(ruVal) !== want) {
+        if (ruVal !== undefined && !samePlaceholders(placeholders(ruVal), want)) {
           errors.push(`${where} RU placeholder mismatch: ${c.key}`);
         }
       }
