@@ -35,6 +35,14 @@ test('scanValue aggregates', () => {
   assert.ok(scanValue('ее  слово', 'hers word').length >= 2);
 });
 
+test('scanTables descends into plural-form objects', () => {
+  const en = { dfo: { 'save.ago_x': { one: '# minute ago', few: '# minutes ago', many: '# minutes ago' } } };
+  const ru = { dfo: { 'save.ago_x': { one: '# минуту назад', few: '# минуты назад', many: '# минут назад' } } };
+  assert.deepEqual(scanTables(en, ru), []);
+  const bad = { dfo: { 'save.ago_x': { one: '# минуту назад', few: 'ее минуты назад', many: '# минут назад' } } };
+  assert.ok(scanTables(en, bad).length === 1, 'object leaf with ее must fail');
+});
+
 test('guard: all shipped tables scan clean', () => {
   const en = JSON.parse(fs.readFileSync(new URL('../src/locale/en.json', import.meta.url), 'utf8'));
   const ru = JSON.parse(fs.readFileSync(new URL('../src/locale/ru.json', import.meta.url), 'utf8'));
