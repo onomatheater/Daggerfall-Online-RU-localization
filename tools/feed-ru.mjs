@@ -11,7 +11,9 @@ export function buildFeed(entries) {
       throw new Error(`feed: entry ${i} needs string url`);
     }
     const manifest = parseManifest(JSON.stringify(entry.manifest));
-    return { ...manifest, url: entry.url };
+    const record = { ...manifest, url: entry.url };
+    if (entry.sha !== undefined) record.sha = entry.sha;
+    return record;
   });
   packs.sort((a, b) => cmpVersion(a.version, b.version));
   return { generated: new Date().toISOString(), packs };
