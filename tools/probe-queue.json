@@ -51,6 +51,7 @@
     { "script": "patch-7553-online-needs.mjs", "touches": ["src/ui/enhancedMenu.js"], "note": "" },
     { "script": "patch-7553-plus-signin.mjs", "touches": ["src/ui/enhancedMenu.js", "src/ui/plusPadBinds.js"], "note": "" },
     { "script": "patch-probe.mjs", "touches": ["src/player/activate.js", "src/scenes/world.js", "src/ui/crashText.js", "src/ui/decisionBox.js"], "note": "audit-first" },
-    { "script": "patch-world-rewire.mjs", "touches": ["src/scenes/world.js", "src/ui/decisionBox.js"], "note": "audit-first" }
+    { "script": "patch-world-rewire.mjs", "touches": ["src/scenes/world.js", "src/ui/decisionBox.js"], "note": "audit-first" },
+    { "script": "patch-names.mjs", "touches": ["src/characters/nameHelper.js"], "note": "needs translit.js + ru/names/syllables.json overlay" }
   ]
 }
