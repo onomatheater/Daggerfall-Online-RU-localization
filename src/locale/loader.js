@@ -4,10 +4,8 @@
 // в рантайме — без правки app.asar и без ребилда клиента.
 // Почему так: статический import в locale.js перетирается апдейтером
 // вместе с asar; overlay-таблицы живут поверх и гейтятся по версии игры.
-export function splitKey(raw) {
-  const i = String(raw).indexOf(':');
-  return i < 0 ? ['strings', String(raw)] : [String(raw).slice(0, i), String(raw).slice(i + 1)];
-}
+import { splitKey } from './locale.js';
+export { splitKey };
 
 export function parseManifest(text) {
   let parsed;
@@ -22,14 +20,19 @@ export function parseManifest(text) {
   return parsed;
 }
 
-// Совместимость пака с игрой: точное совпадение game-тега.
-// Без поля game — несовместим (молча не едем, только явный выбор).
+// Совместимость пака с игрой: точный тег game ИЛИ inclusive-диапазон
+// gameMin/gameMax (паки пересобирать при каждом чихе не надо —
+// диапазон заявляет проверенный отрезок; без клейма — несовместим,
+// молча не едем, только явный выбор). Инвертированный диапазон — брак.
 export function isCompatible(manifest, gameVersion) {
   if (!manifest || typeof gameVersion !== 'string' || gameVersion.length === 0) return false;
-  return manifest.game === gameVersion;
+  if (manifest.game !== undefined) return manifest.game === gameVersion;
+  const { gameMin, gameMax } = manifest;
+  if (typeof gameMin !== 'string' || typeof gameMax !== 'string') return false;
+  return cmpVersion(gameMin, gameVersion) <= 0 && cmpVersion(gameVersion, gameMax) <= 0;
 }
 
-const cmpVersion = (a, b) => {
+export const cmpVersion = (a, b) => {
   const pa = String(a).split('.').map(Number);
   const pb = String(b).split('.').map(Number);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {

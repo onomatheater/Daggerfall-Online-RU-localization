@@ -3,6 +3,7 @@
 // Возвращает { errors[], stats } — пустые errors = пак здоров.
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { cmpVersion } from '../src/locale/loader.js';
 
 export function verifyPack(dir) {
   const errors = [];
@@ -17,6 +18,14 @@ export function verifyPack(dir) {
   }
   for (const f of manifest.files ?? []) {
     if (!existsSync(join(dir, f))) errors.push(`manifest lists missing file: ${f}`);
+  };
+  if (manifest.gameMin !== undefined && manifest.gameMax !== undefined &&
+      cmpVersion(manifest.gameMin, manifest.gameMax) > 0) {
+    errors.push(`inverted game range: ${manifest.gameMin} > ${manifest.gameMax}`);
+  }
+  if (manifest.game !== undefined && manifest.gameMin !== undefined && manifest.gameMax !== undefined &&
+      (cmpVersion(manifest.game, manifest.gameMin) < 0 || cmpVersion(manifest.game, manifest.gameMax) > 0)) {
+    errors.push(`game ${manifest.game} outside range ${manifest.gameMin}..${manifest.gameMax}`);
   }
   const ruPath = join(dir, 'ru.json');
   if (existsSync(ruPath)) {
