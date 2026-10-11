@@ -46,6 +46,58 @@ export function checkQuestPair(src, loc) {
   return errs;
 }
 
+const BIOG_LOGIC = /^\s*(#|!|\d+\s*[+-]|GP\s*[+-]|IT\s|AE\s|AF\s|AO\s|RP\s|FT\s|RR\s|RD\s|MR\s|TH\s|r\d|rf\d)/;
+const BIOG_QNUM = /^(\d+)\./;
+const BIOG_LETTER = /^([a-z])\.\t?/;
+
+const normEnd = (s) => String(s).replace(/\r\n/g, '\n');
+
+// BIOG-пары (создание персонажа): строгий формат классики — число строк
+// 1:1 (парсер читает фиксированные строки), строки логики (#/!/коды
+// эффектов) байт-в-байт, номера вопросов и буквы ответов на месте.
+// Переводится только проза (вопросы + текст ответов вокруг префиксов).
+export function checkBiogPair(src, loc) {
+  const errs = [];
+  const s = normEnd(src).split('\n');
+  const l = normEnd(loc).split('\n');
+  if (s.length !== l.length) errs.push(`line count differs (src ${s.length} vs loc ${l.length})`);
+  const n = Math.min(s.length, l.length);
+  let srcQuestions = 0;
+  let locQuestions = 0;
+  for (let i = 0; i < n; i++) {
+    const sl = s[i];
+    const ll = l[i];
+    if (BIOG_LOGIC.test(sl)) {
+      if (ll !== sl) errs.push(`logic drift line ${i + 1}: ${JSON.stringify(sl)} vs ${JSON.stringify(ll)}`);
+      continue;
+    }
+    const sq = sl.match(BIOG_QNUM);
+    const lq = ll.match(BIOG_QNUM);
+    if (sq) srcQuestions++;
+    if (lq) locQuestions++;
+    if (sq) {
+      if (!lq || lq[1] !== sq[1]) errs.push(`question number drift line ${i + 1}`);
+      continue;
+    }
+    const sa = sl.match(BIOG_LETTER);
+    if (sa) {
+      const la = ll.match(BIOG_LETTER);
+      if (!la || la[1] !== sa[1]) errs.push(`answer letter drift line ${i + 1} (need ${sa[1]})`);
+      continue;
+    }
+    if (sl.trim() === '' && ll.trim() === '') continue;
+    if (sl.trim() === '' || ll.trim() === '') errs.push(`blank drift line ${i + 1}`);
+  }
+  if (srcQuestions !== locQuestions) errs.push(`question count differs (src ${srcQuestions} vs loc ${locQuestions})`);
+  const tail = (t) => {
+    const lines = String(t).replace(/\r\n/g, '\n').split('\n');
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    return lines.pop() ?? '';
+  };
+  if (tail(src) !== tail(loc)) errs.push(`EOF tail differs (${JSON.stringify(tail(src))} vs ${JSON.stringify(tail(loc))})`);
+  return errs;
+}
+
 export function checkBook(src, loc) {
   const errs = [];
   for (const tag of ['Title:', 'Author:']) {

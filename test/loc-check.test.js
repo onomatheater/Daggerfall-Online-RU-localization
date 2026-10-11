@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkQuestPair, checkBook } from '../tools/loc-check.mjs';
+import { checkQuestPair, checkBook, checkBiogPair } from '../tools/loc-check.mjs';
 
 const SRC = `Quest: M0B00Y16
 QRC:
@@ -60,4 +60,49 @@ test('book: tags intact, markup intact', () => {
 test('book: font number may change, tags may not drop', () => {
   assert.deepEqual(checkBook('[/font=2]\n[/center]T\n', '[/font=1]\n[/center]Т\n'), []);
   assert.ok(checkBook('[/font=2]\n[/center]T\n', '[/center]Т\n').some((e) => e.includes('markup')));
+});
+
+const BIOG_SRC = `1.\tWhat school of magic?
+a.\tDestruction
+\t#4150
+\t!4156
+\t22 +6
+b.\tRestoration
+\t#4151
+\t!4157
+\t23 +6
+2.\tWhat motivates you?
+a.\tRiches
+\t#4162
+\t!4263
+\tGP +500
+`;
+
+const BIOG_GOOD = `1.\tКакая школа магии?
+a.\tРазрушение
+\t#4150
+\t!4156
+\t22 +6
+b.\tВосстановление
+\t#4151
+\t!4157
+\t23 +6
+2.\tЧто движет тобой?
+a.\tБогатство
+\t#4162
+\t!4263
+\tGP +500
+`;
+
+test('biog pair: prose translates, logic byte-identical', () => {
+  assert.deepEqual(checkBiogPair(BIOG_SRC, BIOG_GOOD), []);
+});
+
+test('biog pair: changed logic line, dropped answer, moved letter reported', () => {
+  const badLogic = BIOG_GOOD.replace('\t22 +6', '\t22 +7');
+  assert.ok(checkBiogPair(BIOG_SRC, badLogic).some((e) => e.includes('logic')), 'logic drift: ' + checkBiogPair(BIOG_SRC, badLogic));
+  const dropped = BIOG_GOOD.split('\n').filter((l) => !l.startsWith('b.\t')).join('\n');
+  assert.ok(checkBiogPair(BIOG_SRC, dropped).some((e) => e.includes('line count') || e.includes('answer')), 'dropped answer');
+  const moved = BIOG_GOOD.replace('b.\tВосстановление', 'c.\tВосстановление');
+  assert.ok(checkBiogPair(BIOG_SRC, moved).some((e) => e.includes('letter') || e.includes('answer')), 'moved letter');
 });
