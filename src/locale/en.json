@@ -5068,6 +5068,19 @@
     "shots.press_key": "Press {key} in the world to take one.",
     "shots.empty_hint": "Press {key} anywhere in the world. Up to {max} shots are kept here, and can stand on the loading screens.",
     "shots.download_line": "Also save each shot as a file: {state}",
-    "menu.outdoors_note": "Pick a season and a weather, and drop into a random town. A test door: it stores nothing, and it names the town in the console."
+    "menu.outdoors_note": "Pick a season and a weather, and drop into a random town. A test door: it stores nothing, and it names the town in the console.",
+    "tier.enhanced_caps": "ENHANCED",
+    "tier.classic_caps": "DFU CLASSIC",
+    "tier.off_caps": "OFF",
+    "motion.technique": "Technique camera motion",
+    "motion.technique_note": "How much a weapon technique shakes and tilts the view and dips your hands.",
+    "view.draw_distance": "Draw distance",
+    "view.draw_note": "How far away other players are drawn. Your party and your duel opponent always show. Nearer is faster; 150 m can hide an archer.",
+    "feat.n_modules": { "one": "# module", "few": "# modules", "many": "# modules" },
+    "feat.n_dials": { "one": "# dial", "few": "# dials", "many": "# dials" },
+    "feat.n_keys": { "one": "# key", "few": "# keys", "many": "# keys" },
+    "tab.n_options": { "one": "# option", "few": "# options", "many": "# options" },
+    "help.mod_authored": "MOD AUTHORED",
+    "help.keys_note": "Keys are changed in Settings › Controls."
   }
 }
