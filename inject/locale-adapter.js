@@ -7,13 +7,47 @@
 //  - шаблон `${name} just died.` → wrapTemplate('strings:thingJustDied', { s: name }).
 // Нюанс кавычек: значения DFU-мастеров иногда в кавычках ("'%s just died.'"),
 // а клиент рисует без них — call site решает strip'ом, адаптер текст не правит.
+//
+// Рантайм-пак (оверлей-исход): setGameVersion + registerPack кладут таблицы
+// пака поверх bundled. Чужой/битый пак -> {ok:false}, bundled не тронут.
+// wrap* сначала смотрят в пак (has), иначе — как раньше через t().
 export { t, setLocale, getLocale, splitKey } from '../src/locale/locale.js';
-import { t } from '../src/locale/locale.js';
+import { t, getLocale } from '../src/locale/locale.js';
+import { createOverlay, parseManifest, isCompatible } from '../src/locale/loader.js';
 
-export function wrapLiteral(key, params = {}) {
+const packOverlay = createOverlay({});
+let gameVersion = '';
+
+export function setGameVersion(version) {
+  gameVersion = typeof version === 'string' ? version : '';
+}
+
+export function registerPack(pack, version = gameVersion) {
+  const fail = (reason) => ({ ok: false, reason });
+  if (!pack || typeof pack !== 'object') return fail('pack: need {manifest, tables}');
+  let manifest;
+  try {
+    manifest = parseManifest(JSON.stringify(pack.manifest));
+  } catch (err) {
+    return fail(`pack: ${err.message}`);
+  }
+  if (!isCompatible(manifest, version)) return fail(`pack ${manifest.version} incompatible with game ${version || '<unknown>'}`);
+  if (!pack.tables || typeof pack.tables !== 'object') return fail('pack: need tables');
+  for (const [table, rows] of Object.entries(pack.tables)) {
+    packOverlay.register('ru', table, rows);
+  }
+  return { ok: true, version: manifest.version };
+}
+
+function wrap(key, params) {
+  if (packOverlay.has(key, getLocale())) return packOverlay.resolve(key, params, getLocale());
   return t(key, params);
 }
 
+export function wrapLiteral(key, params = {}) {
+  return wrap(key, params);
+}
+
 export function wrapTemplate(key, params = {}) {
-  return t(key, params);
+  return wrap(key, params);
 }

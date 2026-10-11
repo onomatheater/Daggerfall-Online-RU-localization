@@ -73,3 +73,12 @@ test('cmpVersion compares dotted and short tags numerically', async () => {
   assert.ok(cmpVersion('7815', '7553') > 0);
   assert.ok(cmpVersion('0.1.7506', '0.1.7553') < 0);
 });
+
+test('has() reports overlay presence without fallback', async () => {
+  const { createOverlay } = await import('../src/locale/loader.js');
+  const ov = createOverlay({ en: EN });
+  ov.register('ru', 'strings', { hello: 'Привет.' });
+  assert.equal(ov.has('strings:hello', 'ru'), true);
+  assert.equal(ov.has('strings:bye', 'ru'), false);
+  assert.equal(ov.has('strings:hello', 'de'), false);
+});
