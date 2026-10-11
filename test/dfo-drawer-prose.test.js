@@ -5,10 +5,12 @@ import en from '../src/locale/en.json' with { type: 'json' };
 import ru from '../src/locale/ru.json' with { type: 'json' };
 
 // NEED: описания настроек внутри карточек модов (MOD_SETTINGS keys.*.description,
-// только показываемые: Modules.* + curated dials, 97 шт). Жалоба человека 11.10:
+// только показываемые: Modules.* + curated dials, 97 шт + общая строка материалов).
+// Жалоба человека 11.10:
 // игрок должен понимать клавиши и настройки без английского. EN — байт-в-байт
-// из modSettings.js@7815 (дамп tmp drawer-shown.json). Рендер — через ruByEn
-// в modRow (патч пробы); 517 непоказываемых description осознанно вне скоупа.
+// из modSettings.js@7815 (дамп tmp drawer-shown.json + AST-сверка).
+// Рендер — через ruByEn в modRow (патч пробы); 517 непоказываемых description
+// осознанно вне скоупа. EOTB Compatibility.* — скрыты, не показываются.
 
 const NEED = [
   'dfo:feat.cfg.iliac-puddle-no-more.General_SpawnUnderwaterEnemies',
@@ -117,6 +119,9 @@ test('drawer-prose: 97 keys exist, RU non-empty', () => {
     assert.ok(en[table][key] !== undefined, 'missing EN ' + full);
     assert.ok(typeof ru[table][key] === 'string' && ru[table][key].length > 0, 'missing RU ' + full);
   }
+  // Общая строка материалов unleveledLoot (10 рядов, 1 текст, AST-проверено).
+  assert.equal(en.dfo['feat.cfg.unleveledLoot.materials_note'], 'Whenever this material would drop, change it to the selected material.');
+  assert.equal(ru.dfo['feat.cfg.unleveledLoot.materials_note'], 'Когда выпадет этот материал, заменить его выбранным.');
 });
 
 test('drawer-prose: exact RU pins', () => {

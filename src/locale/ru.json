@@ -3661,6 +3661,7 @@
     "grim.vitals.row": "Фиалы в ряд",
     "grim.spellbook.book": "Книга DFO",
     "grim.spellbook.pack": "Собственная GrimoireUI",
+    "feat.cfg.unleveledLoot.materials_note": "Когда выпадет этот материал, заменить его выбранным.",
     "feat.cfg.iliac-puddle-no-more.General_SpawnUnderwaterEnemies": "Создание подводных противников",
     "feat.cfg.iliac-puddle-no-more.General_WaterSurfaceTopTransparency": "Прозрачность поверхности воды при виде сверху",
     "feat.cfg.iliac-puddle-no-more.General_UnderwaterFogStrength": "Интенсивность подводного тумана",
