@@ -5,13 +5,29 @@ import { checkYo, checkMixed, checkSpaces, scanValue, scanTables } from '../tool
 
 test('yo: еще/ее/щелкн/шел без ё', () => {
   assert.ok(checkYo('еще немного').length > 0);
+  assert.ok(checkYo('Еще немного').length > 0);
   assert.ok(checkYo('переместить ее.').length > 0);
+  assert.ok(checkYo('Ее дополнения').length > 0);
   assert.ok(checkYo('Щелкните сюда').length > 0);
   assert.ok(checkYo('ушел в отставку').length > 0);
   assert.deepEqual(checkYo('её'), []);
   assert.deepEqual(checkYo('Щёлкните сюда'), []);
   assert.deepEqual(checkYo('всех'), []);
   assert.deepEqual(checkYo('щелчок'), []);
+});
+
+test('yo: темн/заем/запрещенн/затемнн без ё (но не затемнять)', () => {
+  assert.ok(checkYo('Темный эльф').length > 0);
+  assert.ok(checkYo('в темноте').length > 0);
+  assert.ok(checkYo('Запрещенный материал').length > 0);
+  assert.ok(checkYo('взять заем').length > 0);
+  assert.ok(checkYo('затемненность').length > 0);
+  assert.deepEqual(checkYo('Тёмный эльф'), []);
+  assert.deepEqual(checkYo('Запрещённый материал'), []);
+  assert.deepEqual(checkYo('взять заём'), []);
+  assert.deepEqual(checkYo('затемнённость экрана'), []);
+  assert.deepEqual(checkYo('Затемнение экрана'), []);
+  assert.deepEqual(checkYo('Затемняет проход'), []);
 });
 
 test('mixed: латиница внутри кириллицы, но не \\r-артефакт', () => {
