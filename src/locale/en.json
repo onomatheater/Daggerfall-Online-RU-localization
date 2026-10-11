@@ -3915,8 +3915,16 @@
     "menu.copied_from_the_realm": "Copied from the realm",
     "menu.sync_from_server": "Sync from server",
     "menu.sync_note": "Play offline by the same rules as online. Some settings are fixed online; this sets yours to match. They are the same on every server, and everything else stays your choice.",
-    "menu.sync_go": { "one": "Sync # setting", "few": "Sync # settings", "many": "Sync # settings" },
-    "menu.sync_undo_title": { "one": "Puts back the # setting the last sync changed", "few": "Puts back the # settings the last sync changed", "many": "Puts back the # settings the last sync changed" },
+    "menu.sync_go": {
+      "one": "Sync # setting",
+      "few": "Sync # settings",
+      "many": "Sync # settings"
+    },
+    "menu.sync_undo_title": {
+      "one": "Puts back the # setting the last sync changed",
+      "few": "Puts back the # settings the last sync changed",
+      "many": "Puts back the # settings the last sync changed"
+    },
     "menu.your_offline_game_already_plays_by_the_online_ru": "Your offline game already plays by the online rules.",
     "menu.undo_sync": "Undo sync",
     "menu.loading_is_disabled_during_online_play": "Loading is disabled during online play.",
@@ -4950,9 +4958,21 @@
     "shots.newer": "Newer",
     "shots.older": "Older",
     "save.just_now": "just now",
-    "save.ago_minutes": { "one": "# minute ago", "few": "# minutes ago", "many": "# minutes ago" },
-    "save.ago_hours": { "one": "# hour ago", "few": "# hours ago", "many": "# hours ago" },
-    "save.ago_days": { "one": "# day ago", "few": "# days ago", "many": "# days ago" },
+    "save.ago_minutes": {
+      "one": "# minute ago",
+      "few": "# minutes ago",
+      "many": "# minutes ago"
+    },
+    "save.ago_hours": {
+      "one": "# hour ago",
+      "few": "# hours ago",
+      "many": "# hours ago"
+    },
+    "save.ago_days": {
+      "one": "# day ago",
+      "few": "# days ago",
+      "many": "# days ago"
+    },
     "save.not_backed_up": "Not backed up",
     "save.backed_up": "Backed up",
     "save.backing_up": "Backing up…",
@@ -5068,6 +5088,35 @@
     "shots.press_key": "Press {key} in the world to take one.",
     "shots.empty_hint": "Press {key} anywhere in the world. Up to {max} shots are kept here, and can stand on the loading screens.",
     "shots.download_line": "Also save each shot as a file: {state}",
-    "menu.outdoors_note": "Pick a season and a weather, and drop into a random town. A test door: it stores nothing, and it names the town in the console."
+    "menu.outdoors_note": "Pick a season and a weather, and drop into a random town. A test door: it stores nothing, and it names the town in the console.",
+    "tier.enhanced_caps": "ENHANCED",
+    "tier.classic_caps": "DFU CLASSIC",
+    "tier.off_caps": "OFF",
+    "motion.technique": "Technique camera motion",
+    "motion.technique_note": "How much a weapon technique shakes and tilts the view and dips your hands.",
+    "view.draw_distance": "Draw distance",
+    "view.draw_note": "How far away other players are drawn. Your party and your duel opponent always show. Nearer is faster; 150 m can hide an archer.",
+    "feat.n_modules": {
+      "one": "# module",
+      "few": "# modules",
+      "many": "# modules"
+    },
+    "feat.n_dials": {
+      "one": "# dial",
+      "few": "# dials",
+      "many": "# dials"
+    },
+    "feat.n_keys": {
+      "one": "# key",
+      "few": "# keys",
+      "many": "# keys"
+    },
+    "tab.n_options": {
+      "one": "# option",
+      "few": "# options",
+      "many": "# options"
+    },
+    "help.mod_authored": "MOD AUTHORED",
+    "help.keys_note": "Keys are changed in Settings › Controls."
   }
 }
