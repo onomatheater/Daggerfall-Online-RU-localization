@@ -5081,6 +5081,11 @@
     "feat.n_keys": { "one": "# key", "few": "# keys", "many": "# keys" },
     "tab.n_options": { "one": "# option", "few": "# options", "many": "# options" },
     "help.mod_authored": "MOD AUTHORED",
-    "help.keys_note": "Keys are changed in Settings › Controls."
+    "help.keys_note": "Keys are changed in Settings › Controls.",
+    "bindc.intro_law": "Nothing is saved until you press Confirm. A key not saved yet is marked on its row.",
+    "bindc.intro_warn": "Nothing is saved until you press Confirm, Defaults included. Leave this page and your changes are dropped.",
+    "bindc.unsaved_row": "Not saved yet - press Confirm.",
+    "bindc.fixed_note": "Fixed keys, listed so you know them: they cannot be rebound here.",
+    "menu.hotbar": "Hotbar"
   }
 }
