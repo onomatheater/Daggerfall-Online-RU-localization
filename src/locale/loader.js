@@ -32,7 +32,7 @@ export function isCompatible(manifest, gameVersion) {
   return cmpVersion(gameMin, gameVersion) <= 0 && cmpVersion(gameVersion, gameMax) <= 0;
 }
 
-const cmpVersion = (a, b) => {
+export const cmpVersion = (a, b) => {
   const pa = String(a).split('.').map(Number);
   const pb = String(b).split('.').map(Number);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {

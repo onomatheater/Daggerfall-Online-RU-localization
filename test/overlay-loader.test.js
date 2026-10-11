@@ -65,3 +65,11 @@ test('unknown locale falls back to en, never crashes', () => {
   const ov = createOverlay({ en: EN });
   assert.equal(ov.resolve('strings:hello', { s: 'x' }, 'de'), 'Hello x.');
 });
+
+test('cmpVersion compares dotted and short tags numerically', async () => {
+  const { cmpVersion } = await import('../src/locale/loader.js');
+  assert.ok(cmpVersion('7506', '7553') < 0);
+  assert.equal(cmpVersion('7553', '7553'), 0);
+  assert.ok(cmpVersion('7815', '7553') > 0);
+  assert.ok(cmpVersion('0.1.7506', '0.1.7553') < 0);
+});
