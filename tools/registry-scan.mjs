@@ -211,7 +211,142 @@ export function scanRegistry(src, { fields = DEFAULT_FIELDS } = {}) {
   return { records, risks };
 }
 
-// CLI: node tools/registry-scan.mjs <file.js> [--fields a,b]
+// Сканирование аргументов вызовов: tab("id", "Title", [...]) — заголовки
+// реестров, заданные позиционно, а не полями. specs: [{ name, args: [idx] }].
+// Статика складывается (включая склейки +), динамика — в risks.
+export function scanCalls(src, specs) {
+  const text = stripComments(src);
+  const want = new Map(specs.map((s) => [s.name, s.args]));
+  const records = [];
+  const risks = [];
+  const risk = (kind, at, sample) => {
+    risks.push({ line: lineOf(src, at), kind, sample: String(sample).slice(0, 80) });
+  };
+  const isWord = (ch) => /[\w$]/.test(ch ?? '');
+
+  // Разбить аргументы вызова: spans с учётом вложенности и строк.
+  // Динамический шаблон пропускается целиком (счётчик ${}).
+  function skipTemplate(from) {
+    let j = from + 1;
+    let braces = 0;
+    while (j < text.length) {
+      const ch = text[j];
+      if (ch === '\\') { j += 2; continue; }
+      if (ch === '$' && text[j + 1] === '{') { braces++; j += 2; continue; }
+      if (ch === '{') { braces++; j++; continue; }
+      if (ch === '}') {
+        if (braces > 0) braces--;
+        j++;
+        continue;
+      }
+      if (ch === '`' && braces === 0) return j + 1;
+      j++;
+    }
+    return j;
+  }
+  function splitArgs(from) {
+    // from — на '('
+    const args = [];
+    let depth = 0;
+    let i = from + 1;
+    let start = skipWs(text, i);
+    let closed = false;
+    while (i < text.length) {
+      const ch = text[i];
+      if (ch === '(' || ch === '[' || ch === '{') { depth++; i++; continue; }
+      if (ch === ')' || ch === ']' || ch === '}') {
+        if (depth === 0 && ch === ')') { args.push([start, i]); closed = true; i++; break; }
+        depth--;
+        i++;
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') {
+        if (ch === '`') {
+          const p = parseString(text, i);
+          i = p.dynamic ? skipTemplate(i) : p.end;
+          continue;
+        }
+        const p = parseString(text, i);
+        if (p.error) { i = p.end; continue; }
+        i = p.end;
+        continue;
+      }
+      if (ch === ',' && depth === 0) {
+        args.push([start, i]);
+        i++;
+        start = skipWs(text, i);
+        continue;
+      }
+      i++;
+    }
+    return { args, closed };
+  }
+
+  // Сложить статическое строковое выражение (литералы через +).
+  function foldArg(span) {
+    let [s, e] = span;
+    let acc = '';
+    let any = false;
+    for (;;) {
+      s = skipWs(text, s);
+      const q = text[s];
+      if (q !== "'" && q !== '"' && q !== '`') return undefined;
+      const p = parseString(text, s);
+      if (p.error || p.dynamic) return undefined;
+      acc += p.value;
+      any = true;
+      const nx = skipWs(text, p.end);
+      if (text[nx] === '+') { s = skipWs(text, nx + 1); continue; }
+      // Хвост после литерала — только пробелы до конца span.
+      if (skipWs(text, nx) < e) {
+        const tail = text.slice(nx, e).trim();
+        if (tail.length > 0) return undefined;
+      }
+      return acc;
+    }
+    void any;
+    return acc;
+  }
+
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (/[A-Za-z_$]/.test(ch) && !isWord(text[i - 1]) && text[i - 1] !== '.') {
+      const m = /^[A-Za-z_$][\w$]*/.exec(text.slice(i));
+      const name = m[0];
+      if (want.has(name)) {
+        let j = skipWs(text, i + name.length);
+        if (text[j] === '(') {
+          const { args, closed } = splitArgs(j);
+          if (!closed) {
+            risk('unterminated', i, name + '(...)');
+          } else {
+            const first = args.length ? foldArg(args[0]) : undefined;
+            const base = first !== undefined ? [name, first] : [name];
+            for (const idx of want.get(name)) {
+              if (idx >= args.length) {
+                risk('missing-arg', i, name + ' arg ' + idx);
+                continue;
+              }
+              const val = foldArg(args[idx]);
+              if (val === undefined) {
+                risk('dynamic-value', i, name + ' arg ' + idx + ': ' + text.slice(args[idx][0], args[idx][1]).slice(0, 40));
+              } else {
+                records.push({ path: base, field: 'arg' + idx, value: val, line: lineOf(src, i) });
+              }
+            }
+          }
+          i = j + 1;
+          continue;
+        }
+      }
+      i += name.length;
+      continue;
+    }
+    i++;
+  }
+  return { records, risks };
+}
 const cliArgs = process.argv.slice(2);
 if (cliArgs.length > 0 && !cliArgs.includes('--help')) {
   const { readFileSync } = await import('node:fs');
