@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scanRegistry } from '../tools/registry-scan.mjs';
+import { scanRegistry, scanCalls } from '../tools/registry-scan.mjs';
 
 // NEED: надёжный экстрактор реестр-строк (замена regex-костылям: 3 сбоя —
 // обрезка склеек, якорь $, двойные кавычки). Ноль зависимостей, честная
@@ -65,4 +65,23 @@ test('registry-scan: array rows get index path', () => {
   assert.equal(byPath.get('0.title'), 'Wind');
   assert.equal(byPath.get('0.note'), 'Blows.');
   assert.equal(byPath.get('1.title'), 'Grass');
+});
+
+test('registry-scan: call args (tab/sec titles)', () => {
+  const { records, risks } = scanCalls(`tab("graphics", "Graphics", [
+    sec("quality", "Quality", ["GUI/Quality"]),
+    sec('dq', "Double" + ' quoted', []),
+  ]);`, [{ name: 'tab', args: [1] }, { name: 'sec', args: [1] }]);
+  const vals = records.map((r) => r.value);
+  assert.deepEqual(vals, ['Graphics', 'Quality', 'Double quoted']);
+  assert.ok(records.every((r) => r.field.startsWith('arg')));
+  assert.equal(risks.length, 0);
+});
+
+test('registry-scan: call args skip dynamic', () => {
+  const { records, risks } = scanCalls(`tab("x", "Part " + middle + " end", []);
+sec("y", \`by \${who}\`, []);`, [{ name: 'tab', args: [1] }, { name: 'sec', args: [1] }]);
+  assert.equal(records.length, 0);
+  assert.equal(risks.length, 2);
+  assert.ok(risks.every((r) => r.kind === 'dynamic-value'));
 });
