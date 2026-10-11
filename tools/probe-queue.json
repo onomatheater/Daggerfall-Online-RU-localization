@@ -52,6 +52,9 @@
     { "script": "patch-7553-plus-signin.mjs", "touches": ["src/ui/enhancedMenu.js", "src/ui/plusPadBinds.js"], "note": "" },
     { "script": "patch-probe.mjs", "touches": ["src/player/activate.js", "src/scenes/world.js", "src/ui/crashText.js", "src/ui/decisionBox.js"], "note": "audit-first" },
     { "script": "patch-world-rewire.mjs", "touches": ["src/scenes/world.js", "src/ui/decisionBox.js"], "note": "audit-first" },
-    { "script": "patch-names.mjs", "touches": ["src/characters/nameHelper.js"], "note": "needs translit.js + ru/names/syllables.json overlay" }
+    { "script": "patch-names.mjs", "touches": ["src/characters/nameHelper.js"], "note": "needs translit.js + ru/names/syllables.json overlay" },
+    { "script": "patch-7815-mini.mjs", "touches": ["src/main.js", "src/ui/enhancedMenu.js", "src/ui/settingsCopy.js", "src/ui/saveTile.js"], "note": "7815 fresh-tree mini-queue: boot ru + rails/head + labelOf/helpOf + agoText (needs src/locale overlay incl. ruByEn.js)" },
+    { "script": "patch-sdf.mjs", "touches": ["src/ui/text.js", "src/systems/uiPack.js"], "note": "7815 ok as-is (?lang gate relaxed by patch-7815-font.mjs)" },
+    { "script": "patch-7815-font.mjs", "touches": ["src/ui/text.js", "src/systems/uiPack.js", "src/main.js", "src/ui/pixelifyFive.js"], "note": "7815 fresh-tree: always-RU SDF + Handjet faces + stack (needs public/fonts woff2)" }
   ]
 }
