@@ -4844,7 +4844,7 @@
     "bindc.press_key_dot": "Press a key...",
     "bindc.console": "Console",
     "bindc.screenshot": "Screenshot",
-    "bindc.none": "None",
+    "bindc.none": "NONE",
     "bindc.lowest": "Lowest",
     "bindc.highest": "Highest",
     "bindc.vanilla": "Vanilla",

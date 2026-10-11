@@ -76,6 +76,7 @@ test('binds exact RU values (QA-gated)', () => {
   eq('bindc.howto', 'Нажмите назначение, затем нужную клавишу. Подходят все клавиши, включая Escape. Удерживайте Ctrl, Shift или Alt для комбинаций. Правый клик или ✕ очищает назначение.');
   eq('bindc.confirm_hint', 'Ничего не сохранится, пока не нажмёте {confirm}, включая значения по умолчанию. Уйдёте со страницы — изменения сбросятся.');
   eq('val.ultra', 'Ультра');
+  assert.equal(en.dfo['bindc.none'], 'NONE', 'кнопка без привязки — капс из buttonText');
 });
 
 test('binds render in RU', () => {
