@@ -17,7 +17,11 @@ const NO_SPELLBOOK_TEXT = () => wrapLiteral('spells:nospellbook' /* ключ п�
 const line = wrapTemplate('strings:thingJustDied', { s: name });
 ```
 
-## Якоря (первые 5 точек, аудит 820/990 дословно)
+## Якоря (первые 5 точек — исторический пример механики, 11.10)
+
+> Актуальная очередь и drift-контроль — `tools/probe-queue.json` +
+> `tools/probe-rebase.mjs`; слои системы — AGENTS §4. Ниже — исходный
+> пример врезки, строки/номера могут дрейфовать с апстримом.
 
 1. `src/scenes/hostMagic.js:41` — `'You have no spellbook!'` → таблица spells/strings.
 2. `src/scenes/corpseMarker.js:149` — `` `${name} just died.` `` → `strings:thingJustDied`.
