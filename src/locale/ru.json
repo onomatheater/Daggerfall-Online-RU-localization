@@ -3649,6 +3649,17 @@
     "ovh.add_texture": "Добавить текстурные моды",
     "ovh.switch_on": "Включить",
     "ovh.switch_off": "Выключить",
-    "ovh.peer_onoff": "Вкл: спрайт выше. Выкл: бумажная кукла."
+    "ovh.peer_onoff": "Вкл: спрайт выше. Выкл: бумажная кукла.",
+    "grim.pages": "Страницы",
+    "grim.backdrop": "Фон",
+    "grim.vitals": "Показатели",
+    "grim.page.cream": "Кремовая страница",
+    "grim.page.scroll": "Свитковая страница",
+    "grim.backdrop.desk": "Письменный стол",
+    "grim.backdrop.map": "Карта",
+    "grim.vitals.upright": "Вертикальные фиалы",
+    "grim.vitals.row": "Фиалы в ряд",
+    "grim.spellbook.book": "Книга DFO",
+    "grim.spellbook.pack": "Собственная GrimoireUI"
   }
 }

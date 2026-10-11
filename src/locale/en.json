@@ -5108,6 +5108,17 @@
     "ovh.add_texture": "Add texture mods",
     "ovh.switch_on": "Switch on",
     "ovh.switch_off": "Switch off",
-    "ovh.peer_onoff": "On: the sprite above. Off: the paperdoll."
+    "ovh.peer_onoff": "On: the sprite above. Off: the paperdoll.",
+    "grim.pages": "Pages",
+    "grim.backdrop": "Backdrop",
+    "grim.vitals": "Vitals",
+    "grim.page.cream": "Cream page",
+    "grim.page.scroll": "Tan scroll",
+    "grim.backdrop.desk": "The desk",
+    "grim.backdrop.map": "The map",
+    "grim.vitals.upright": "Upright vials",
+    "grim.vitals.row": "Vials in a row",
+    "grim.spellbook.book": "DFO book",
+    "grim.spellbook.pack": "GrimoireUI's own"
   }
 }
