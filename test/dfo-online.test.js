@@ -17,7 +17,7 @@ const NEED = [
   'menu.no_saved_games', 'menu.an_offline_character_the_realm_knew_before_it_op',
   'menu.sign_in_or_continue_as_guest', 'menu.bring_online', 'menu.undo',
   'realm.undo_ask', 'realm.undo_body', 'realm.undo_done', 'realm.copy_done',
-  'realm.undo_button',
+  'realm.undo_button', 'menu.online_needs_an_account_so_no_one_else_can_use_y',
 ];
 
 test('online batch: EN+RU share the new keys, RU non-empty', () => {
@@ -45,5 +45,10 @@ test('online renders in RU', () => {
   assert.equal(t('dfo:realm.undo_button'), 'Отменить перенос');
   assert.equal(t('dfo:menu.undo'), 'Отменить');
   assert.equal(t('dfo:menu.bring_online'), 'Ввести в мир');
+  assert.equal(
+    t('dfo:menu.online_needs_an_account_so_no_one_else_can_use_y'),
+    'Для сетевой игры нужна учётная запись, чтобы имя не заняли. Гостем — один клик и без почты.',
+  );
+  assert.equal(t('dfo:menu.sign_in_or_continue_as_guest'), 'Войти или продолжить гостем');
   setLocale('en');
 });
