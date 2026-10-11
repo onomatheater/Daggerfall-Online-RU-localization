@@ -71,5 +71,11 @@ export function createOverlay(bundled) {
       for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
       return s;
     },
+    // Явное наличие в паке (без фолбэка): адаптер решает, кому рендерить —
+    // overlay-паку или bundled t(). Сравнением строк это не делается.
+    has(rawKey, locale = 'ru') {
+      const [table, key] = splitKey(rawKey);
+      return overlay[locale]?.[table]?.[key] !== undefined;
+    },
   };
 }
