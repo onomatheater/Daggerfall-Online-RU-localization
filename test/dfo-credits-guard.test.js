@@ -63,8 +63,10 @@ test('credits triage: no RU value smuggles a proper name inside translated prose
   const short = PROPER_NAMES.filter((n) => n.length < 60 && !n.includes('through the') && !n.includes('(') && !n.includes('@') && !n.includes('org'));
   assert.ok(short.length > 20);
   for (const k of Object.keys(en.dfo)) {
+    const rv = ru.dfo[k];
+    if (typeof rv !== 'string') continue; // plural-формы {one,few,many} — не проза
     for (const n of short) {
-      if (ru.dfo[k]?.includes(n) && !en.dfo[k]?.includes(n)) {
+      if (rv.includes(n) && !en.dfo[k]?.includes?.(n)) {
         assert.fail(`RU smuggles proper name ${JSON.stringify(n)} in ${k}`);
       }
     }

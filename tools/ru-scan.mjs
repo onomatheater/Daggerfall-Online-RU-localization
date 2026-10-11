@@ -45,14 +45,28 @@ export function scanValue(ru, en = '') {
   return [...checkYo(ru), ...checkMixed(ru, en), ...checkSpaces(ru, en)];
 }
 
+const isForms = (v) => v && typeof v === 'object' && !Array.isArray(v);
+
 export function scanTables(enTables, ruTables) {
   const bad = [];
   for (const [t, o] of Object.entries(ruTables)) {
     for (const [k, v] of Object.entries(o)) {
-      if (typeof v !== 'string') continue;
-      const e = enTables[t]?.[k] ?? '';
-      const issues = scanValue(v, typeof e === 'string' ? e : '');
-      if (issues.length) bad.push({ table: t, key: k, issues });
+      if (typeof v === 'string') {
+        const e = enTables[t]?.[k] ?? '';
+        const issues = scanValue(v, typeof e === 'string' ? e : '');
+        if (issues.length) bad.push({ table: t, key: k, issues });
+        continue;
+      }
+      // Plural-формы {one,few,many}: листья проверяются against EN-листьев.
+      if (isForms(v)) {
+        const eo = enTables[t]?.[k] ?? {};
+        for (const [form, leaf] of Object.entries(v)) {
+          if (typeof leaf !== 'string') continue;
+          const ee = isForms(eo) ? eo[form] : '';
+          const issues = scanValue(leaf, typeof ee === 'string' ? ee : '');
+          if (issues.length) bad.push({ table: t, key: `${k}.${form}`, issues });
+        }
+      }
     }
   }
   return bad;
