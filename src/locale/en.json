@@ -5120,6 +5120,7 @@
     "grim.vitals.row": "Vials in a row",
     "grim.spellbook.book": "DFO book",
     "grim.spellbook.pack": "GrimoireUI's own",
+    "feat.cfg.unleveledLoot.materials_note": "Whenever this material would drop, change it to the selected material.",
     "feat.cfg.iliac-puddle-no-more.General_SpawnUnderwaterEnemies": "Spawn underwate enemies",
     "feat.cfg.iliac-puddle-no-more.General_WaterSurfaceTopTransparency": "Water surface transparency from above",
     "feat.cfg.iliac-puddle-no-more.General_UnderwaterFogStrength": "Underwater fog strength",
