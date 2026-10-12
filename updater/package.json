@@ -1,0 +1,20 @@
+{
+  "name": "rudaggerfall-updater-app",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "RU-pack updater: standalone Electron GUI over the tested tools core.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0"
+  },
+  "allowScripts": {
+    "electron@35.7.5": true
+  }
+}
