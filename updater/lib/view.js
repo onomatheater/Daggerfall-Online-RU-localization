@@ -26,7 +26,7 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
     status = `Доступен пак ${check.entry.version}.`;
     pushNotes(check.entry.version, check.entry.notes);
   } else if (check?.status === 'up-to-date') {
-    status = 'У тебя последний перевод.';
+    status = 'Установлена последняя версия перевода.';
   } else if (check?.status === 'no-compatible') {
     status = 'Под твою версию игры пака пока нет.';
     note = note || 'Жди следующий выпуск — игра при этом работает.';

@@ -84,7 +84,7 @@ test('current game shows no banner', () => {
 
 test('failed game check lands in detail, pack status stays', () => {
   const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'up-to-date', entry: ENTRY }, gameUpdate: { status: 'failed' }, busy: false, prefs: {}, gameDir: '' });
-  assert.ok(v.status.includes('последний перевод'), v.status);
+  assert.ok(v.status.includes('последняя версия перевода'), v.status);
   assert.ok(v.detail.includes('игры'), v.detail);
 });
 
