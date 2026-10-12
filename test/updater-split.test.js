@@ -40,55 +40,10 @@ test('checkGameUpdate: newer tag detected, garbage is silence', () => {
   assert.equal(siteTag.available, false);
 });
 
-test('resolveGameFile: installer per platform, null when unpackaged', async () => {
-  const { resolveGameFile, GAME_RELEASES_PAGE } = await import('../updater/lib/flow.js');
-  assert.ok(GAME_RELEASES_PAGE.includes('releases/latest'), 'stable releases page');
-  assert.equal(resolveGameFile({ platform: 'win32', packaged: true, portable: false }), 'DaggerfallOnline-win-x64-setup.exe');
-  assert.equal(resolveGameFile({ platform: 'win32', packaged: true, portable: true }), 'DaggerfallOnline-win-x64-portable.exe');
-  assert.equal(resolveGameFile({ platform: 'darwin', packaged: true, portable: false }), 'DaggerfallOnline-mac-arm64.dmg');
-  assert.equal(resolveGameFile({ platform: 'win32', packaged: false, portable: false }), null);
-});
-
-test('resolveGameInstall: setup vs portable by game dir contents', async () => {
-  const { resolveGameInstall } = await import('../updater/lib/flow.js');
-  assert.equal(resolveGameInstall({ files: ['Daggerfall Online.exe', 'Uninstall Daggerfall Online.exe', 'resources'] }), 'setup');
-  assert.equal(resolveGameInstall({ files: ['Daggerfall Online.exe'] }), 'portable');
-  assert.equal(resolveGameInstall({ files: [] }), 'unknown');
-});
-
-test('planGameUpdate: setup runs installer, portable replaces exe, running game blocks', async () => {
-  const { planGameUpdate, isGameRunning } = await import('../updater/lib/flow.js');
-  assert.deepEqual(
-    planGameUpdate({ file: 'DaggerfallOnline-win-x64-setup.exe', gameRunning: false }),
-    { kind: 'installer' }
-  );
-  assert.deepEqual(
-    planGameUpdate({ file: 'DaggerfallOnline-win-x64-portable.exe', gameRunning: false }),
-    { kind: 'portable-file' }
-  );
-  assert.deepEqual(
-    planGameUpdate({ file: 'DaggerfallOnline-win-x64-portable.exe', gameRunning: true }),
-    { blocked: 'close-game' }
-  );
-  assert.deepEqual(planGameUpdate({ file: null, gameRunning: false }), { blocked: 'no-file' });
+test('isGameRunning reads process list, touches nothing', async () => {
+  const { isGameRunning } = await import('../updater/lib/flow.js');
   const running = await isGameRunning(async () => '... Daggerfall Online.exe ...');
   assert.equal(running, true);
   const idle = await isGameRunning(async () => 'chrome.exe');
   assert.equal(idle, false);
-});
-
-test('download cache: stable path per tag, yml sha512 gates the file', async () => {
-  const { cachedDownloadPath, findYmlEntry, verifyFileSha512 } = await import('../updater/lib/flow.js');
-  assert.ok(cachedDownloadPath('/dl', 'app-v0.1.8127', 'Setup.exe').includes('0.1.8127'), 'tag in name');
-  const yml = 'version: 0.1.8127\nfiles:\n  - url: Setup.exe\n    sha512: abc123\n    size: 3\n';
-  assert.deepEqual(findYmlEntry(yml, 'Setup.exe'), { sha512: 'abc123' });
-  assert.equal(findYmlEntry(yml, 'Nope.exe'), null);
-  const dir = mkdtempSync(join(tmpdir(), 'ruyml-'));
-  const path = join(dir, 'f.bin');
-  writeFileSync(path, 'bytes');
-  const { createHash } = await import('node:crypto');
-  const b64 = createHash('sha512').update('bytes').digest('base64');
-  assert.equal(verifyFileSha512(path, b64).ok, true);
-  assert.equal(verifyFileSha512(path, 'bogus').ok, false);
-  assert.equal(verifyFileSha512(join(dir, 'missing'), b64).ok, false);
 });

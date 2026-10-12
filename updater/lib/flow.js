@@ -6,79 +6,13 @@ import { selectPack } from '../../tools/feed-ru.mjs';
 import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
-import downloads from '../vendor-dfo/downloads.cjs';
 
 // Стабильная страница релизов игры (их REL5: версия в теге, не в имени файла).
+// Игру качаем только руками с этой страницы: установщик мы не тянем
+// (решение человека 12.10) — апдейтер замечает новую версию и возвращает
+// перевод рецептом.
 export const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
-
-// Какой файл качать для обновления игры (их manualDownloadFile, MIT).
-// null = нечего качать напрямую (dev-запуск) -> открываем страницу релизов.
-export function resolveGameFile({ platform, packaged, portable } = {}) {
-  return downloads.manualDownloadFile({ platform, packaged, portable });
-}
-
-export function latestGameFileUrl(file) {
-  return downloads.latestDownloadUrl(file);
-}
-
-// Кэш скачанного: стабильные имена у них без версии, поэтому ключ — тег.
-// Повторное нажатие при готовом кэше не качает.
-export function cachedDownloadPath(dir, tag, file) {
-  const clean = String(tag ?? '').replace(/^app-v/, '').replace(/[^0-9A-Za-z.+-]/g, '');
-  return `${dir}/${clean}-${file}`;
-}
-
-// Запись их latest.yml про файл (sha512 у них в base64). Нет — null.
-export function findYmlEntry(ymlText, file) {
-  const lines = String(ymlText ?? '').split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(file)) {
-      for (let j = i; j < Math.min(i + 6, lines.length); j++) {
-        const m = /sha512:\s*(\S+)/.exec(lines[j]);
-        if (m) return { sha512: m[1] };
-      }
-      return null;
-    }
-  }
-  return null;
-}
-
-export function verifyFileSha512(path, expected) {
-  if (typeof expected !== 'string' || expected.length === 0) return { ok: false, reason: 'no sha in feed' };
-  let bytes;
-  try {
-    bytes = readFileSync(path);
-  } catch {
-    return { ok: false, reason: `missing file: ${path}` };
-  }
-  const actual = createHash('sha512').update(bytes).digest('base64');
-  return actual === expected
-    ? { ok: true, sha512: actual }
-    : { ok: false, reason: 'sha mismatch' };
-}
-
-// Тип копии ИГРЫ по содержимому её папки (а не по упакованности апдейтера):
-// есть деинсталлятор — setup, один exe — portable, иначе unknown.
-export function resolveGameInstall({ files = [] } = {}) {
-  const names = files.map((f) => String(f).toLowerCase());
-  if (names.some((n) => n.startsWith('uninstall'))) return 'setup';
-  if (names.some((n) => n.endsWith('.exe'))) return 'portable';
-  return 'unknown';
-}
-
-// План обновления игры (апдейтер — полная замена оригинального):
-// setup-установщик — видимый запуск (код молча не применяем, их принцип);
-// portable-exe — замена файла, но только при закрытой игре.
-// Сама замена — в main (шелл), здесь чистое решение.
-export function planGameUpdate({ file, gameRunning } = {}) {
-  if (typeof file !== 'string' || file.length === 0) return { blocked: 'no-file' };
-  if (gameRunning === true) return { blocked: 'close-game' };
-  if (file.includes('portable')) return { kind: 'portable-file' };
-  return { kind: 'installer' };
-}
 
 const defaultListProcesses = () => new Promise((resolve) => {
   import('node:child_process').then(({ execFile }) => {

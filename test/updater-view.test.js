@@ -94,14 +94,6 @@ test('download progress passes through to their bar', () => {
   assert.equal(v.busy, true);
 });
 
-test('installer launched: primary continue action, no other moves', () => {
-  const v = viewOf({ game: GAME, installed: INSTALLED, check: null, busy: false, prefs: {}, gameDir: '', installerLaunched: true });
-  const cont = v.statusActions.find((a) => a.id === 'finish-game-update');
-  assert.ok(cont, 'continue present');
-  assert.equal(cont.primary, true);
-  assert.ok(v.status.includes('установки'), v.status);
-});
-
 test('manual restore action when pending pack carries a recipe', () => {
   const withRecipe = { ...ENTRY, recipe: { url: 'https://example.invalid/r.zip', sha: 'abc' } };
   const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'available', entry: withRecipe }, busy: false, prefs: {}, gameDir: '' });

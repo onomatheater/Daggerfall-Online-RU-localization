@@ -3,7 +3,7 @@
 // Играть всегда disabled: запуск игры — не scope апдейтера перевода.
 import { describeIssue } from './flow.js';
 
-export function viewOf({ game, installed = [], check = null, gameNews = [], gameUpdate = null, busy = false, progress = null, installerLaunched = false, prefs = {}, gameDir = '' } = {}) {
+export function viewOf({ game, installed = [], check = null, gameNews = [], gameUpdate = null, busy = false, progress = null, prefs = {}, gameDir = '' } = {}) {
   const actions = [{ id: 'check', label: 'Проверить' }];
   let status = 'Готов.';
   let detail = '';
@@ -42,17 +42,12 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
   }
   if (installed.length >= 2) actions.push({ id: 'rollback', label: 'Откатить' });
   if (!packNoted && installed[0]) pushNotes(installed[0].version, installed[0].notes);
-  // Установщик игры запущен: ждём конца установки, дальше — «Продолжить».
-  if (installerLaunched) {
-    status = 'Дождись конца установки игры и нажми «Продолжить».';
-    actions.push({ id: 'finish-game-update', label: 'Продолжить', primary: true });
-  }
   // Обновление игры — отдельным баннером (их notice-транспорт): только текст
   // и кнопка на страницу релизов, игру не трогаем. Состояние пака — в detail.
   if (gameUpdate?.status === 'available' && gameUpdate.tag) {
     if (status !== 'Готов.') detail = status;
     status = `Вышла версия игры ${String(gameUpdate.tag).replace(/^app-v/, '')}.`;
-    actions.push({ id: 'download-game', label: 'Обновить игру', primary: !actions.some((a) => a.primary) });
+    actions.push({ id: 'download-game', label: 'Скачать игру', primary: !actions.some((a) => a.primary) });
   } else if (gameUpdate?.status === 'failed') {
     detail = 'Не получилось проверить обновления игры.';
   }

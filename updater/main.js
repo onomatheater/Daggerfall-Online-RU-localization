@@ -6,10 +6,10 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, writeFileSync, readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, resolveGameInstall, latestGameFileUrl, planGameUpdate, isGameRunning, cachedDownloadPath, findYmlEntry, verifyFileSha512, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -32,7 +32,7 @@ const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
 const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
 const installed = () => listPacks(storeDir());
 
-const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null, installerLaunched: false };
+const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null };
 
 function currentView() {
   return viewOf({
@@ -43,7 +43,6 @@ function currentView() {
     gameUpdate: state.gameUpdate,
     busy: state.busy,
     progress: state.progress,
-    installerLaunched: state.installerLaunched,
     prefs: loadPrefs(userData()),
     gameDir: gameDir(),
   });
@@ -69,24 +68,6 @@ async function fetchZip(url, dest) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`zip ${res.status}`);
   writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
-  return dest;
-}
-
-async function downloadWithProgress(url, dest, onProgress) {
-  const res = await fetch(url);
-  if (!res.ok || !res.body) throw new Error(`zip ${res.status}`);
-  const total = Number(res.headers.get('content-length')) || 0;
-  const { createWriteStream } = await import('node:fs');
-  const out = createWriteStream(dest);
-  let done = 0;
-  for await (const chunk of res.body) {
-    out.write(chunk);
-    done += chunk.length;
-    if (total > 0) onProgress(Math.min(99, Math.round((done / total) * 100)));
-  }
-  out.end();
-  await new Promise((resolve) => out.on('finish', resolve));
-  onProgress(100);
   return dest;
 }
 
@@ -293,78 +274,10 @@ app.whenReady().then(() => {
       }
       refresh();
     } else if (action === 'download-game') {
-      // Обновление самой игры (апдейтер — полная замена оригинального):
-      // тип копии — по папке ИГРЫ (а не по упакованности апдейтера):
-      // setup — качаем и открываем их установщик видимо (код молча не
-      // применяем); portable — качаем и показываем файл (exe меняешь сам,
-      // гадать какой exe запущен — не будем); запущенная игра — стоп.
-      // Непонятно что — страница релизов.
-      let entries = [];
-      try {
-        entries = readdirSync(gameDir());
-      } catch { /* unknown install below */ }
-      const kind = resolveGameInstall({ files: entries });
-      const file = kind === 'unknown'
-        ? null
-        : resolveGameFile({ platform: process.platform, packaged: true, portable: kind === 'portable' });
-      if (file === null) {
-        shell.openExternal(GAME_RELEASES_PAGE);
-      } else if (await isGameRunning()) {
-        dialog.showMessageBox(win, {
-          message: 'Закрой игру перед обновлением.',
-          detail: 'Файлы игры заняты запущенной копией.',
-        });
-      } else {
-        const plan = planGameUpdate({ file, gameRunning: false });
-        state.busy = true;
-        state.progress = { percent: 0, label: 'Качаю обновление игры…' };
-        refresh();
-        // Кэш по тегу: повторное нажатие не качает. Целостность — по их
-        // latest.yml (sha512). Кэш версий остаётся для отката установщика.
-        const tag = state.gameUpdate?.tag ?? '';
-        const dest = cachedDownloadPath(join(userData(), 'downloads'), tag, file);
-        try {
-          mkdirSync(dirname(dest), { recursive: true });
-          if (!existsSync(dest)) {
-            await downloadWithProgress(latestGameFileUrl(file), dest, (percent) => {
-              state.progress = { percent, label: `Качаю обновление игры ${percent}%` };
-              refresh();
-            });
-          } else {
-            state.progress = { percent: 100, label: 'Уже скачано, проверяю…' };
-            refresh();
-          }
-          try {
-            const yml = await fetchText(latestGameFileUrl('latest.yml'));
-            const entry = findYmlEntry(yml, file);
-            if (entry && !verifyFileSha512(dest, entry.sha512).ok) {
-              rmSync(dest, { force: true });
-              state.progress = null;
-              state.check = { status: 'install-failed', reason: 'sha не сошлась, файл удалён — нажми ещё раз' };
-              return refresh();
-            }
-          } catch { /* без сети манифест не сверить — ставим как есть */ }
-          state.progress = null;
-          if (plan.kind === 'installer') {
-            shell.openPath(dest);
-            state.installerLaunched = true;
-            state.gameUpdate = null;
-          } else {
-            shell.showItemInFolder(dest);
-            state.gameUpdate = null;
-            dialog.showMessageBox(win, {
-              message: 'Установщик скачан.',
-              detail: 'Положи скачанный exe вместо твоей portable-копии (игра закрыта).',
-            });
-          }
-        } catch {
-          state.progress = null;
-          state.check = { status: 'install-failed', reason: 'net-error' };
-        } finally {
-          state.busy = false;
-        }
-        refresh();
-      }
+      // Игра обновляется руками (решение 12.10, установщик не качаем):
+      // открываем страницу релизов, дальше штатно. Заметили новую версию —
+      // баннер; поставили — «Восстановить перевод» вернёт русский рецептом.
+      shell.openExternal(GAME_RELEASES_PAGE);
     } else if (action === 'install') {
       const entry = state.pending;
       if (!entry) return;
@@ -382,10 +295,6 @@ app.whenReady().then(() => {
         state.busy = false;
       }
       refresh();
-    } else if (action === 'finish-game-update') {
-      // Продолжение после установщика: версия -> миграция -> рецепт -> маркеры.
-      state.installerLaunched = false;
-      await runRestore(state.pending?.recipe);
     } else if (action === 'restore-translation') {
       await runRestore(state.pending?.recipe);
     } else if (action === 'rollback') {
