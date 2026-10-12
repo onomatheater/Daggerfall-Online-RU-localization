@@ -25,6 +25,7 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
     actions.push({ id: 'install', label: 'Установить', primary: true });
     status = `Доступен пак ${check.entry.version}.`;
     pushNotes(check.entry.version, check.entry.notes);
+    if (check.entry.recipe) actions.push({ id: 'restore-translation', label: 'Восстановить перевод' });
   } else if (check?.status === 'up-to-date') {
     status = 'Установлена последняя версия перевода.';
   } else if (check?.status === 'no-compatible') {

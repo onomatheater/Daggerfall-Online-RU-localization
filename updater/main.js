@@ -170,6 +170,80 @@ function createWindow() {
 app.whenReady().then(() => {
   const win = createWindow();
   const refresh = () => push(win);
+  // Возврат перевода: миграция -> рецепт -> маркеры. Общая для кнопки
+  // «Продолжить» после установщика и ручного «Восстановить перевод».
+  const restoreTranslation = async (recipeRef, onStage) => {
+    const hit = game();
+    if (hit.version === null) return { status: 'unknown-game', reason: hit.reason };
+    if (!recipeRef || typeof recipeRef.url !== 'string') return { status: 'no-recipe' };
+    if (await isGameRunning()) {
+      dialog.showMessageBox(win, {
+        message: 'Закрой игру перед восстановлением перевода.',
+        detail: 'Файлы игры заняты запущенной копией.',
+      });
+      return null;
+    }
+    onStage(20, 'Готовлю распакованную установку…');
+    const { ensureUnpacked } = await import('./lib/migrate.js');
+    await ensureUnpacked({
+      resourcesDir: join(gameDir(), 'resources'),
+      backupPath: join(userData(), 'backups', `app-asar-${hit.version}.asar`),
+    });
+    onStage(50, 'Качаю рецепт перевода…');
+    const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
+    const zipPath = join(tmp, 'recipe.zip');
+    if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
+      const { copyFileSync } = await import('node:fs');
+      copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
+    } else {
+      await fetchZip(recipeRef.url, zipPath);
+    }
+    if (recipeRef.sha) {
+      const { verifyFileSha } = await import('../tools/update-ru.mjs');
+      const sha = verifyFileSha(zipPath, recipeRef.sha);
+      if (!sha.ok) return { status: 'install-failed', reason: sha.reason };
+    }
+    onStage(75, 'Возвращаю перевод…');
+    const { unpackZip } = await import('./lib/unzip.js');
+    const unpackDir = join(tmp, 'recipe');
+    unpackZip(zipPath, unpackDir);
+    const { readFileSync: readJson } = await import('node:fs');
+    const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
+    if (recipe.game !== hit.version) return { status: 'no-recipe' };
+    const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
+    const appDir = join(gameDir(), 'resources', 'app', 'dist');
+    const rep = await applyRecipe({
+      appDir,
+      recipe,
+      backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
+    });
+    if (!rep.ok) return { status: 'install-failed', reason: rep.reason };
+    const verify = verifyApplied({ appDir, recipe });
+    if (!verify.ok) return { status: 'install-failed', reason: verify.reason };
+    return { status: 'translation-restored' };
+  };
+  const runRestore = async (recipeRef) => {
+    state.busy = true;
+    state.progress = { percent: 5, label: 'Смотрю версию игры…' };
+    refresh();
+    try {
+      const result = await restoreTranslation(recipeRef, (percent, label) => {
+        state.progress = { percent, label };
+        refresh();
+      });
+      if (result !== null) {
+        state.check = result;
+        state.pending = null;
+      }
+    } catch {
+      state.check = { status: 'install-failed', reason: 'net-error' };
+      state.pending = null;
+    } finally {
+      state.busy = false;
+      state.progress = null;
+    }
+    refresh();
+  };
   ipcMain.on('launcher:act', async (_ev, { action, arg }) => {
     if (action === 'open') {
       if (Object.hasOwn(LINKS, arg)) shell.openExternal(LINKS[arg]);
@@ -266,65 +340,9 @@ app.whenReady().then(() => {
     } else if (action === 'finish-game-update') {
       // Продолжение после установщика: версия -> миграция -> рецепт -> маркеры.
       state.installerLaunched = false;
-      state.busy = true;
-      state.progress = { percent: 5, label: 'Смотрю версию игры…' };
-      refresh();
-      const done = (check) => {
-        state.check = check;
-        state.pending = null;
-        state.busy = false;
-        state.progress = null;
-        refresh();
-      };
-      try {
-        const hit = game();
-        if (hit.version === null) return done({ status: 'unknown-game', reason: hit.reason });
-        const recipeRef = state.pending?.recipe;
-        if (!recipeRef || typeof recipeRef.url !== 'string') return done({ status: 'no-recipe' });
-        state.progress = { percent: 20, label: 'Готовлю распакованную установку…' };
-        refresh();
-        const { ensureUnpacked } = await import('./lib/migrate.js');
-        await ensureUnpacked({
-          resourcesDir: join(gameDir(), 'resources'),
-          backupPath: join(userData(), 'backups', `app-asar-${hit.version}.asar`),
-        });
-        state.progress = { percent: 50, label: 'Качаю рецепт перевода…' };
-        refresh();
-        const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
-        const zipPath = join(tmp, 'recipe.zip');
-        if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
-          const { copyFileSync } = await import('node:fs');
-          copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
-        } else {
-          await fetchZip(recipeRef.url, zipPath);
-        }
-        if (recipeRef.sha) {
-          const { verifyFileSha } = await import('../tools/update-ru.mjs');
-          const sha = verifyFileSha(zipPath, recipeRef.sha);
-          if (!sha.ok) return done({ status: 'install-failed', reason: sha.reason });
-        }
-        state.progress = { percent: 75, label: 'Возвращаю перевод…' };
-        refresh();
-        const { unpackZip } = await import('./lib/unzip.js');
-        const unpackDir = join(tmp, 'recipe');
-        unpackZip(zipPath, unpackDir);
-        const { readFileSync: readJson } = await import('node:fs');
-        const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
-        if (recipe.game !== hit.version) return done({ status: 'no-recipe' });
-        const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
-        const appDir = join(gameDir(), 'resources', 'app', 'dist');
-        const rep = await applyRecipe({
-          appDir,
-          recipe,
-          backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
-        });
-        if (!rep.ok) return done({ status: 'install-failed', reason: rep.reason });
-        const verify = verifyApplied({ appDir, recipe });
-        if (!verify.ok) return done({ status: 'install-failed', reason: verify.reason });
-        return done({ status: 'translation-restored' });
-      } catch {
-        return done({ status: 'install-failed', reason: 'net-error' });
-      }
+      await runRestore(state.pending?.recipe);
+    } else if (action === 'restore-translation') {
+      await runRestore(state.pending?.recipe);
     } else if (action === 'rollback') {
       const prev = rollbackPack(storeDir());
       if (prev === null) return;
