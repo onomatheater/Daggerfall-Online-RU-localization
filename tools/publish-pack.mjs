@@ -7,7 +7,7 @@
 // Отклонение от плана: частичный stage без рецепта не делаем — любой
 // затык роняет прогон целиком (hold, зовём человека), молчаливого
 // полупака не существует.
-import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync, rmSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync, rmSync, appendFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -106,8 +106,26 @@ export function copyAssets(repoRoot, probeTree) {
     copyFileSync(src, join(probeTree, 'public', 'fonts', to));
   }
   if (missing.length > 0) throw new Error(`pipeline: missing assets: ${missing.join(', ')}`);
+  const localeJs = join(probeTree, 'src', 'locale', 'locale.js');
+  if (!readFileSync(localeJs, 'utf8').includes('PROBE ONLY')) {
+    appendFileSync(localeJs, TOR_SHIM);
+  }
   return { ok: true, fonts: ASSET_FONTS.length };
 }
+
+// tOr-шим как в живой пробе 7815 (побайтово): wired-сайты импортируют tOr
+// из копии locale.js, в репозитории его нет осознанно. Только для дерева,
+// в продукт не едет.
+const TOR_SHIM = `
+// PROBE ONLY (tmp): t with explicit EN fallback for wiring sites.
+export function tOr(rawKey, fallback, params = {}) {
+  const [table, key] = splitKey(rawKey);
+  const hit = tables[cur]?.[table]?.[key] ?? tables.en?.[table]?.[key];
+  let s = hit ?? fallback;
+  for (const [k, v] of Object.entries(params)) s = String(s).replaceAll(\`{\${k}}\`, String(v));
+  return s;
+}
+`;
 
 // Снос НАШИХ артефактов прошлого незавершённого прогона (таблицы + 11
 // шрифтов — детерминированный список выше). Чужие файлы не трогаем:
@@ -146,6 +164,7 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   const repoRoot = join(REPO_TOOLS, '..');
   copyAssets(repoRoot, venue.probeTree);
   process.env.RU_FONT_PROD = join(repoRoot, 'src', 'font', 'scale.js');
+  process.env.RU_REPO_ROOT = repoRoot;
   // --allow-dirty: к этому моменту грязь в дереве — только наши ассеты
   // (verify выше пропустил чистое, после него писал только copyAssets).
   // probe-rebase их не трогает (не в touches очереди), при отказе restore

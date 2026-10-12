@@ -58,6 +58,16 @@ test('copyAssets lays tables and fonts, refuses on gaps', async () => {
   assert.ok(existsSync(join(probe, 'src', 'locale', 'ru.json')), 'tables copied');
   assert.ok(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), 'ttf copied');
   assert.ok(existsSync(join(probe, 'public', 'fonts', 'guildenstern.ttf')), 'renamed ttf copied');
+  assert.ok(readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').includes('export function tOr'), 'tOr shim appended');
+  assert.equal(
+    readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').split('PROBE ONLY').length - 1, 1,
+    'shim idempotent',
+  );
+  copyAssets(repoRoot, probe);
+  assert.equal(
+    readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').split('PROBE ONLY').length - 1, 1,
+    'second copy keeps single shim',
+  );
   const thin = mk();
   mkdirSync(join(thin, 'src', 'locale'), { recursive: true });
   writeFileSync(join(thin, 'src', 'locale', 'x.json'), '{}');
