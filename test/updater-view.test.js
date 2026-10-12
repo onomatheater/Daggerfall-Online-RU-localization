@@ -102,6 +102,14 @@ test('installer launched: primary continue action, no other moves', () => {
   assert.ok(v.status.includes('установки'), v.status);
 });
 
+test('manual restore action when pending pack carries a recipe', () => {
+  const withRecipe = { ...ENTRY, recipe: { url: 'https://example.invalid/r.zip', sha: 'abc' } };
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'available', entry: withRecipe }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(v.statusActions.some((a) => a.id === 'restore-translation'), 'restore action present');
+  const plain = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'available', entry: ENTRY }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(!plain.statusActions.some((a) => a.id === 'restore-translation'), 'no restore without recipe');
+});
+
 test('translation restored and missing recipe speak plainly', () => {
   const done = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'translation-restored' }, busy: false, prefs: {}, gameDir: '' });
   assert.ok(done.status.includes('Перевод возвращён'), done.status);
