@@ -21,6 +21,7 @@
 ## Открытые PR (ждут «мерж»)
 
 - [x] PR #85 `feat/prefs-locale → dev` — ВЛИТ (Task 1 иммунитета + план в `todo.md`); ветка удалена везде
+- [~] PR #87 `feat/adapter-wiring → dev` — Task 2 иммунитета (Prefs-boot + wrap-default + render-proof); G0 307/307, wire OK
 
 - [x] PR #47 `feat/contributing → dev` — ВЛИТ 11.11, ветка удалена; `CONTRIBUTING.md` (tracked) — входной документ контрибьютора; на `dev` 165/165
 
@@ -218,7 +219,7 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 Критерий готовности каждого таска: PR → апрув → мерж (G4, только по слову человека).
 
 - [x] Task 1 `feat/prefs-locale`: `loadExternalPack(dir, gameVersion, bundled)` в `tools/load-pack.mjs` (не в `loader.js`: туда `fs` нельзя — он едет в браузерный бандл; гейты `parseManifest/isCompatible/createOverlay` переиспользованы из `loader.js`, single-source) + `test/overlay-external.test.js` (NEED: нет dir → `{ok:false}`; чужая версия → `{ok:false}`; битый `ru.json`/BOM → `{ok:false}`; валидный пак → RU + EN-fallback). G0 302/302 + wire-check зелёные → PR #85 → апрув → мерж
-- [ ] Task 2 врезка адаптера: `probe-rebase` dry-run → ONE-SHOT apply в `tmp/dfjs` → build → grep `dfo:` → headless (один Chrome, прибить после) → глаз человека → PR в апстрим (EN до/после попиксельно); в наш репо — только `inject/*` + гварды
+- [~] Task 2 врезка адаптера: `probe-rebase` dry-run → ONE-SHOT apply в `tmp/dfjs` → build → grep `dfo:` → headless (один Chrome, прибить после) → глаз человека → PR в апстрим (EN до/после попиксельно); в наш репо — только `inject/*` + гварды
 - [ ] Task 3 `feat/updater-data-only`: пак в `Prefs/Locale/ru/` + `test/updater-data-only.test.js` (NEED: пак в Prefs → RU без рецепта; старая игра → рецепт-fallback; `recipe.game !== version` → честный `no-recipe`) → PR → апрув → мерж
 - [ ] Task 4 синк ключей: новый ключ апстрима без RU → EN-fallback + warn + очередь синка + `test/key-sync.test.js` (NEED: инверсия диапазона — брак) → PR → апрув → мерж
 - [ ] RISK-очередь: PR в апстрим отклонён → остаёмся на рецепте-fallback (зафиксировать здесь, не молча)
