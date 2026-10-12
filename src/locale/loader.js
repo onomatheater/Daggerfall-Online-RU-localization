@@ -103,3 +103,38 @@ export function createOverlay(bundled) {
 export function resolvePlural(ov, rawKey, n, locale = 'ru') {
   return ov.resolvePlural(rawKey, n, locale);
 }
+
+// Браузерный загрузчик внешнего пака: игра читает Prefs/Locale/ru/ через fetch
+// (node:fs в бандле нет). fetchJson(url) инжектится: тест даёт стаб, игра —
+// fetch(url).then((r) => r.json()). Форма {manifest, tables} стыкуется с
+// registerPack() из inject/locale-adapter.js без новых API.
+// Отказ — {ok:false, reason}, никогда throw: игра живёт дальше на bundled EN.
+export async function loadExternalPackFetch({ baseUrl, gameVersion, bundled = { en: {} }, fetchJson } = {}) {
+  const fail = (reason) => ({ ok: false, reason });
+  if (typeof fetchJson !== 'function') return fail('external-pack: need fetchJson');
+  let manifestRaw;
+  let tablesRaw;
+  try {
+    manifestRaw = await fetchJson(`${baseUrl}/locale-version.json`);
+    tablesRaw = await fetchJson(`${baseUrl}/ru.json`);
+  } catch (err) {
+    return fail(`external-pack: fetch failed: ${err?.message ?? err}`);
+  }
+  let manifest;
+  try {
+    manifest = parseManifest(JSON.stringify(manifestRaw));
+  } catch (err) {
+    return fail(`external-pack: ${err?.message ?? err}`);
+  }
+  if (!isCompatible(manifest, gameVersion)) {
+    return fail(`external-pack: incompatible pack game=${manifest.game ?? `${manifest.gameMin}-${manifest.gameMax}`} for ${gameVersion}`);
+  }
+  if (!tablesRaw || typeof tablesRaw !== 'object' || Array.isArray(tablesRaw)) {
+    return fail('external-pack: ru.json must be {table: {key: value}}');
+  }
+  const overlay = createOverlay(bundled);
+  for (const [table, rows] of Object.entries(tablesRaw)) {
+    overlay.register('ru', table, rows);
+  }
+  return { ok: true, overlay, manifest, tables: tablesRaw };
+}
