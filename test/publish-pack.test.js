@@ -54,7 +54,7 @@ test('copyAssets lays tables and fonts, refuses on gaps', async () => {
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
   const rep = copyAssets(repoRoot, probe);
   assert.equal(rep.ok, true);
-  assert.equal(rep.fonts, 11);
+  assert.equal(rep.fonts, 13);
   assert.ok(existsSync(join(probe, 'src', 'locale', 'ru.json')), 'tables copied');
   assert.ok(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), 'ttf copied');
   assert.ok(existsSync(join(probe, 'public', 'fonts', 'guildenstern.ttf')), 'renamed ttf copied');

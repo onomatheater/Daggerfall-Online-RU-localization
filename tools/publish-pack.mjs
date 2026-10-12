@@ -92,6 +92,8 @@ export const ASSET_FONTS = [
   ['vendor/probe-fonts/ps2p-full.ttf', 'ps2p-full.ttf'],
   ['vendor/probe-fonts/handjet-cyrillic-600-normal.woff2', 'handjet-cyrillic-600-normal.woff2'],
   ['vendor/probe-fonts/handjet-latin-600-normal.woff2', 'handjet-latin-600-normal.woff2'],
+  ['vendor/probe-fonts/ps2p-cyrillic-400.woff2', 'ps2p-cyrillic-400.woff2'],
+  ['vendor/probe-fonts/ps2p-latin-400.woff2', 'ps2p-latin-400.woff2'],
 ];
 
 export function copyAssets(repoRoot, probeTree) {

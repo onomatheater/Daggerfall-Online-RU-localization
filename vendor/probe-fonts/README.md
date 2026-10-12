@@ -18,6 +18,8 @@ Handjet-full.ttf  283912 bytes
 ps2p-full.ttf     118204 bytes
 handjet-cyrillic-600-normal.woff2 4808 bytes
 handjet-latin-600-normal.woff2    7320 bytes
+ps2p-cyrillic-400.woff2 6864 bytes
+ps2p-latin-400.woff2    12512 bytes
 ```
 
 600-сабсеты проверены через wawoff2+cmap (12.10): cyrillic-only и
