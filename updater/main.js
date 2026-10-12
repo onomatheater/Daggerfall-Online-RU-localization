@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -237,8 +237,8 @@ app.whenReady().then(() => {
         state.check = result;
         state.pending = null;
       }
-    } catch {
-      state.check = { status: 'install-failed', reason: 'net-error' };
+    } catch (err) {
+      state.check = { status: 'install-failed', reason: restoreFailReason(err) };
       state.pending = null;
     } finally {
       state.busy = false;

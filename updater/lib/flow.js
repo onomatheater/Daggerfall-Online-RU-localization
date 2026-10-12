@@ -47,7 +47,8 @@ export function checkGameUpdate({ apiText, currentVersion } = {}) {
   return ok ? { available: true, tag } : { available: false };
 }
 
-// Человеческие причины на русском: сырой английский наружу не идёт.
+// Человеческие причины на русском: известные отказы маппятся полностью,
+// неизвестные остаются громкими с деталью (держит тест detect-game).
 const ISSUE_RU = [
   [/no package\.json or app-update\.yml/, 'Игра не найдена: нет package.json и app-update.yml'],
   [/no package\.json, app-update\.yml or app\.asar/, 'Игра не найдена: нет package.json, app-update.yml и app.asar'],
@@ -57,8 +58,26 @@ const ISSUE_RU = [
   [/package\.json has no version/, 'В package.json нет версии'],
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
   [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo|net-error/i, 'Нет соединения с сервером паков'],
+  [/no pack entry selected/, 'Пак не выбран: нечего устанавливать'],
+  [/unpack failed/, 'Не получилось распаковать пак: скачай его заново из релизов'],
+  [/sha mismatch/, 'Скачанный файл не сошёлся по sha: подмена или битый файл, остаёшься на старом паке'],
+  [/sha missing/, 'У пака нет sha в фиде: ставить нечего, остаёшься на старом паке'],
+  [/missing file:/, 'Файл не найден: скачай пак заново из релизов'],
+  [/migrate:/, 'Не получилось подготовить распакованную установку игры'],
+  [/base mismatch/, 'Перевод не лёг на эту версию игры: жди пак под неё, игра при этом работает'],
+  [/markers lost/, 'В рецепте нет меток перевода: он не от этой версии игры'],
+  [/content mismatch|missing after apply|apply failed/, 'Перевод не встал: установка игры не тронута'],
+  [/bad recipe shape/, 'Рецепт перевода испорчен: жди следующий выпуск'],
+  [/empty backup|rollback failed/, 'Откат не удался: предыдущий пак недоступен'],
   [/^unknown(-game)?$/, 'Неизвестная ошибка'],
 ];
+
+// Причина провала восстановления перевода: сырое сообщение наружу,
+// viewOf через describeIssue скажет по-русски. Пусто -> net-error.
+export function restoreFailReason(err) {
+  const text = String(err?.message ?? err ?? '').trim();
+  return text.length > 0 ? text : 'net-error';
+}
 
 export function describeIssue(reason) {
   const text = String(reason ?? '');

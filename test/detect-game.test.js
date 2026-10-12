@@ -83,3 +83,27 @@ test('describeIssue speaks Russian, never leaks raw English', async () => {
     assert.ok(describeIssue(net).includes('соединения'), `network speaks Russian: ${net}`);
   }
 });
+
+test('describeIssue maps updater failure reasons to Russian', async () => {
+  const { describeIssue, restoreFailReason } = await import('../updater/lib/flow.js');
+  const cases = [
+    ['no pack entry selected', 'Пак'],
+    ['unpack failed: boom', 'распаковать'],
+    ['sha mismatch: expected a, got b', 'sha'],
+    ['missing file: C:/x/ru-pack.zip', 'найден'],
+    ['migrate: extract failed: boom', 'подготовить'],
+    ['base mismatch, missing: dist/a.js', 'версию игры'],
+    ['markers lost: foo', 'меток'],
+    ['content mismatch: dist/a.js', 'не встал'],
+    ['missing after apply: dist/a.js', 'не встал'],
+    ['apply failed: boom', 'не встал'],
+    ['bad recipe shape', 'испорчен'],
+    ['empty backup', 'Откат'],
+  ];
+  for (const [reason, needle] of cases) {
+    const ru = describeIssue(reason);
+    assert.ok(ru.includes(needle), `${reason} -> ${ru}`);
+  }
+  assert.equal(restoreFailReason(new Error('migrate: extract failed: x')), 'migrate: extract failed: x');
+  assert.equal(restoreFailReason(undefined), 'net-error');
+});
