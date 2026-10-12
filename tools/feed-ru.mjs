@@ -13,6 +13,12 @@ export function buildFeed(entries) {
     const manifest = parseManifest(JSON.stringify(entry.manifest));
     const record = { ...manifest, url: entry.url };
     if (entry.sha !== undefined) record.sha = entry.sha;
+    if (entry.notes !== undefined) {
+      if (!Array.isArray(entry.notes) || !entry.notes.every((n) => typeof n === 'string')) {
+        throw new Error(`feed: entry ${i} notes must be string[]`);
+      }
+      record.notes = entry.notes;
+    }
     return record;
   });
   packs.sort((a, b) => cmpVersion(a.version, b.version));
