@@ -42,3 +42,32 @@ test('missing or broken sources give null with reason, never throw', () => {
   assert.equal(badHit.version, null);
   assert.ok(badHit.reason.length > 0, 'reason present');
 });
+
+test('reads version from resources/app.asar via injected reader', () => {
+  const dir = mk();
+  const hit = detectGameVersion(dir, {
+    readAsar: (path) => {
+      assert.ok(path.endsWith('app.asar'), `asar path: ${path}`);
+      return { version: '0.1.7815' };
+    },
+  });
+  assert.equal(hit.version, '0.1.7815');
+  assert.equal(hit.source, 'app.asar');
+  const broken = detectGameVersion(mk(), {
+    readAsar: () => { throw new Error('boom'); },
+  });
+  assert.equal(broken.version, null);
+  assert.ok(broken.reason.length > 0, 'reason present');
+});
+
+test('asar reader roundtrips a real package', async () => {
+  const { createPackage } = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+  const { readAsarPackageJson } = await import('../updater/lib/asar.js');
+  const dir = mk();
+  const src = join(dir, 'src');
+  mkdirSync(src);
+  writeFileSync(join(src, 'package.json'), JSON.stringify({ name: 'game', version: '0.1.7815' }));
+  const dest = join(dir, 'app.asar');
+  await createPackage(src, dest);
+  assert.equal(readAsarPackageJson(dest).version, '0.1.7815');
+});
