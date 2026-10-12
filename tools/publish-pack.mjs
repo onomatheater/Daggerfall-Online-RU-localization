@@ -21,9 +21,9 @@ import { packZip } from '../updater/lib/unzip.js';
 const REPO_TOOLS = dirname(fileURLToPath(import.meta.url));
 
 export const STEPS = [
-  'clone',
-  'deps',
   'vanilla-build',
+  'verify-probe',
+  'tables-copy',
   'rebase-apply',
   'patched-build',
   'markers',
@@ -75,24 +75,30 @@ const need = (venue, key) => {
 const shaFile = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } = {}) {
-  for (const key of ['workRoot', 'gameTag', 'version', 'fromTag', 'scriptsDir', 'queuePath', 'packVersion', 'urlBase']) {
+  for (const key of ['workRoot', 'gameTag', 'version', 'fromTag', 'scriptsDir', 'queuePath', 'packVersion', 'urlBase', 'vanillaClone', 'probeTree']) {
     need(venue, key);
   }
   if (!Array.isArray(venue.markers) || venue.markers.length === 0) throw new Error('pipeline: need venue.markers[]');
   if (dryRun) return { executed: false, steps: [...STEPS] };
   const run = (cmd, args, cwd) => sh({ cmd, args, cwd });
+  const repoLocale = join(REPO_TOOLS, '..', 'src', 'locale');
   const ctx = {
     ...venue,
-    cloneDir: join(venue.workRoot, 'dfjs'),
     vanillaDir: join(venue.workRoot, 'vanilla'),
     stageDir: join(venue.workRoot, 'stage'),
   };
-  run('git', ['clone', '--branch', venue.gameTag, '--depth', '1', 'https://github.com/Lattymoy/daggerfall-js-source.git', ctx.cloneDir]);
-  run('npm', ['install'], ctx.cloneDir);
-  await buildVanilla({ cloneDir: ctx.cloneDir, outDir: ctx.vanillaDir });
-  run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', ctx.cloneDir, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply']);
-  run('npm', ['run', 'build'], ctx.cloneDir);
-  const patchedDist = join(ctx.cloneDir, 'dist');
+  await buildVanilla({ cloneDir: venue.vanillaClone, outDir: ctx.vanillaDir });
+  const probeStatus = run('git', ['-C', venue.probeTree, 'status', '--porcelain']);
+  if (probeStatus.output.trim() !== '') throw new Error('pipeline: probe tree dirty, refusing');
+  const probeHead = run('git', ['-C', venue.probeTree, 'describe', '--tags', '--exact-match']);
+  if (probeHead.output.trim() !== venue.gameTag) {
+    throw new Error(`pipeline: probe tree at ${probeHead.output.trim()}, need ${venue.gameTag}`);
+  }
+  const { cpSync } = await import('node:fs');
+  cpSync(repoLocale, join(venue.probeTree, 'src', 'locale'), { recursive: true });
+  run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', venue.probeTree, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply']);
+  run('npm', ['run', 'build'], venue.probeTree);
+  const patchedDist = join(venue.probeTree, 'dist');
   if (!distReady(patchedDist)) throw new Error('pipeline: patched build has no dist');
   if (!bundleHasMarkers(patchedDist, venue.markers ?? [])) {
     throw new Error('pipeline: markers missing in patched bundle');
@@ -124,8 +130,10 @@ if (process.argv[1]?.endsWith('publish-pack.mjs')) {
   if (args.includes('--help') || args.length === 0) {
     console.log([
       'usage: node tools/publish-pack.mjs [--run] --tag <app-vX> --from <app-vY> --version <0.1.X>',
-      '  --pack-version <1.2.3> --scripts <dir> --queue <json> --markers <a,b> --notes <t> --url-base <url> --work-root <dir>',
-      '  default: dry-run (steps only, touches nothing). --run executes in tmp workRoot.',
+      '  --pack-version <1.2.3> --scripts <dir> --queue <json> --markers <a,b> --notes <t> --url-base <url>',
+      '  --work-root <dir> --vanilla-clone <dir> --probe-tree <dir>',
+      '  default: dry-run (steps only, touches nothing). --run executes: vanilla snapshot,',
+      '  probe-tree verify, tables copy, queue apply, patched build, markers, stage.',
     ].join('\n'));
     process.exit(0);
   }
@@ -141,6 +149,8 @@ if (process.argv[1]?.endsWith('publish-pack.mjs')) {
     notes: (get('--notes') ?? '').split('|').filter((s) => s.length > 0),
     urlBase: get('--url-base'),
     workRoot: get('--work-root'),
+    vanillaClone: get('--vanilla-clone'),
+    probeTree: get('--probe-tree'),
   };
   const rep = await runPipeline(venue, { dryRun: !args.includes('--run') });
   console.log(JSON.stringify({ executed: rep.executed, steps: rep.steps }));

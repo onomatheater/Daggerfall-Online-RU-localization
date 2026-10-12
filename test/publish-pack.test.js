@@ -32,6 +32,8 @@ test('runPipeline dry-run lists steps, touches nothing', async () => {
     queuePath: 'C:/repo/tools/probe-queue.json',
     packVersion: '1.4.0',
     urlBase: 'https://example.invalid/packs',
+    vanillaClone: 'C:/tmp/vanilla',
+    probeTree: 'C:/tmp/dfjs',
     markers: ['m1'],
     notes: ['n1'],
   };
