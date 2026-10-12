@@ -14,6 +14,10 @@
 @font-face { font-family: 'Pixelify Five'; unicode-range: U+0035; font-display: block; src: url(data:font/woff2;base64,d09GMgABAAAAAAIIAA0AAAAABKQAAAG5AAEAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGyAcIAZgADQRCAo8UQE2AiQDCAsGAAQgBYQEByAb0gMRFZQRZF8mbyrtyKnsmUtW0uh5eajRkkYiwmd9zzwevvZ7PXd3A4jjU0BFqJDHE1p0Mq4uqiyrUX1VpBcA/QCAwLv/sfo5F6Rn9t09Ls65/8pEjkFdE/m2A84AIXIHmiZwJJFm0pbQC2cFlGjCRS2xqAUWJRAZpScLgtmEN4H2INg9T6DZqHGxacuuvRoVqAhYvaSloI70IIWdVRLHLfgNBOxl356deyxZYUWpr+rJNb8JiK/pmJSRkNErC/QqJlEUgRWVXLV6ESBEVQESKEjoRA+gAFJrOROtuU2rFi1ORpsvt1y9+lW3f3N7TL8NBMKGS6Nj8yes/za5Bg8HfwuvHq+zWX05l2uol0Dwz5V3RP1cQJeUzrud3rstkMyqCwJGSQINDsuiNGGRJvRaJGn3iGytlxSz0U6dvbHww+rNxh0babDbhyLLJzB13YBvnsCnqKuRDUnSwnPAMmETnOcpx2EEPp+mbgw1LSumfKYqw0bLELM6SbGdRm08TAsa7XeSzTUZDFX+dPS7X+6RR5RVmJvg9p8MY4EtHAlMk2kyC+YFf/8E/GKovmqrnuLEDhW0/Ak2MwEAAA==) format('woff2'); }
 @font-face { font-family: 'Pixelify Sans'; font-weight: 400 700; font-display: block; src: url(fonts/PixelifySans-latin.woff2) format('woff2'); }
 @font-face { font-family: 'Jacquard 12'; font-display: block; src: url(fonts/Jacquard12-latin.woff2) format('woff2'); }
+/* RU-fork: их шрифты без кириллицы — русские строки рисуют Handjet (OFL, наш вендор). */
+@font-face { font-family: 'Handjet'; font-weight: 400; font-display: block; src: url(fonts/handjet-cyrillic-400-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: 'Handjet'; font-weight: 500; font-display: block; src: url(fonts/handjet-cyrillic-500-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face { font-family: 'Handjet'; font-weight: 700; font-display: block; src: url(fonts/handjet-cyrillic-700-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
 
 :root { --brass: #c08a3e; --ruby: #b91309; }
 * { box-sizing: border-box; }
@@ -22,7 +26,7 @@
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body {
   color: #d8cfae; background: #0a0c11;
-  font-family: 'Pixelify Five', 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.5;
+  font-family: 'Handjet', 'Pixelify Five', 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.5;
   -webkit-font-smoothing: none; font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'clig' 0;
   user-select: none; cursor: default;
 }

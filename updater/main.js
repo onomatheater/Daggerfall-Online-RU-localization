@@ -1,33 +1,51 @@
-// Обновление перевода: главное окно. Вся логика — в updater/lib/flow.js
-// и tools-ядре (покрыты тестами); здесь только окно + IPC-мост.
-// Сеть: два GET (фид, zip) и только из обработчиков кнопок — фоном не ходим,
-// телеметрии и аплоада нет.
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+// Шелл окна апдейтера: считает view нашим viewOf и шлёт странице,
+// страница (их launcher.js, без изменений) только рисует.
+// Сеть: два GET (фид, zip) и только из check/install — руками или
+// включённым авточеком. Телеметрии и аплоада нет.
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, describeIssue, decideStartup } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup } from './lib/flow.js';
+import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
 import { loadPrefs, savePrefs } from './lib/prefs.js';
 
 // Хост фида заполняет человек при релизе (стабильный URL feed.json).
 const FEED_URL = 'https://example.invalid/ru-pack-feed.json';
-const GAME_DIR = `${process.env.LOCALAPPDATA ?? ''}\\Programs\\Daggerfall Online`;
 // Ссылки разработчиков — те же, что в их лаунчере (Lattymoy, MIT).
 const LINKS = {
   site: 'https://daggerfalljs.dev/',
   discord: 'https://discord.gg/jM2JdwSM8w',
 };
+const DEFAULT_GAME_DIR = `${process.env.LOCALAPPDATA ?? ''}\\Programs\\Daggerfall Online`;
 
 const userData = () => app.getPath('userData');
-const STORE_DIR = join(app.getPath('userData'), 'packs');
+const storeDir = () => join(userData(), 'packs');
+const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
+const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
+const installed = () => listPacks(storeDir());
 
-const gameVersion = () => detectGameVersion(GAME_DIR, { readAsar: readAsarPackageJson });
-const currentVersion = () => listPacks(STORE_DIR)[0]?.version;
+const state = { check: null, busy: false, pending: null };
+
+function currentView() {
+  return viewOf({
+    game: game(),
+    installed: installed(),
+    check: state.check,
+    busy: state.busy,
+    prefs: loadPrefs(userData()),
+    gameDir: gameDir(),
+  });
+}
+
+function push(win) {
+  if (win && !win.isDestroyed()) win.webContents.send('launcher:view', currentView());
+}
 
 async function fetchText(url) {
   const res = await fetch(url);
@@ -42,71 +60,118 @@ async function fetchZip(url, dest) {
   return dest;
 }
 
+async function runCheck() {
+  const hit = game();
+  if (hit.version === null) return { status: 'unknown-game', reason: hit.reason };
+  try {
+    const feedText = await fetchText(FEED_URL);
+    return checkForUpdate({ feedText, gameVersion: hit.version, currentVersion: installed()[0]?.version });
+  } catch {
+    return { status: 'net-error' };
+  }
+}
+
+async function runInstall(entry) {
+  try {
+    const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
+    const zipPath = join(tmp, 'ru-pack.zip');
+    await fetchZip(entry.url, zipPath);
+    return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir: storeDir(), unpack: unpackZip });
+  } catch {
+    return { ok: false, reason: 'net-error' };
+  }
+}
+
 function createWindow() {
   const root = dirname(fileURLToPath(import.meta.url));
   const win = new BrowserWindow({
-    width: 480,
-    height: 620,
-    resizable: false,
+    width: 900,
+    height: 640,
     autoHideMenuBar: true,
     title: 'Обновление перевода',
-    webPreferences: { preload: join(root, 'preload.js') },
+    webPreferences: { preload: join(root, 'preload.js'), sandbox: true },
   });
-  win.loadFile(join(root, 'renderer/index.html'));
+  win.loadFile(join(root, 'launcher/index.html'));
+  ipcMain.on('launcher:ready', () => push(win));
+  return win;
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle('game', () => gameVersion());
-  ipcMain.handle('describe', (_ev, reason) => describeIssue(reason));
-  ipcMain.handle('open', (_ev, where) => {
-    if (Object.hasOwn(LINKS, where)) shell.openExternal(LINKS[where]);
-  });
-  ipcMain.handle('prefs', () => loadPrefs(userData()));
-  ipcMain.handle('setPrefs', (_ev, prefs) => savePrefs(userData(), prefs));
-  ipcMain.handle('startup', () => {
-    const game = gameVersion();
-    return { action: decideStartup({ autoCheck: loadPrefs(userData()).autoCheck, gameVersion: game.version }) };
-  });
-  ipcMain.handle('check', async () => {
-    try {
-      const game = gameVersion();
-      if (game.version === null) return { status: 'unknown-game', reason: game.reason };
-      const feedText = await fetchText(FEED_URL);
-      return checkForUpdate({ feedText, gameVersion: game.version, currentVersion: currentVersion() });
-    } catch {
-      return { status: 'net-error' };
+  const win = createWindow();
+  const refresh = () => push(win);
+  ipcMain.on('launcher:act', async (_ev, { action, arg }) => {
+    if (action === 'open') {
+      if (Object.hasOwn(LINKS, arg)) shell.openExternal(LINKS[arg]);
+    } else if (action === 'set-update-check') {
+      savePrefs(userData(), { ...loadPrefs(userData()), autoCheck: arg === true });
+      refresh();
+    } else if (action === 'choose-folder') {
+      const { canceled, filePaths } = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
+      if (!canceled && filePaths[0]) {
+        savePrefs(userData(), { ...loadPrefs(userData()), gameDir: filePaths[0] });
+        state.check = null;
+        state.pending = null;
+      }
+      refresh();
+    } else if (action === 'check') {
+      state.busy = true;
+      refresh();
+      try {
+        state.check = await runCheck();
+        state.pending = state.check.status === 'available' ? state.check.entry : null;
+      } finally {
+        state.busy = false;
+      }
+      refresh();
+    } else if (action === 'install') {
+      const entry = state.pending;
+      if (!entry) return;
+      state.busy = true;
+      refresh();
+      try {
+        const rep = await runInstall(entry);
+        if (rep.ok) {
+          state.check = { status: 'up-to-date', entry };
+          state.pending = null;
+        } else {
+          state.check = { status: 'install-failed', reason: rep.reason ?? (rep.errors ?? []).join('; ') };
+        }
+      } finally {
+        state.busy = false;
+      }
+      refresh();
+    } else if (action === 'rollback') {
+      const prev = rollbackPack(storeDir());
+      if (prev === null) return;
+      state.busy = true;
+      refresh();
+      try {
+        const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
+        const rep = installUpdate({
+          zipPath: join(storeDir(), prev.file),
+          entry: prev,
+          unpackDir: join(tmp, 'pack'),
+          storeDir: storeDir(),
+          unpack: unpackZip,
+        });
+        state.check = rep.ok
+          ? { status: 'up-to-date', entry: prev }
+          : { status: 'install-failed', reason: rep.reason ?? (rep.errors ?? []).join('; ') };
+        state.pending = null;
+      } finally {
+        state.busy = false;
+      }
+      refresh();
     }
   });
-  ipcMain.handle('install', async (_ev, entry) => {
-    try {
-      const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
-      const zipPath = join(tmp, 'ru-pack.zip');
-      await fetchZip(entry.url, zipPath);
-      return installUpdate({
-        zipPath,
-        entry,
-        unpackDir: join(tmp, 'pack'),
-        storeDir: STORE_DIR,
-        unpack: unpackZip,
-      });
-    } catch {
-      return { ok: false, reason: 'net-error' };
+  (async () => {
+    const hit = game();
+    if (decideStartup({ autoCheck: loadPrefs(userData()).autoCheck, gameVersion: hit.version }) === 'check') {
+      state.check = await runCheck();
+      state.pending = state.check.status === 'available' ? state.check.entry : null;
+      refresh();
     }
-  });
-  ipcMain.handle('installed', () => listPacks(STORE_DIR));
-  ipcMain.handle('rollback', async () => {
-    const prev = rollbackPack(STORE_DIR);
-    if (prev === null) return { ok: false, reason: 'откатываться некуда' };
-    const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
-    return installUpdate({
-      zipPath: join(STORE_DIR, prev.file),
-      entry: prev,
-      unpackDir: join(tmp, 'pack'),
-      storeDir: STORE_DIR,
-      unpack: unpackZip,
-    });
-  });
-  createWindow();
+  })();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 

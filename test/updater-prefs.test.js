@@ -16,17 +16,17 @@ const mk = () => mkdtempSync(join(tmpdir(), 'ruprefs-'));
 
 test('prefs roundtrip, default off', () => {
   const dir = mk();
-  assert.deepEqual(loadPrefs(dir), { autoCheck: false });
-  savePrefs(dir, { autoCheck: true });
-  assert.deepEqual(loadPrefs(dir), { autoCheck: true });
+  assert.deepEqual(loadPrefs(dir), { autoCheck: false, gameDir: '' });
+  savePrefs(dir, { autoCheck: true, gameDir: 'C:\\Game' });
+  assert.deepEqual(loadPrefs(dir), { autoCheck: true, gameDir: 'C:\\Game' });
   savePrefs(dir, { autoCheck: false });
-  assert.deepEqual(loadPrefs(dir), { autoCheck: false });
+  assert.deepEqual(loadPrefs(dir), { autoCheck: false, gameDir: '' });
 });
 
 test('prefs survive broken file as default, never throw', () => {
   const dir = mk();
   writeFileSync(join(dir, 'prefs.json'), 'not json{');
-  assert.deepEqual(loadPrefs(dir), { autoCheck: false });
+  assert.deepEqual(loadPrefs(dir), { autoCheck: false, gameDir: '' });
 });
 
 test('decideStartup: silent check only when opted in with known game', () => {

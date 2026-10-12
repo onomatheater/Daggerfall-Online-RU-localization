@@ -10,7 +10,7 @@
        the update in the bar, and Play.
        DA12: and a controller - the game's own front-door pad loop (pad.js). -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self' data:">
-  <title>Daggerfall Online</title>
+  <title>Обновление перевода</title>
   <link rel="stylesheet" href="launcher.css">
 </head>
 <body data-busy>
@@ -18,6 +18,8 @@
   <div class="launcher">
     <header class="top">
       <h1 class="wordmark">Daggerfall<small>Online</small></h1>
+      <!-- RU-fork: их шапка и ссылки как есть + наша подпись. -->
+      <p class="unofficial">Неофициальный лаунчер русской локализации</p>
       <nav class="links caps" aria-label="Ссылки">
         <button class="link" type="button" data-open="site">daggerfalljs.dev</button>
         <button class="link" type="button" data-open="discord">Discord</button>
@@ -41,19 +43,20 @@
       </main>
 
       <aside class="side" aria-label="Настройки">
+        <!-- RU-fork: файлы игры = папка для детекта версии; сейвы не трогаем. -->
         <section class="opt">
-          <h3 class="caps">Файлы игры</h3>
+          <h3 class="caps">Папка игры</h3>
           <p id="files" class="files"></p>
           <button class="plaque small" type="button" data-act="choose-folder">Сменить папку</button>
         </section>
         <section class="opt">
-          <h3 class="caps">Сохранения</h3>
-          <button class="plaque small" type="button" data-act="open-saves">Открыть папку сохранений</button>
-        </section>
-        <section class="opt">
           <h3 class="caps">Обновления</h3>
           <label class="check"><input id="update-check" type="checkbox"> Проверять автоматически</label>
-          <button class="link" type="button" data-act="reinstall">Переустановить…</button>
+          <button class="link" type="button" data-act="rollback">Откатить пак…</button>
+        </section>
+        <section class="opt">
+          <h3 class="caps">Приватность</h3>
+          <p class="note">Только список паков и сам пак — и только по кнопке. Ничего о тебе никуда не уходит.</p>
         </section>
       </aside>
     </div>
@@ -75,6 +78,6 @@
     </footer>
   </div>
   <script src="launcher.js"></script>
-  <script type="module" src="pad.js"></script>
+  <!-- RU-fork: без pad.js — геймпад-петля игровых меню апдейтеру не нужна. -->
 </body>
 </html>
