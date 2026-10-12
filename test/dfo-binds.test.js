@@ -40,7 +40,7 @@ const NEED = [
   'bindc.transport', 'bindc.static_keys', 'bindc.howto', 'bindc.shared', 'bindc.confirm_hint',
   'bindc.primary', 'bindc.secondary', 'bindc.which_set', 'bindc.defaults',
   'bindc.primary_caps', 'bindc.secondary_caps', 'bindc.press_key_dot', 'bindc.console',
-  'bindc.screenshot', 'bindc.none', 'bindc.lowest', 'bindc.highest', 'bindc.vanilla',
+  'bindc.screenshot', 'bindc.none', 'bindc.smoothing_none', 'bindc.lowest', 'bindc.highest', 'bindc.vanilla',
   'bindc.look_smoothing', 'bindc.look_sens', 'bindc.swing_mode', 'bindc.invert_y',
   'bindc.move_accel', 'bindc.bow_draw', 'bindc.toggle_sneak', 'bindc.protect',
   'bindc.attack_threshold', 'bindc.adv_controls', 'bindc.continue_caps',
@@ -77,6 +77,8 @@ test('binds exact RU values (QA-gated)', () => {
   eq('bindc.confirm_hint', 'Ничего не сохранится, пока не нажмёте {confirm}, включая значения по умолчанию. Уйдёте со страницы — изменения сбросятся.');
   eq('val.ultra', 'Ультра');
   assert.equal(en.dfo['bindc.none'], 'NONE', 'кнопка без привязки — капс из buttonText');
+  assert.equal(en.dfo['bindc.smoothing_none'], 'None', 'сглаживание — обычный регистр из SMOOTHING_STRENGTHS');
+  eq('bindc.smoothing_none', 'Нет');
 });
 
 test('binds render in RU', () => {

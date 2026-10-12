@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { distReady, buildVanilla } from '../tools/vanilla-dist.mjs';
+import { distReady, buildVanilla, defaultRun } from '../tools/vanilla-dist.mjs';
 
 const mk = () => mkdtempSync(join(tmpdir(), 'ruvan-'));
 function dist(root, { html = true, assets = true } = {}) {
@@ -50,4 +50,9 @@ test('buildVanilla copies built dist, cleans up on failure', async () => {
   const badOut = join(mk(), 'vanilla');
   await assert.rejects(buildVanilla({ cloneDir: badClone, outDir: badOut, run: bad }), /vanilla-dist/);
   assert.equal(existsSync(badOut), false, 'no half-copy left behind');
+});
+
+test('defaultRun resolves commands through the platform shell', () => {
+  const rep = defaultRun({ cmd: 'node', args: ['--version'], cwd: tmpdir() });
+  assert.equal(rep.ok, true);
 });

@@ -6,10 +6,11 @@
 //   только список шагов, fs и sh не трогает. Публикации здесь нет (таск 4).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { bundleHasMarkers, STEPS, runPipeline } from '../tools/publish-pack.mjs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { bundleHasMarkers, STEPS, runPipeline, copyAssets, scrubAssets, defaultSh } from '../tools/publish-pack.mjs';
 
 const mk = () => mkdtempSync(join(tmpdir(), 'rupipe-'));
 
@@ -32,6 +33,8 @@ test('runPipeline dry-run lists steps, touches nothing', async () => {
     queuePath: 'C:/repo/tools/probe-queue.json',
     packVersion: '1.4.0',
     urlBase: 'https://example.invalid/packs',
+    vanillaClone: 'C:/tmp/vanilla',
+    probeTree: 'C:/tmp/dfjs',
     markers: ['m1'],
     notes: ['n1'],
   };
@@ -43,4 +46,53 @@ test('runPipeline dry-run lists steps, touches nothing', async () => {
   assert.equal(rep.executed, false);
   assert.equal(existsSync(venue.workRoot), false, 'no fs side effects');
   await assert.rejects(runPipeline({ ...venue, gameTag: '' }, { dryRun: true }), /gameTag/);
+});
+
+test('copyAssets lays tables and fonts, refuses on gaps', async () => {
+  const probe = mk();
+  mkdirSync(join(probe, 'src'), { recursive: true });
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const rep = copyAssets(repoRoot, probe);
+  assert.equal(rep.ok, true);
+  assert.equal(rep.fonts, 13);
+  assert.ok(existsSync(join(probe, 'src', 'locale', 'ru.json')), 'tables copied');
+  assert.ok(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), 'ttf copied');
+  assert.ok(existsSync(join(probe, 'public', 'fonts', 'guildenstern.ttf')), 'renamed ttf copied');
+  assert.ok(readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').includes('export function tOr'), 'tOr shim appended');
+  assert.equal(
+    readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').split('PROBE ONLY').length - 1, 1,
+    'shim idempotent',
+  );
+  copyAssets(repoRoot, probe);
+  assert.equal(
+    readFileSync(join(probe, 'src', 'locale', 'locale.js'), 'utf8').split('PROBE ONLY').length - 1, 1,
+    'second copy keeps single shim',
+  );
+  const thin = mk();
+  mkdirSync(join(thin, 'src', 'locale'), { recursive: true });
+  writeFileSync(join(thin, 'src', 'locale', 'x.json'), '{}');
+  assert.throws(() => copyAssets(thin, mk()), /missing assets/);
+});
+
+test('scrubAssets removes only pipeline-owned artifacts', () => {
+  const probe = mk();
+  mkdirSync(join(probe, 'src', 'locale'), { recursive: true });
+  writeFileSync(join(probe, 'src', 'locale', 'ru.json'), '{}');
+  mkdirSync(join(probe, 'public', 'fonts'), { recursive: true });
+  writeFileSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf'), 'x');
+  writeFileSync(join(probe, 'public', 'fonts', 'stranger.ttf'), 'keep me');
+  writeFileSync(join(probe, 'precious.txt'), 'keep me');
+  assert.equal(scrubAssets(probe).ok, true);
+  assert.equal(existsSync(join(probe, 'src', 'locale')), false);
+  assert.equal(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), false);
+  assert.equal(readFileSync(join(probe, 'public', 'fonts', 'stranger.ttf'), 'utf8'), 'keep me');
+  assert.equal(readFileSync(join(probe, 'precious.txt'), 'utf8'), 'keep me');
+});
+
+test('defaultSh quotes spaced paths on win', () => {
+  const spaced = join(mk(), 'dir with space');
+  mkdirSync(spaced, { recursive: true });
+  const rep = defaultSh({ cmd: 'node', args: ['--version'], cwd: spaced });
+  assert.equal(rep.ok, true);
+  assert.ok(rep.output.includes('v'), rep.output);
 });

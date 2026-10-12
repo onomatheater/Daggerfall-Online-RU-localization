@@ -1,0 +1,393 @@
+{
+  "note": "pipeline order: vanilla-cumulative. BOOT-LOCALE (tables+boot import) runs before #0 via glue, not a script. Dropped: wt-7815 scripts (49,50,53), acct-tail (absorbed by account), forceru (absorbed by BOOT). Dropped mini (needs ruByEn.js product batch).",
+  "order": [
+    {
+      "script": "patch-boot-locale.mjs",
+      "touches": [
+        "src/main.js",
+        "src/scenes/world.js"
+      ],
+      "note": "boot ru + ruT import, pipe-first"
+    },
+    {
+      "script": "patch-7361-locale-default.mjs",
+      "touches": [
+        "src/locale/locale.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-anchor.mjs",
+      "touches": [
+        "src/scenes/hostMagic.js"
+      ],
+      "note": "anchor first"
+    },
+    {
+      "script": "patch-begin.mjs",
+      "touches": [
+        "src/ui/introScreen.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-sdf.mjs",
+      "touches": [
+        "src/ui/text.js",
+        "src/systems/uiPack.js"
+      ],
+      "note": "sdf ru codes + Handjet-full intercept"
+    },
+    {
+      "script": "patch-fontstack.mjs",
+      "touches": [
+        "src/systems/uiPack.js",
+        "src/ui/pixelifyFive.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-fontscale.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "fontscale before floor/700/menu2"
+    },
+    {
+      "script": "patch-fontfull.mjs",
+      "touches": [
+        "src/systems/uiPack.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-floor.mjs",
+      "touches": [
+        "src/ui/text.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-ps2p.mjs",
+      "touches": [
+        "src/systems/uiPack.js",
+        "src/ui/pixelifyFive.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-guild.mjs",
+      "touches": [
+        "src/systems/uiPack.js",
+        "src/ui/pixelifyFive.js"
+      ],
+      "note": "Guildenstern over PS2P"
+    },
+    {
+      "script": "patch-menu.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-menu2.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js",
+        "src/ui/settingsLaw.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-rails.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js",
+        "src/ui/settingsCopy.js",
+        "src/ui/settingsMap.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-menu3.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js",
+        "src/ui/enhancedStyle.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-settings.mjs",
+      "touches": [
+        "src/ui/introScreen.js",
+        "src/ui/settingsCopy.js"
+      ],
+      "note": "one-off era, may be stale"
+    },
+    {
+      "script": "patch-7361-law.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js",
+        "src/ui/settingsLaw.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-restore.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-toggles.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-menufinish.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first"
+    },
+    {
+      "script": "patch-7361-account.mjs",
+      "touches": [
+        "src/ui/enhancedAccount.js",
+        "src/ui/enhancedMenu.js",
+        "src/net/duelRecord.js",
+        "src/net/gateClaims.js",
+        "src/net/raidClaims.js",
+        "src/net/sdClaims.js",
+        "src/net/serpentClaims.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-binds.mjs",
+      "touches": [
+        "src/ui/controlsWindow.js",
+        "src/ui/enhancedControls.js",
+        "src/ui/enhancedMenu.js",
+        "src/ui/joystickControlsWindow.js",
+        "src/ui/mouseControlsWindow.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7361-feats.mjs",
+      "touches": [
+        "src/systems/features.js",
+        "src/systems/graphicsPresets.js",
+        "src/systems/inputActions.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-scaleprod.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first"
+    },
+    {
+      "script": "patch-700.mjs",
+      "touches": [
+        "src/main.js",
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-700b.mjs",
+      "touches": [
+        "src/main.js",
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-launcher.mjs",
+      "touches": [
+        "app/launcher/index.html",
+        "app/launcher/launcher.js",
+        "app/lib/launcherState.cjs"
+      ],
+      "note": "app/ paths (R=dfjs/app); launcherRu.cjs is our own overlay"
+    },
+    {
+      "script": "patch-stale-defaults.mjs",
+      "touches": [
+        "src/ui/accountFlow.js",
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "one-off repair, may be stale"
+    },
+    {
+      "script": "patch-spawn.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "one-off repair, may be stale"
+    },
+    {
+      "script": "patch-7427-panels.mjs",
+      "touches": [
+        "src/ui/pauseWindow.js",
+        "src/ui/saveTile.js",
+        "src/ui/shotsPane.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-wave1.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first"
+    },
+    {
+      "script": "patch-7506-explainer.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-online.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-ovh.mjs",
+      "touches": [
+        "src/systems/dfmodTextures.js",
+        "src/systems/overhauls.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-pads.mjs",
+      "touches": [
+        "src/ui/plusPadBinds.js",
+        "src/ui/touchButtons.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-sky.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-tail2.mjs",
+      "touches": [
+        "src/systems/uiPrefs.js",
+        "src/systems/uiSkin.js",
+        "src/ui/charSheetDoor.js",
+        "src/ui/enhancedAccount.js",
+        "src/ui/enhancedMenu.js",
+        "src/ui/levelNotice.js",
+        "src/ui/loadingScreen.js",
+        "src/ui/screenshot.js",
+        "src/ui/settingsLaw.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-tipfix.mjs",
+      "touches": [
+        "src/ui/loadingScreen.js"
+      ],
+      "note": "one-off repair, may be stale"
+    },
+    {
+      "script": "patch-7506-tail2-fix.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first, must run right after tail2"
+    },
+    {
+      "script": "patch-comma.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "one-off repair, may be stale"
+    },
+    {
+      "script": "patch-7506-troom-data.mjs",
+      "touches": [
+        "src/systems/testRoom.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-troom-intro.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7506-troom-pane.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7553-ovh-boss.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first"
+    },
+    {
+      "script": "patch-7553-shots.mjs",
+      "touches": [
+        "src/ui/shotsPane.js",
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "audit-first"
+    },
+    {
+      "script": "patch-7553-online-needs.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-7553-plus-signin.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js",
+        "src/ui/plusPadBinds.js"
+      ],
+      "note": ""
+    },
+    {
+      "script": "patch-names.mjs",
+      "touches": [
+        "src/characters/nameHelper.js"
+      ],
+      "note": "needs translit.js + ru/names/syllables.json overlay"
+    },
+    {
+      "script": "patch-7815-font.mjs",
+      "touches": [
+        "src/ui/text.js",
+        "src/systems/uiPack.js",
+        "src/main.js",
+        "src/ui/pixelifyFive.js"
+      ],
+      "note": "7815 fresh-tree: always-RU SDF + Handjet faces + stack (needs public/fonts woff2)"
+    }
+  ]
+}
