@@ -6,6 +6,8 @@ import { selectPack } from '../../tools/feed-ru.mjs';
 import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
 import downloads from '../vendor-dfo/downloads.cjs';
 
@@ -20,6 +22,42 @@ export function resolveGameFile({ platform, packaged, portable } = {}) {
 
 export function latestGameFileUrl(file) {
   return downloads.latestDownloadUrl(file);
+}
+
+// Кэш скачанного: стабильные имена у них без версии, поэтому ключ — тег.
+// Повторное нажатие при готовом кэше не качает.
+export function cachedDownloadPath(dir, tag, file) {
+  const clean = String(tag ?? '').replace(/^app-v/, '').replace(/[^0-9A-Za-z.+-]/g, '');
+  return `${dir}/${clean}-${file}`;
+}
+
+// Запись их latest.yml про файл (sha512 у них в base64). Нет — null.
+export function findYmlEntry(ymlText, file) {
+  const lines = String(ymlText ?? '').split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes(file)) {
+      for (let j = i; j < Math.min(i + 6, lines.length); j++) {
+        const m = /sha512:\s*(\S+)/.exec(lines[j]);
+        if (m) return { sha512: m[1] };
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+export function verifyFileSha512(path, expected) {
+  if (typeof expected !== 'string' || expected.length === 0) return { ok: false, reason: 'no sha in feed' };
+  let bytes;
+  try {
+    bytes = readFileSync(path);
+  } catch {
+    return { ok: false, reason: `missing file: ${path}` };
+  }
+  const actual = createHash('sha512').update(bytes).digest('base64');
+  return actual === expected
+    ? { ok: true, sha512: actual }
+    : { ok: false, reason: 'sha mismatch' };
 }
 
 // Тип копии ИГРЫ по содержимому её папки (а не по упакованности апдейтера):

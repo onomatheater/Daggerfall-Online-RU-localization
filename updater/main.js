@@ -6,10 +6,10 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, resolveGameInstall, latestGameFileUrl, planGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, resolveGameInstall, latestGameFileUrl, planGameUpdate, isGameRunning, cachedDownloadPath, findYmlEntry, verifyFileSha512, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -139,13 +139,30 @@ async function runGameCheck(current) {
 }
 
 async function runInstall(entry) {
+  const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
   try {
-    const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
     const zipPath = join(tmp, 'ru-pack.zip');
     await fetchZip(entry.url, zipPath);
     return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir: storeDir(), unpack: unpackZip });
   } catch {
     return { ok: false, reason: 'net-error' };
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Подбор мусора прошлых прогонов (наши префиксы), молча.
+function pruneTmp() {
+  let names = [];
+  try {
+    names = readdirSync(tmpdir());
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    if (name.startsWith('ruapp-') || name.startsWith('rurecipe-')) {
+      rmSync(join(tmpdir(), name), { recursive: true, force: true });
+    }
   }
 }
 
@@ -191,36 +208,40 @@ app.whenReady().then(() => {
     });
     onStage(50, 'Качаю рецепт перевода…');
     const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
-    const zipPath = join(tmp, 'recipe.zip');
-    if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
-      const { copyFileSync } = await import('node:fs');
-      copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
-    } else {
-      await fetchZip(recipeRef.url, zipPath);
+    try {
+      const zipPath = join(tmp, 'recipe.zip');
+      if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
+        const { copyFileSync } = await import('node:fs');
+        copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
+      } else {
+        await fetchZip(recipeRef.url, zipPath);
+      }
+      if (recipeRef.sha) {
+        const { verifyFileSha } = await import('../tools/update-ru.mjs');
+        const sha = verifyFileSha(zipPath, recipeRef.sha);
+        if (!sha.ok) return { status: 'install-failed', reason: sha.reason };
+      }
+      onStage(75, 'Возвращаю перевод…');
+      const { unpackZip } = await import('./lib/unzip.js');
+      const unpackDir = join(tmp, 'recipe');
+      unpackZip(zipPath, unpackDir);
+      const { readFileSync: readJson } = await import('node:fs');
+      const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
+      if (recipe.game !== hit.version) return { status: 'no-recipe' };
+      const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
+      const appDir = join(gameDir(), 'resources', 'app', 'dist');
+      const rep = await applyRecipe({
+        appDir,
+        recipe,
+        backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
+      });
+      if (!rep.ok) return { status: 'install-failed', reason: rep.reason };
+      const verify = verifyApplied({ appDir, recipe });
+      if (!verify.ok) return { status: 'install-failed', reason: verify.reason };
+      return { status: 'translation-restored' };
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
     }
-    if (recipeRef.sha) {
-      const { verifyFileSha } = await import('../tools/update-ru.mjs');
-      const sha = verifyFileSha(zipPath, recipeRef.sha);
-      if (!sha.ok) return { status: 'install-failed', reason: sha.reason };
-    }
-    onStage(75, 'Возвращаю перевод…');
-    const { unpackZip } = await import('./lib/unzip.js');
-    const unpackDir = join(tmp, 'recipe');
-    unpackZip(zipPath, unpackDir);
-    const { readFileSync: readJson } = await import('node:fs');
-    const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
-    if (recipe.game !== hit.version) return { status: 'no-recipe' };
-    const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
-    const appDir = join(gameDir(), 'resources', 'app', 'dist');
-    const rep = await applyRecipe({
-      appDir,
-      recipe,
-      backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
-    });
-    if (!rep.ok) return { status: 'install-failed', reason: rep.reason };
-    const verify = verifyApplied({ appDir, recipe });
-    if (!verify.ok) return { status: 'install-failed', reason: verify.reason };
-    return { status: 'translation-restored' };
   };
   const runRestore = async (recipeRef) => {
     state.busy = true;
@@ -298,12 +319,31 @@ app.whenReady().then(() => {
         state.busy = true;
         state.progress = { percent: 0, label: 'Качаю обновление игры…' };
         refresh();
+        // Кэш по тегу: повторное нажатие не качает. Целостность — по их
+        // latest.yml (sha512). Кэш версий остаётся для отката установщика.
+        const tag = state.gameUpdate?.tag ?? '';
+        const dest = cachedDownloadPath(join(userData(), 'downloads'), tag, file);
         try {
-          const dest = join(tmpdir(), file);
-          await downloadWithProgress(latestGameFileUrl(file), dest, (percent) => {
-            state.progress = { percent, label: `Качаю обновление игры ${percent}%` };
+          mkdirSync(dirname(dest), { recursive: true });
+          if (!existsSync(dest)) {
+            await downloadWithProgress(latestGameFileUrl(file), dest, (percent) => {
+              state.progress = { percent, label: `Качаю обновление игры ${percent}%` };
+              refresh();
+            });
+          } else {
+            state.progress = { percent: 100, label: 'Уже скачано, проверяю…' };
             refresh();
-          });
+          }
+          try {
+            const yml = await fetchText(latestGameFileUrl('latest.yml'));
+            const entry = findYmlEntry(yml, file);
+            if (entry && !verifyFileSha512(dest, entry.sha512).ok) {
+              rmSync(dest, { force: true });
+              state.progress = null;
+              state.check = { status: 'install-failed', reason: 'sha не сошлась, файл удалён — нажми ещё раз' };
+              return refresh();
+            }
+          } catch { /* без сети манифест не сверить — ставим как есть */ }
           state.progress = null;
           if (plan.kind === 'installer') {
             shell.openPath(dest);
@@ -355,17 +395,21 @@ app.whenReady().then(() => {
       refresh();
       try {
         const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
-        const rep = installUpdate({
-          zipPath: join(storeDir(), prev.file),
-          entry: prev,
-          unpackDir: join(tmp, 'pack'),
-          storeDir: storeDir(),
-          unpack: unpackZip,
-        });
-        state.check = rep.ok
-          ? { status: 'up-to-date', entry: prev }
-          : { status: 'install-failed', reason: rep.reason ?? (rep.errors ?? []).join('; ') };
-        state.pending = null;
+        try {
+          const rep = installUpdate({
+            zipPath: join(storeDir(), prev.file),
+            entry: prev,
+            unpackDir: join(tmp, 'pack'),
+            storeDir: storeDir(),
+            unpack: unpackZip,
+          });
+          state.check = rep.ok
+            ? { status: 'up-to-date', entry: prev }
+            : { status: 'install-failed', reason: rep.reason ?? (rep.errors ?? []).join('; ') };
+          state.pending = null;
+        } finally {
+          rmSync(tmp, { recursive: true, force: true });
+        }
       } finally {
         state.busy = false;
       }
@@ -375,6 +419,7 @@ app.whenReady().then(() => {
   (async () => {
     // Новости игры — всегда при старте, как у них (один GET к публичным
     // релизам, без данных пользователя). Проверка пака — за кнопкой.
+    pruneTmp();
     state.gameNews = await runGameNews();
     refresh();
     const hit = game();
