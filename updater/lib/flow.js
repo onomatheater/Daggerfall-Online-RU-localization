@@ -22,6 +22,15 @@ export function latestGameFileUrl(file) {
   return downloads.latestDownloadUrl(file);
 }
 
+// Тип копии ИГРЫ по содержимому её папки (а не по упакованности апдейтера):
+// есть деинсталлятор — setup, один exe — portable, иначе unknown.
+export function resolveGameInstall({ files = [] } = {}) {
+  const names = files.map((f) => String(f).toLowerCase());
+  if (names.some((n) => n.startsWith('uninstall'))) return 'setup';
+  if (names.some((n) => n.endsWith('.exe'))) return 'portable';
+  return 'unknown';
+}
+
 // План обновления игры (апдейтер — полная замена оригинального):
 // setup-установщик — видимый запуск (код молча не применяем, их принцип);
 // portable-exe — замена файла, но только при закрытой игре.

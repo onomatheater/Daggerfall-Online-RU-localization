@@ -49,6 +49,13 @@ test('resolveGameFile: installer per platform, null when unpackaged', async () =
   assert.equal(resolveGameFile({ platform: 'win32', packaged: false, portable: false }), null);
 });
 
+test('resolveGameInstall: setup vs portable by game dir contents', async () => {
+  const { resolveGameInstall } = await import('../updater/lib/flow.js');
+  assert.equal(resolveGameInstall({ files: ['Daggerfall Online.exe', 'Uninstall Daggerfall Online.exe', 'resources'] }), 'setup');
+  assert.equal(resolveGameInstall({ files: ['Daggerfall Online.exe'] }), 'portable');
+  assert.equal(resolveGameInstall({ files: [] }), 'unknown');
+});
+
 test('planGameUpdate: setup runs installer, portable replaces exe, running game blocks', async () => {
   const { planGameUpdate, isGameRunning } = await import('../updater/lib/flow.js');
   assert.deepEqual(

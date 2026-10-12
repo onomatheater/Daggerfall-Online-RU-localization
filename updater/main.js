@@ -6,10 +6,10 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, latestGameFileUrl, planGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, resolveGameInstall, latestGameFileUrl, planGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -273,14 +273,19 @@ app.whenReady().then(() => {
       refresh();
     } else if (action === 'download-game') {
       // Обновление самой игры (апдейтер — полная замена оригинального):
+      // тип копии — по папке ИГРЫ (а не по упакованности апдейтера):
       // setup — качаем и открываем их установщик видимо (код молча не
       // применяем); portable — качаем и показываем файл (exe меняешь сам,
       // гадать какой exe запущен — не будем); запущенная игра — стоп.
-      const file = resolveGameFile({
-        platform: process.platform,
-        packaged: app.isPackaged,
-        portable: !!process.env.PORTABLE_EXECUTABLE_DIR,
-      });
+      // Непонятно что — страница релизов.
+      let entries = [];
+      try {
+        entries = readdirSync(gameDir());
+      } catch { /* unknown install below */ }
+      const kind = resolveGameInstall({ files: entries });
+      const file = kind === 'unknown'
+        ? null
+        : resolveGameFile({ platform: process.platform, packaged: true, portable: kind === 'portable' });
       if (file === null) {
         shell.openExternal(GAME_RELEASES_PAGE);
       } else if (await isGameRunning()) {
