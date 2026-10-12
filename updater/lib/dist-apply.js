@@ -3,10 +3,10 @@
 // Порядок: цели delete на месте (нет — отказ, дерево не тронуто) ->
 // маркеры в добавляемом (нет — отказ) -> rm + write. Отказ = дерево цело.
 // Ноль зависимостей. Распаковка asar — разовая миграция (см. unpack.js).
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'node:fs';
+import { join, dirname, relative, sep } from 'node:path';
 
-export async function applyRecipe({ appDir, recipe } = {}) {
+export async function applyRecipe({ appDir, recipe, backupDir } = {}) {
   if (!recipe || !Array.isArray(recipe.add) || !Array.isArray(recipe.delete)) {
     return { ok: false, reason: 'bad recipe shape' };
   }
@@ -17,6 +17,15 @@ export async function applyRecipe({ appDir, recipe } = {}) {
   const lost = markers.filter((m) => !haystack.includes(m));
   if (lost.length > 0) return { ok: false, reason: `markers lost: ${lost.slice(0, 3).join(',')}` };
   try {
+    if (backupDir !== undefined) {
+      for (const rel of [...recipe.delete, ...recipe.add.map((f) => f.path)]) {
+        const src = join(appDir, rel);
+        if (!existsSync(src)) continue;
+        const dest = join(backupDir, rel);
+        mkdirSync(dirname(dest), { recursive: true });
+        copyFileSync(src, dest);
+      }
+    }
     for (const rel of recipe.delete) rmSync(join(appDir, rel), { force: true });
     for (const file of recipe.add) {
       const dest = join(appDir, file.path);
@@ -29,7 +38,35 @@ export async function applyRecipe({ appDir, recipe } = {}) {
   }
 }
 
-// Сверка результата с деревом (для вызывателя после применения).
+// Возврат ванильных копий из бэкапа (откат перевода, не трогая остальное).
+export async function rollbackVanilla({ appDir, backupDir } = {}) {
+  const rels = [];
+  const walk = (dir, base = dir) => {
+    let names;
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full, base);
+      else rels.push(relative(base, full).split(sep).join('/'));
+    }
+  };
+  walk(backupDir);
+  if (rels.length === 0) return { ok: false, reason: 'empty backup' };
+  try {
+    for (const rel of rels) {
+      const dest = join(appDir, rel);
+      mkdirSync(dirname(dest), { recursive: true });
+      copyFileSync(join(backupDir, rel), dest);
+    }
+    return { ok: true, restored: rels.length };
+  } catch (err) {
+    return { ok: false, reason: `rollback failed: ${err.message}` };
+  }
+}
 export function verifyApplied({ appDir, recipe } = {}) {
   for (const file of recipe.add ?? []) {
     let text;
