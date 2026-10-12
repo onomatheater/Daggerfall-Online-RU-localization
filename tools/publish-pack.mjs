@@ -7,7 +7,7 @@
 // Отклонение от плана: частичный stage без рецепта не делаем — любой
 // затык роняет прогон целиком (hold, зовём человека), молчаливого
 // полупака не существует.
-import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -60,8 +60,9 @@ export function bundleHasMarkers(distDir, markers) {
   return (markers ?? []).every((m) => haystack.includes(m));
 }
 
-const defaultSh = ({ cmd, args, cwd }) => {
-  const hit = spawnSync(cmd, args, { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
+export const defaultSh = ({ cmd, args, cwd }) => {
+  const quote = (a) => (process.platform === 'win32' && /[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+  const hit = spawnSync(cmd, args.map(quote), { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
   if (hit.status !== 0) {
     throw new Error(`pipeline: ${cmd} ${args.join(' ')} failed: ${String(hit.stderr ?? hit.error ?? '').slice(0, 300)}`);
   }
@@ -104,6 +105,17 @@ export function copyAssets(repoRoot, probeTree) {
   return { ok: true, fonts: ASSET_FONTS.length };
 }
 
+// Снос НАШИХ артефактов прошлого незавершённого прогона (таблицы + 11
+// шрифтов — детерминированный список выше). Чужие файлы не трогаем:
+// что не наше — то отказ verify, а не удаление.
+export function scrubAssets(probeTree) {
+  rmSync(join(probeTree, 'src', 'locale'), { recursive: true, force: true });
+  for (const [, to] of ASSET_FONTS) {
+    rmSync(join(probeTree, 'public', 'fonts', to), { force: true });
+  }
+  return { ok: true };
+}
+
 const shaFile = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } = {}) {
@@ -113,6 +125,7 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   if (!Array.isArray(venue.markers) || venue.markers.length === 0) throw new Error('pipeline: need venue.markers[]');
   if (dryRun) return { executed: false, steps: [...STEPS] };
   const run = (cmd, args, cwd) => sh({ cmd, args, cwd });
+  scrubAssets(venue.probeTree);
   const ctx = {
     ...venue,
     vanillaDir: join(venue.workRoot, 'vanilla'),

@@ -6,11 +6,11 @@
 //   только список шагов, fs и sh не трогает. Публикации здесь нет (таск 4).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bundleHasMarkers, STEPS, runPipeline, copyAssets } from '../tools/publish-pack.mjs';
+import { bundleHasMarkers, STEPS, runPipeline, copyAssets, scrubAssets, defaultSh } from '../tools/publish-pack.mjs';
 
 const mk = () => mkdtempSync(join(tmpdir(), 'rupipe-'));
 
@@ -62,4 +62,27 @@ test('copyAssets lays tables and fonts, refuses on gaps', async () => {
   mkdirSync(join(thin, 'src', 'locale'), { recursive: true });
   writeFileSync(join(thin, 'src', 'locale', 'x.json'), '{}');
   assert.throws(() => copyAssets(thin, mk()), /missing assets/);
+});
+
+test('scrubAssets removes only pipeline-owned artifacts', () => {
+  const probe = mk();
+  mkdirSync(join(probe, 'src', 'locale'), { recursive: true });
+  writeFileSync(join(probe, 'src', 'locale', 'ru.json'), '{}');
+  mkdirSync(join(probe, 'public', 'fonts'), { recursive: true });
+  writeFileSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf'), 'x');
+  writeFileSync(join(probe, 'public', 'fonts', 'stranger.ttf'), 'keep me');
+  writeFileSync(join(probe, 'precious.txt'), 'keep me');
+  assert.equal(scrubAssets(probe).ok, true);
+  assert.equal(existsSync(join(probe, 'src', 'locale')), false);
+  assert.equal(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), false);
+  assert.equal(readFileSync(join(probe, 'public', 'fonts', 'stranger.ttf'), 'utf8'), 'keep me');
+  assert.equal(readFileSync(join(probe, 'precious.txt'), 'utf8'), 'keep me');
+});
+
+test('defaultSh quotes spaced paths on win', () => {
+  const spaced = join(mk(), 'dir with space');
+  mkdirSync(spaced, { recursive: true });
+  const rep = defaultSh({ cmd: 'node', args: ['--version'], cwd: spaced });
+  assert.equal(rep.ok, true);
+  assert.ok(rep.output.includes('v'), rep.output);
 });
