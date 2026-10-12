@@ -1,54 +1,44 @@
-// Применение рецепта к installed app.asar (сторона приложения).
-// Порядок: цели delete на месте (нет — отказ, asar не тронут) -> extract ->
-// apply ops -> маркеры (нет — отказ) -> repack. Отказ = asar побайтово цел.
-// Бэкап asar перед вызовом — обязанность шелла (main).
-import { extractFile, listPackage, extractAll, createPackage, uncache } from '@electron/asar';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// Применение рецепта к распакованной установке (resources/app):
+// asar-хирургия отменена пробой 12.10 — игра штатно стартует из папки.
+// Порядок: цели delete на месте (нет — отказ, дерево не тронуто) ->
+// маркеры в добавляемом (нет — отказ) -> rm + write. Отказ = дерево цело.
+// Ноль зависимостей. Распаковка asar — разовая миграция (см. unpack.js).
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-// Windows-сборки asar хранят сегменты с бэкслешами, posix — со слешами,
-// а поиск идёт посегментно через path.sep без ведущего сепаратора.
-// Сравниваем нормализованно, иначе настоящий asar не узнаем.
-import { sep } from 'node:path';
-const normRel = (p) => String(p).replace(/^[/\\]+/, '').split(/[/\\]+/);
-const hasIn = (names, rel) => {
-  const want = JSON.stringify(normRel(rel));
-  return names.some((n) => JSON.stringify(normRel(n)) === want);
-};
-
-export async function applyRecipe({ asarPath, recipe } = {}) {
-  if (!recipe || !Array.isArray(recipe.add) || !Array.isArray(recipe.delete) || !Array.isArray(recipe.markers ?? [])) {
+export async function applyRecipe({ appDir, recipe } = {}) {
+  if (!recipe || !Array.isArray(recipe.add) || !Array.isArray(recipe.delete)) {
     return { ok: false, reason: 'bad recipe shape' };
   }
-  const markers = recipe.markers ?? [];
-  let names;
-  try {
-    names = listPackage(asarPath);
-  } catch {
-    return { ok: false, reason: 'asar unreadable' };
-  }
-  const missing = recipe.delete.filter((rel) => !hasIn(names, rel));
+  const missing = recipe.delete.filter((rel) => !existsSync(join(appDir, rel)));
   if (missing.length > 0) return { ok: false, reason: `base mismatch, missing: ${missing.slice(0, 3).join(',')}` };
-  const work = mkdtempSync(join(tmpdir(), 'rurecipe-'));
+  const markers = recipe.markers ?? [];
+  const haystack = recipe.add.map((f) => f.content).join('\n');
+  const lost = markers.filter((m) => !haystack.includes(m));
+  if (lost.length > 0) return { ok: false, reason: `markers lost: ${lost.slice(0, 3).join(',')}` };
   try {
-    extractAll(asarPath, join(work, 'app'));
-    const root = join(work, 'app');
-    for (const rel of recipe.delete) rmSync(join(root, rel), { force: true });
+    for (const rel of recipe.delete) rmSync(join(appDir, rel), { force: true });
     for (const file of recipe.add) {
-      const dest = join(root, file.path);
+      const dest = join(appDir, file.path);
       mkdirSync(dirname(dest), { recursive: true });
       writeFileSync(dest, file.content, 'utf8');
     }
-    const haystack = recipe.add.map((f) => f.content).join('\n');
-    const lost = markers.filter((m) => !haystack.includes(m));
-    if (lost.length > 0) return { ok: false, reason: `markers lost: ${lost.slice(0, 3).join(',')}` };
-    await createPackage(root, asarPath);
-    // Библиотека кэширует заголовки по пути в процессе: без сброса
-    // последующие чтения в том же процессе увидят старый asar.
-    uncache(asarPath);
-    return { ok: true };
+    return { ok: true, applied: recipe.add.length, removed: recipe.delete.length };
   } catch (err) {
     return { ok: false, reason: `apply failed: ${err.message}` };
   }
+}
+
+// Сверка результата с деревом (для вызывателя после применения).
+export function verifyApplied({ appDir, recipe } = {}) {
+  for (const file of recipe.add ?? []) {
+    let text;
+    try {
+      text = readFileSync(join(appDir, file.path), 'utf8');
+    } catch {
+      return { ok: false, reason: `missing after apply: ${file.path}` };
+    }
+    if (!text.includes(file.content.slice(0, 64))) return { ok: false, reason: `content mismatch: ${file.path}` };
+  }
+  return { ok: true };
 }

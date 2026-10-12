@@ -1,16 +1,13 @@
 // NEED: перестановка патча после обновления игры — без исходников и сборки
-// на машине пользователя (там только installed app.asar).
+// на машине пользователя (там распакованное resources/app, проба 12.10).
 // - buildRecipe({vanillaDir, patchedDir}): сверка двух dist-деревьев ->
-//   {game, add: [{path, content}], delete: [paths]} (только изменившееся;
-//   неизменные чанки совпадают байтом и не едут).
-// - applyRecipe({asarPath, recipe, readAsar, writeAsar}): сверяет наличие
-//   delete-целей в asar (нет — отказ, asar не тронут), кладёт add-файлы,
-//   проверяет маркеры, пересобирает asar. Маркера нет — отказ.
-// Рецепты живут в релизах (в репозиторий 10-мегабайтные JSON не едут),
-// asar-бэкап перед хирургией — обязанность вызывателя (main).
+//   {game, add: [{path, content}], delete: [paths]} (только изменившееся).
+// - applyRecipe({appDir, recipe}): сверяет delete-цели (нет — отказ, дерево
+//   цело), кладёт add-файлы, проверяет маркеры. Маркера нет — отказ.
+// Рецепты живут в релизах (в репозиторий мегабайтные JSON не едут).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildRecipe } from '../tools/dist-recipe.mjs';
@@ -37,39 +34,40 @@ test('buildRecipe emits only changed files as add, vanished as delete', () => {
   assert.deepEqual(recipe.delete, ['assets/b.js']);
 });
 
-test('applyRecipe swaps files in asar, refuses on missing target or marker', async () => {
-  const asar = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+test('applyRecipe swaps files in unpacked tree, refuses cleanly', async () => {
+  const { applyRecipe, verifyApplied } = await import('../updater/lib/dist-apply.js');
   const dir = mk();
-  const src = join(dir, 'app');
-  mkdirSync(join(src, 'dist', 'assets'), { recursive: true });
-  writeFileSync(join(src, 'dist', 'index.html'), '<a/>');
-  writeFileSync(join(src, 'dist', 'assets', 'a.js'), 'AAA');
-  const asarPath = join(dir, 'app.asar');
-  await asar.createPackage(src, asarPath);
+  const app = join(dir, 'app');
+  dist(app, { 'index.html': '<a/>', 'assets/a.js': 'AAA', 'assets/old.js': 'OLD' });
+  const appDir = join(app, 'dist');
 
-  const recipe = {
-    game: '7815',
-    add: [{ path: 'dist/assets/a.js', content: 'AAA-CHANGED' }],
-    delete: [],
-    markers: ['AAA-CHANGED'],
-  };
-  const ok = await applyRecipe({ asarPath, recipe });
-  assert.equal(ok.ok, true);
-  // Поиск в asar — посегментный через path.sep без ведущего сепаратора.
-  const lookup = ['dist', 'assets', 'a.js'].join(process.platform === 'win32' ? '\\' : '/');
-  const after = String(asar.extractFile(asarPath, lookup));
-  assert.ok(after.includes('AAA-CHANGED'), 'patched content in asar');
-  const before = readFileSync(asarPath);
+  const ok = await applyRecipe({
+    appDir,
+    recipe: {
+      game: '7815',
+      add: [{ path: 'assets/a.js', content: 'AAA-CHANGED' }],
+      delete: ['assets/old.js'],
+      markers: ['AAA-CHANGED'],
+    },
+  });
+  assert.deepEqual(ok, { ok: true, applied: 1, removed: 1 });
+  assert.equal(readFileSync(join(appDir, 'assets/a.js'), 'utf8'), 'AAA-CHANGED');
+  assert.equal(existsSync(join(appDir, 'assets/old.js')), false);
+  assert.equal(verifyApplied({
+    appDir,
+    recipe: { game: '7815', add: [{ path: 'assets/a.js', content: 'AAA-CHANGED' }], delete: [] },
+  }).ok, true);
 
+  const before = readFileSync(join(appDir, 'assets/a.js'), 'utf8');
   const missing = await applyRecipe({
-    asarPath,
-    recipe: { game: '7815', add: [], delete: ['dist/assets/nope.js'], markers: [] },
+    appDir,
+    recipe: { game: '7815', add: [], delete: ['assets/nope.js'], markers: [] },
   });
   assert.equal(missing.ok, false);
   const badMarker = await applyRecipe({
-    asarPath,
-    recipe: { game: '7815', add: [], delete: [], markers: ['NOPE-NEVER-HERE'] },
+    appDir,
+    recipe: { game: '7815', add: [{ path: 'assets/a.js', content: 'ZZZ' }], delete: [], markers: ['NOPE-NEVER-HERE'] },
   });
   assert.equal(badMarker.ok, false);
-  assert.deepEqual(readFileSync(asarPath), before, 'refused applies leave asar byte-identical');
+  assert.equal(readFileSync(join(appDir, 'assets/a.js'), 'utf8'), before, 'refused applies leave tree intact');
 });
