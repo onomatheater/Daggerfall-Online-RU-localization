@@ -17,6 +17,29 @@ const NO_SPELLBOOK_TEXT = () => wrapLiteral('spells:nospellbook' /* ключ п�
 const line = wrapTemplate('strings:thingJustDied', { s: name });
 ```
 
+## Загрузка из Prefs/Locale (иммунитет к обновлению игры)
+
+Перевод лежит вне сборки — `Prefs/Locale/ru/` рядом с сейвами (апдейтер игры
+их не трогает). Старт игры (буквально, `node:fs` в бандле нет — только fetch):
+
+```js
+// src/main.js клиента (или его boot-модуль):
+import { registerPack, setGameVersion, setLocale } from './locale/locale-adapter.js';
+setGameVersion(gameVersion); // dotted '0.1.8127' — канон сведёт сам
+const [manifest, tables] = await Promise.all([
+  fetch('/Prefs/Locale/ru/locale-version.json').then((r) => r.json()),
+  fetch('/Prefs/Locale/ru/ru.json').then((r) => r.json()),
+]);
+const pack = registerPack({ manifest, tables }); // {ok:false} → остаёмся на EN
+if (pack.ok) setLocale('ru'); // ре-рендер, сеть молчит, сейвы — только ID
+```
+
+Та же механика покрыта тестом без браузера: `loadExternalPackFetch()`
+(`src/locale/loader.js`, `test/overlay-external-fetch.test.js`) — fetchJson
+инжектится, отказ `{ok:false}`, никогда throw. RISK: как именно браузерный
+клиент дотягивается до папки Prefs (file:// vs протокол Electron) — решает
+апстрим, адаптер путь не зашивает (baseUrl — параметр).
+
 ## Якоря (первые 5 точек — исторический пример механики, 11.10)
 
 > Актуальная очередь и drift-контроль — `tools/probe-queue.json` +

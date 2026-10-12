@@ -46,17 +46,27 @@ export function registerPack(pack, version = gameVersion) {
   return { ok: true, version: manifest.version };
 }
 
-function wrap(key, params) {
+function applyParams(s, params) {
+  for (const v of Object.values(params)) s = s.replaceAll('%s', String(v));
+  for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
+  return s;
+}
+
+function wrap(key, params, fallback) {
   if (packOverlay.has(key, getLocale())) return packOverlay.resolve(key, params, getLocale());
-  return t(key, params);
+  const hit = t(key, params);
+  // Total miss: t() returns the raw key (keys always carry 'table:' shape,
+  // human values never equal it). Call sites keep their EN default (tOr parity).
+  if (hit === key && fallback !== undefined) return applyParams(String(fallback), params);
+  return hit;
 }
 
-export function wrapLiteral(key, params = {}) {
-  return wrap(key, params);
+export function wrapLiteral(key, params = {}, fallback) {
+  return wrap(key, params, fallback);
 }
 
-export function wrapTemplate(key, params = {}) {
-  return wrap(key, params);
+export function wrapTemplate(key, params = {}, fallback) {
+  return wrap(key, params, fallback);
 }
 
 // Plural-рендер поверх пака: объект {one,few,many} -> строка через plural(),

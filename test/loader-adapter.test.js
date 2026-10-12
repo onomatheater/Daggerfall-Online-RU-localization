@@ -30,3 +30,14 @@ test('adapter pins the client-layout import map (probe lesson 7815)', () => {
   assert.ok(src.includes(`'../src/locale/locale.js' -> './locale.js'`), 'client map: locale.js');
   assert.ok(src.includes(`'../src/locale/loader.js' -> './loader.js'`), 'client map: loader.js');
 });
+
+test('wrapLiteral/wrapTemplate: EN default on total miss (tOr parity for call sites)', () => {
+  setLocale('ru');
+  assert.equal(
+    wrapLiteral('dfo:no.such.key', {}, 'EN fallback'),
+    'EN fallback',
+    'miss with default renders default, not raw key',
+  );
+  assert.equal(wrapTemplate('dfo:no.such.key', {}, 'EN fallback'), 'EN fallback');
+  setLocale('en');
+});
