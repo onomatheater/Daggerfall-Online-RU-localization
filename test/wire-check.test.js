@@ -86,3 +86,38 @@ test('wire-check: nested call inside params keeps top-level names only', () => {
   const src = IMP + `x(ruTOr('dfo:shots.download_line', 'Also save each shot as a file: {state}', { state: ruTOr(dl ? 'dfo:val.on' : 'dfo:val.off', dl ? 'On' : 'Off') }));`;
   assert.deepEqual(checkWiring([{ name: 'a.js', src }], tables).errors, []);
 });
+
+test('wire-check: %s parity with params count (swing lesson)', () => {
+  const tables = {
+    en: { dfo: { 'bindc.swing_press': 'Press %s to swing.' } },
+    ru: { dfo: { 'bindc.swing_press': 'Нажми %s для взмаха.' } },
+  };
+  const ok = IMP + `x(ruT('dfo:bindc.swing_press', 'Press %s to swing.', { s: btn }));`;
+  assert.deepEqual(checkWiring([{ name: 'a.js', src: ok }], tables).errors, []);
+  const badCount = IMP + `x(ruT('dfo:bindc.swing_press', 'Press %s to swing.', { s: btn, extra: 1 }));`;
+  const e1 = checkWiring([{ name: 'a.js', src: badCount }], tables).errors;
+  assert.equal(e1.length, 1);
+  assert.match(e1[0], /placeholder/);
+  const badTable = {
+    en: { dfo: { 'bindc.swing_press': 'Press to swing.' } },
+    ru: { dfo: { 'bindc.swing_press': 'Нажми для взмаха.' } },
+  };
+  const e2 = checkWiring([{ name: 'a.js', src: ok }], badTable).errors;
+  assert.equal(e2.length, 2);
+  assert.ok(e2.some((e) => /placeholder/.test(e)));
+});
+
+test('wire-check: template default resolves module consts (confirm lesson)', () => {
+  const tables = {
+    en: { dfo: { 'bindc.intro_law': 'Nothing until you press Confirm.' } },
+    ru: { dfo: { 'bindc.intro_law': 'Ничего, пока не нажмёшь Подтвердить.' } },
+  };
+  const src = IMP + `const CONFIRM_LABEL = 'Confirm';\n` +
+    `x(ruTOr('dfo:bindc.intro_law', \`Nothing until you press \${CONFIRM_LABEL}.\`));`;
+  assert.deepEqual(checkWiring([{ name: 'a.js', src }], tables).errors, []);
+  const srcUnknown = IMP +
+    `x(ruTOr('dfo:bindc.intro_law', \`Nothing until you press \${mystery()}.\`));`;
+  const e = checkWiring([{ name: 'a.js', src: srcUnknown }], tables).errors;
+  assert.equal(e.length, 1);
+  assert.match(e[0], /stale default/);
+});

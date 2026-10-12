@@ -14,7 +14,13 @@ test('orthography: yo and homoglyphs', () => {
   assert.ok(t('strings:activeQuestsInfo').startsWith('Щёлкните'));
   assert.ok(t('strings:finishedQuestsInfo').includes('её.'));
   assert.ok(t('strings:notebookInfo').includes('её.'));
-  assert.ok(t('strings:confirmMove2').includes('щёлкнешь'));
+  assert.ok(t('strings:confirmMove2').includes('щёлкнете'));
+  assert.ok(t('strings:youPinchedGoldPieces').includes('Вы стащили'));
+  assert.ok(t('strings:lightRefuel').includes('Вы заправляете'));
+  assert.equal(t('strings:youAreBlending'), 'Слияние с тенями.');
+  assert.equal(t('strings:highElf'), 'Высший эльф');
+  assert.equal(t('strings:darkElf'), 'Тёмный эльф');
+  assert.equal(t('strings:unknown'), 'неизвестно');
   assert.ok(t('strings:oldLeaderFate3').startsWith('ушёл'));
   assert.equal(fa['240'], 'Храмовые Миссионеры');
   setLocale('en');
