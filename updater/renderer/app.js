@@ -39,7 +39,7 @@ $('check').onclick = async () => {
       say(await window.ruUpdater.describe(rep.reason ?? 'unknown'));
     }
   } catch (err) {
-    say(`Не получилось: ${err.message}`);
+    say(await window.ruUpdater.describe(err.message));
   }
 };
 
@@ -51,7 +51,7 @@ $('install').onclick = async () => {
     const rep = await window.ruUpdater.install(pending);
     say(rep.ok ? `Готово: пак ${rep.version}.` : `Отказ: ${rep.reason ?? (rep.errors ?? []).join('; ')}`);
   } catch (err) {
-    say(`Не получилось: ${err.message}`);
+    say(await window.ruUpdater.describe(err.message));
   }
   pending = null;
   refresh();
@@ -63,7 +63,7 @@ $('rollback').onclick = async () => {
     const rep = await window.ruUpdater.rollback();
     say(rep.ok ? `Готово: вернулся пак ${rep.version}.` : `Нечего откатывать.`);
   } catch (err) {
-    say(`Не получилось: ${err.message}`);
+    say(await window.ruUpdater.describe(err.message));
   }
   refresh();
 };

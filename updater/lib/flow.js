@@ -16,6 +16,7 @@ const ISSUE_RU = [
   [/package\.json is not JSON/, 'package.json испорчен'],
   [/package\.json has no version/, 'В package.json нет версии'],
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
+  [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo/i, 'Нет соединения с сервером паков'],
 ];
 
 export function describeIssue(reason) {

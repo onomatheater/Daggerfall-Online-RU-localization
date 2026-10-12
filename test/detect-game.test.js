@@ -79,4 +79,7 @@ test('describeIssue speaks Russian, never leaks raw English', async () => {
   assert.ok(describeIssue('no package.json, app-update.yml or app.asar').includes('Игра не найдена'), 'legacy reason');
   const unknown = describeIssue('something-else-entirely');
   assert.ok(unknown.startsWith('Не получилось: '), `unknown stays loud: ${unknown}`);
+  for (const net of ['fetch failed', 'ENOTFOUND example.invalid', 'UND_ERR_CONNECT_TIMEOUT', 'network timeout']) {
+    assert.ok(describeIssue(net).includes('соединения'), `network speaks Russian: ${net}`);
+  }
 });
