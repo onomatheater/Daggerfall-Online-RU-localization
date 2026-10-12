@@ -64,7 +64,9 @@ export const defaultSh = ({ cmd, args, cwd }) => {
   const quote = (a) => (process.platform === 'win32' && /[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
   const hit = spawnSync(cmd, args.map(quote), { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
   if (hit.status !== 0) {
-    throw new Error(`pipeline: ${cmd} ${args.join(' ')} failed: ${String(hit.stderr ?? hit.error ?? '').slice(0, 300)}`);
+    const out = String(hit.stdout ?? '').trim().split('\n').slice(-8).join('\n');
+    const err = String(hit.stderr ?? hit.error ?? '').slice(0, 300);
+    throw new Error(`pipeline: ${cmd} ${args.join(' ')} failed: ${err}${out ? `\n${out}` : ''}`);
   }
   return { ok: true, output: String(hit.stdout ?? '') };
 };
