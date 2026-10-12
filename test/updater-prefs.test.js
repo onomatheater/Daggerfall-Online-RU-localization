@@ -37,4 +37,5 @@ test('decideStartup: silent check only when opted in with known game', () => {
 
 test('describeIssue maps net-error to Russian', () => {
   assert.ok(describeIssue('net-error').includes('соединения'));
+  assert.equal(describeIssue('unknown'), 'Неизвестная ошибка');
 });

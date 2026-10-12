@@ -17,6 +17,7 @@ const ISSUE_RU = [
   [/package\.json has no version/, 'В package.json нет версии'],
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
   [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo|net-error/i, 'Нет соединения с сервером паков'],
+  [/^unknown(-game)?$/, 'Неизвестная ошибка'],
 ];
 
 export function describeIssue(reason) {
