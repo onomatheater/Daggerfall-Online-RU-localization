@@ -21,10 +21,12 @@ import { packZip } from '../updater/lib/unzip.js';
 const REPO_TOOLS = dirname(fileURLToPath(import.meta.url));
 
 export const STEPS = [
+  'vanilla-deps',
   'vanilla-build',
   'verify-probe',
   'assets-copy',
   'rebase-apply',
+  'probe-deps',
   'patched-build',
   'markers',
   'stage',
@@ -116,6 +118,7 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
     vanillaDir: join(venue.workRoot, 'vanilla'),
     stageDir: join(venue.workRoot, 'stage'),
   };
+  run('npm', ['install'], venue.vanillaClone);
   await buildVanilla({ cloneDir: venue.vanillaClone, outDir: ctx.vanillaDir });
   const probeStatus = run('git', ['-C', venue.probeTree, 'status', '--porcelain']);
   if (probeStatus.output.trim() !== '') throw new Error('pipeline: probe tree dirty, refusing');
@@ -127,6 +130,7 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   copyAssets(repoRoot, venue.probeTree);
   process.env.RU_FONT_PROD = join(repoRoot, 'src', 'font', 'scale.js');
   run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', venue.probeTree, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply']);
+  run('npm', ['install'], venue.probeTree);
   run('npm', ['run', 'build'], venue.probeTree);
   const patchedDist = join(venue.probeTree, 'dist');
   if (!distReady(patchedDist)) throw new Error('pipeline: patched build has no dist');
