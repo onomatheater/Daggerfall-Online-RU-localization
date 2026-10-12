@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, latestGameFileUrl, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, latestGameFileUrl, planGameUpdate, isGameRunning, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -197,9 +197,10 @@ app.whenReady().then(() => {
       }
       refresh();
     } else if (action === 'download-game') {
-      // Обновление самой игры: качаем установщик с их стабильного URL
-      // (REL5: имя не двигается) и открываем его — дальше их установщик.
-      // В dev-запуске качать нечего: открываем страницу релизов.
+      // Обновление самой игры (апдейтер — полная замена оригинального):
+      // setup — качаем и открываем их установщик видимо (код молча не
+      // применяем); portable — качаем и показываем файл (exe меняешь сам,
+      // гадать какой exe запущен — не будем); запущенная игра — стоп.
       const file = resolveGameFile({
         platform: process.platform,
         packaged: app.isPackaged,
@@ -207,19 +208,34 @@ app.whenReady().then(() => {
       });
       if (file === null) {
         shell.openExternal(GAME_RELEASES_PAGE);
+      } else if (await isGameRunning()) {
+        dialog.showMessageBox(win, {
+          message: 'Закрой игру перед обновлением.',
+          detail: 'Файлы игры заняты запущенной копией.',
+        });
       } else {
+        const plan = planGameUpdate({ file, gameRunning: false });
         state.busy = true;
-        state.progress = { percent: 0, label: 'Качаю установщик…' };
+        state.progress = { percent: 0, label: 'Качаю обновление игры…' };
         refresh();
         try {
           const dest = join(tmpdir(), file);
           await downloadWithProgress(latestGameFileUrl(file), dest, (percent) => {
-            state.progress = { percent, label: `Качаю установщик ${percent}%` };
+            state.progress = { percent, label: `Качаю обновление игры ${percent}%` };
             refresh();
           });
           state.progress = null;
-          state.check = { status: 'up-to-date', entry: state.pending };
-          shell.openPath(dest);
+          if (plan.kind === 'installer') {
+            shell.openPath(dest);
+            state.gameUpdate = null;
+          } else {
+            shell.showItemInFolder(dest);
+            state.gameUpdate = null;
+            dialog.showMessageBox(win, {
+              message: 'Установщик скачан.',
+              detail: 'Положи скачанный exe вместо твоей portable-копии (игра закрыта).',
+            });
+          }
         } catch {
           state.progress = null;
           state.check = { status: 'install-failed', reason: 'net-error' };

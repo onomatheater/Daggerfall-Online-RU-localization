@@ -48,3 +48,24 @@ test('resolveGameFile: installer per platform, null when unpackaged', async () =
   assert.equal(resolveGameFile({ platform: 'darwin', packaged: true, portable: false }), 'DaggerfallOnline-mac-arm64.dmg');
   assert.equal(resolveGameFile({ platform: 'win32', packaged: false, portable: false }), null);
 });
+
+test('planGameUpdate: setup runs installer, portable replaces exe, running game blocks', async () => {
+  const { planGameUpdate, isGameRunning } = await import('../updater/lib/flow.js');
+  assert.deepEqual(
+    planGameUpdate({ file: 'DaggerfallOnline-win-x64-setup.exe', gameRunning: false }),
+    { kind: 'installer' }
+  );
+  assert.deepEqual(
+    planGameUpdate({ file: 'DaggerfallOnline-win-x64-portable.exe', gameRunning: false }),
+    { kind: 'portable-file' }
+  );
+  assert.deepEqual(
+    planGameUpdate({ file: 'DaggerfallOnline-win-x64-portable.exe', gameRunning: true }),
+    { blocked: 'close-game' }
+  );
+  assert.deepEqual(planGameUpdate({ file: null, gameRunning: false }), { blocked: 'no-file' });
+  const running = await isGameRunning(async () => '... Daggerfall Online.exe ...');
+  assert.equal(running, true);
+  const idle = await isGameRunning(async () => 'chrome.exe');
+  assert.equal(idle, false);
+});

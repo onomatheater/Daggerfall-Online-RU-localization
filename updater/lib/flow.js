@@ -22,6 +22,29 @@ export function latestGameFileUrl(file) {
   return downloads.latestDownloadUrl(file);
 }
 
+// План обновления игры (апдейтер — полная замена оригинального):
+// setup-установщик — видимый запуск (код молча не применяем, их принцип);
+// portable-exe — замена файла, но только при закрытой игре.
+// Сама замена — в main (шелл), здесь чистое решение.
+export function planGameUpdate({ file, gameRunning } = {}) {
+  if (typeof file !== 'string' || file.length === 0) return { blocked: 'no-file' };
+  if (gameRunning === true) return { blocked: 'close-game' };
+  if (file.includes('portable')) return { kind: 'portable-file' };
+  return { kind: 'installer' };
+}
+
+const defaultListProcesses = () => new Promise((resolve) => {
+  import('node:child_process').then(({ execFile }) => {
+    execFile('tasklist', (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
+  });
+});
+
+// Игра запущена? Только чтение списка процессов, ничего не трогаем.
+export async function isGameRunning(listProcesses = defaultListProcesses) {
+  const list = await listProcesses();
+  return /daggerfall online\.exe/i.test(String(list));
+}
+
 // Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
 export async function loadFeedText(source, { fetchText, readText } = {}) {
   const src = String(source ?? '');

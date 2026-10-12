@@ -42,7 +42,7 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
   if (gameUpdate?.status === 'available' && gameUpdate.tag) {
     if (status !== 'Готов.') detail = status;
     status = `Вышла версия игры ${String(gameUpdate.tag).replace(/^app-v/, '')}.`;
-    actions.push({ id: 'download-game', label: 'Скачать игру', primary: !actions.some((a) => a.primary) });
+    actions.push({ id: 'download-game', label: 'Обновить игру', primary: !actions.some((a) => a.primary) });
   } else if (gameUpdate?.status === 'failed') {
     detail = 'Не получилось проверить обновления игры.';
   }
