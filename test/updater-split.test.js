@@ -47,3 +47,14 @@ test('isGameRunning reads process list, touches nothing', async () => {
   const idle = await isGameRunning(async () => 'chrome.exe');
   assert.equal(idle, false);
 });
+
+test('isGameRunning matches mac/linux lines, picks list command per platform', async () => {
+  const { isGameRunning, psCommand } = await import('../updater/lib/flow.js');
+  const mac = await isGameRunning(async () => '1234 /Applications/Daggerfall Online.app/Contents/MacOS/Daggerfall Online');
+  assert.equal(mac, true);
+  const lin = await isGameRunning(async () => '5678 /opt/games/Daggerfall Online --no-sandbox');
+  assert.equal(lin, true);
+  assert.deepEqual(psCommand('win32'), { cmd: 'tasklist', args: [] });
+  assert.deepEqual(psCommand('darwin'), { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] });
+  assert.deepEqual(psCommand('linux'), { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] });
+});

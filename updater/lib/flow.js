@@ -14,16 +14,26 @@ import updateCheck from '../vendor-dfo/updateCheck.cjs';
 // перевод рецептом.
 export const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
 
+// Команда списка процессов по платформе: win — tasklist, остальное — pgrep
+// (macOS и почти весь linux его имеют; нет — тихо false, как раньше).
+export function psCommand(platform = process.platform) {
+  if (platform === 'win32') return { cmd: 'tasklist', args: [] };
+  return { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] };
+}
+
 const defaultListProcesses = () => new Promise((resolve) => {
   import('node:child_process').then(({ execFile }) => {
-    execFile('tasklist', (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
+    const { cmd, args } = psCommand();
+    execFile(cmd, args, (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
   });
 });
 
 // Игра запущена? Только чтение списка процессов, ничего не трогаем.
+// Матчим имя на любой строке: Daggerfall Online.exe (win),
+// .../Daggerfall Online.app/... (mac), .../Daggerfall Online (linux).
 export async function isGameRunning(listProcesses = defaultListProcesses) {
   const list = await listProcesses();
-  return /daggerfall online\.exe/i.test(String(list));
+  return /daggerfall online/i.test(String(list));
 }
 
 // Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
