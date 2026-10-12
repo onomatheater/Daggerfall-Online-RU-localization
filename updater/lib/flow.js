@@ -16,7 +16,7 @@ const ISSUE_RU = [
   [/package\.json is not JSON/, 'package.json испорчен'],
   [/package\.json has no version/, 'В package.json нет версии'],
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
-  [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo/i, 'Нет соединения с сервером паков'],
+  [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo|net-error/i, 'Нет соединения с сервером паков'],
 ];
 
 export function describeIssue(reason) {
@@ -27,6 +27,12 @@ export function describeIssue(reason) {
   const latin = text.replace(/[^A-Za-z ]/g, '').trim();
   if (latin.length >= 4) return `Не получилось: ${text}`;
   return text.length > 0 ? text : 'Неизвестная ошибка';
+}
+
+// Тихая автопроверка при старте — только с согласия (флаг) и известной игрой.
+// Их закон DA6: авто = тишина (ошибка никому не показывается), ручная = громко.
+export function decideStartup({ autoCheck, gameVersion } = {}) {
+  return autoCheck === true && typeof gameVersion === 'string' && gameVersion.length > 0 ? 'check' : 'idle';
 }
 
 export function checkForUpdate({ feedText, gameVersion, currentVersion } = {}) {

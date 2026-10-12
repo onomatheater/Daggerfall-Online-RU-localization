@@ -105,6 +105,12 @@ test('renderer is self-contained and phone-home free', () => {
   const html = readFileSync(new URL('../updater/renderer/index.html', import.meta.url), 'utf8');
   assert.ok(html.includes('Проверить обновления'), 'main action present');
   assert.ok(html.includes('Откатить'), 'rollback present');
+  assert.ok(html.includes('Неофициальный лаунчер русской локализации'), 'unofficial label');
+  assert.ok(html.includes('data-open="site"'), 'site link');
+  assert.ok(html.includes('data-open="discord"'), 'discord link');
+  assert.ok(html.includes('id="auto-check"'), 'auto-check toggle');
+  assert.ok(html.includes('id="banner"'), 'version banner');
+  assert.ok(html.includes("default-src 'none'"), 'CSP lockdown');
   assert.doesNotMatch(html, /src="https?:/, 'no remote scripts');
   assert.doesNotMatch(html, /href="https?:/, 'no remote links');
 });
