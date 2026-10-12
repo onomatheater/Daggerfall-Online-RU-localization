@@ -207,6 +207,20 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 - База пробы e40f6dbb9 (= тег 7361), дрейф от 7363 — 2 коммита (16 файлов, в т.ч. enhancedMenu/settingsMap). Ребейз — по необходимости.
 - Остаток меню (P1): chips значений пресетов/тайлов, названия фич (systems/features.js — нужен батч features.*), юниты (65 DEG), тест-комната (template-halves в ревью), credits.
 
+## Иммунитет перевода (план утверждён человеком; сверка здесь)
+
+Цель: обновление игры не сносит русский перевод; обновление русификатора не требует пересборки игры.
+Средство: PR в апстрим (адаптер + чтение внешнего пака из `Prefs/Locale/ru/` с гейтом версии и fallback EN) →
+апдейтер data-only (фид паков, без рецептов) → конвейер синкает только новые ключи.
+Пока PR не принят — старый рецепт как fallback, не как основа.
+Критерий готовности каждого таска: PR → апрув → мерж (G4, только по слову человека).
+
+- [ ] Task 1 `feat/prefs-locale`: `loadExternalPack(dir, gameVersion)` в `src/locale/loader.js` + `test/overlay-external.test.js` (NEED: нет dir → `{ok:false}`; чужая версия → EN; битый `ru.json`/BOM → громкий отказ; валидный пак → RU). G0 + wire-check зелёные → PR → апрув → мерж
+- [ ] Task 2 врезка адаптера: `probe-rebase` dry-run → ONE-SHOT apply в `tmp/dfjs` → build → grep `dfo:` → headless (один Chrome, прибить после) → глаз человека → PR в апстрим (EN до/после попиксельно); в наш репо — только `inject/*` + гварды
+- [ ] Task 3 `feat/updater-data-only`: пак в `Prefs/Locale/ru/` + `test/updater-data-only.test.js` (NEED: пак в Prefs → RU без рецепта; старая игра → рецепт-fallback; `recipe.game !== version` → честный `no-recipe`) → PR → апрув → мерж
+- [ ] Task 4 синк ключей: новый ключ апстрима без RU → EN-fallback + warn + очередь синка + `test/key-sync.test.js` (NEED: инверсия диапазона — брак) → PR → апрув → мерж
+- [ ] RISK-очередь: PR в апстрим отклонён → остаёмся на рецепте-fallback (зафиксировать здесь, не молча)
+
 ## Как продолжать перевод (инструкция)
 
 1. Найди непереведённое: `node tools/<tmp-скрипт>.mjs` с `extractTexts` из `tools/extract-texts.mjs` по файлам
