@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -197,8 +197,10 @@ app.whenReady().then(() => {
       } else {
         await fetchZip(recipeRef.url, zipPath);
       }
-      if (recipeRef.sha) {
-        const { verifyFileSha } = await import('../tools/update-ru.mjs');
+      const { verifyFileSha } = await import('../tools/update-ru.mjs');
+      const shaIssue = shaProblem(recipeRef);
+      if (shaIssue !== null) return { status: 'install-failed', reason: shaIssue };
+      {
         const sha = verifyFileSha(zipPath, recipeRef.sha);
         if (!sha.ok) return { status: 'install-failed', reason: sha.reason };
       }

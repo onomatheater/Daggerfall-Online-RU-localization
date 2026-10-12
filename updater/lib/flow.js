@@ -104,14 +104,22 @@ export function checkForUpdate({ feedText, gameVersion, currentVersion } = {}) {
   return { status: 'up-to-date', entry };
 }
 
+// Гейт sha256: пак и рецепт без валидного sha не ставятся никак —
+// ни сетью, ни локальным file://-стендом. Пусто -> null вперёд.
+export function shaProblem(entry) {
+  const sha = entry?.sha;
+  if (typeof sha !== 'string' || !/^[0-9a-f]{64}$/i.test(sha)) {
+    return 'sha missing: entry has no sha256';
+  }
+  return null;
+}
+
 export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, keep } = {}) {
   if (!entry || typeof entry.version !== 'string') return { ok: false, reason: 'no pack entry selected' };
-  let shaChecked = false;
-  if (entry.sha !== undefined) {
-    const sha = verifyFileSha(zipPath, entry.sha);
-    if (!sha.ok) return { ok: false, reason: sha.reason };
-    shaChecked = true;
-  }
+  const shaIssue = shaProblem(entry);
+  if (shaIssue !== null) return { ok: false, reason: shaIssue };
+  const sha = verifyFileSha(zipPath, entry.sha);
+  if (!sha.ok) return { ok: false, reason: sha.reason };
   try {
     const un = unpack(zipPath, unpackDir);
     if (!un || un.ok !== true) return { ok: false, reason: 'unpack failed' };
@@ -128,5 +136,5 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
     notes: entry.notes,
     keep,
   });
-  return { ok: true, version: entry.version, shaChecked, stats: installed.stats };
+  return { ok: true, version: entry.version, shaChecked: true, stats: installed.stats };
 }

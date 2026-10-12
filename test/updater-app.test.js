@@ -52,22 +52,49 @@ test('installUpdate: bad sha stops before unpack', () => {
   assert.ok(rep.reason.includes('sha'), rep.reason);
 });
 
-test('installUpdate: skips sha for legacy entries, installs healthy pack', () => {
+test('installUpdate: entry without sha refuses before unpack', () => {
   const dir = mk();
   const packDir = join(dir, 'pack');
   pack({ out: packDir, version: '1.3.0', game: '7553' });
   const zipPath = join(dir, 'p.zip');
   writeFileSync(zipPath, 'zip-bytes');
+  let unpacked = false;
   const rep = installUpdate({
     zipPath,
     entry: { version: '1.3.0', game: '7553', url: 'https://example.invalid/b.zip' },
     unpackDir: packDir,
     storeDir: join(dir, 'store'),
-    unpack: () => ({ ok: true }),
+    unpack: () => { unpacked = true; return { ok: true }; },
   });
-  assert.equal(rep.ok, true);
-  assert.equal(rep.shaChecked, false);
-  assert.equal(rep.version, '1.3.0');
+  assert.equal(rep.ok, false);
+  assert.equal(unpacked, false);
+  assert.ok(rep.reason.includes('sha'), rep.reason);
+});
+
+test('installUpdate: malformed sha refuses before unpack', () => {
+  const dir = mk();
+  const zipPath = join(dir, 'p.zip');
+  writeFileSync(zipPath, 'bytes');
+  for (const sha of ['deadbeef', 'xyz', '', 'A'.repeat(63), 'g'.repeat(64)]) {
+    let unpacked = false;
+    const rep = installUpdate({
+      zipPath,
+      entry: { version: '1.3.0', game: '7553', url: 'https://example.invalid/b.zip', sha },
+      unpackDir: join(dir, 'out'),
+      storeDir: join(dir, 'store'),
+      unpack: () => { unpacked = true; return { ok: true }; },
+    });
+    assert.equal(rep.ok, false, `sha ${sha}`);
+    assert.equal(unpacked, false, `sha ${sha}`);
+    assert.ok(rep.reason.includes('sha'), `sha ${sha}: ${rep.reason}`);
+  }
+});
+
+test('shaProblem gates pack and recipe entries', async () => {
+  const { shaProblem } = await import('../updater/lib/flow.js');
+  assert.equal(shaProblem({ sha: 'a'.repeat(64) }), null);
+  assert.ok(String(shaProblem({})).includes('sha'), 'missing sha');
+  assert.ok(String(shaProblem({ sha: 'abc' })).includes('sha'), 'short sha');
 });
 
 test('installUpdate: broken unpacked pack refuses loudly', () => {
@@ -79,7 +106,7 @@ test('installUpdate: broken unpacked pack refuses loudly', () => {
   writeFileSync(zipPath, 'zip-bytes');
   const rep = installUpdate({
     zipPath,
-    entry: { version: '1.0.0', game: '7553', url: 'https://example.invalid/a.zip' },
+    entry: { version: '1.0.0', game: '7553', url: 'https://example.invalid/a.zip', sha: createHash('sha256').update('zip-bytes').digest('hex') },
     unpackDir: packDir,
     storeDir: join(dir, 'store'),
     unpack: () => ({ ok: true }),
