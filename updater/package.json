@@ -1,0 +1,42 @@
+{
+  "name": "rudaggerfall-updater-app",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "RU-pack updater: standalone Electron GUI over the tested tools core.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "@electron/asar": "^4.3.1",
+    "adm-zip": "^0.5.16"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.15.3",
+    "wawoff2": "^2.0.1"
+  },
+  "allowScripts": {
+    "electron@35.7.5": true
+  },
+  "build": {
+    "appId": "dev.daggerfall-ru.updater",
+    "productName": "Daggerfall RU Updater",
+    "directories": { "output": "release" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "launcher/**/*",
+      "lib/**/*",
+      "vendor-dfo/**/*"
+    ],
+    "extraResources": [
+      { "from": "../tools", "to": "tools" },
+      { "from": "../src/locale", "to": "src/locale" }
+    ],
+    "win": { "target": ["nsis"] },
+    "nsis": { "oneClick": false, "perMachine": false }
+  }
+}

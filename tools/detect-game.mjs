@@ -15,7 +15,7 @@ const readText = (path) => {
   }
 };
 
-export function detectGameVersion(dir) {
+export function detectGameVersion(dir, { readAsar } = {}) {
   const pkgText = readText(join(dir, 'package.json'));
   if (pkgText !== null) {
     try {
@@ -34,6 +34,19 @@ export function detectGameVersion(dir) {
     const version = line?.split(':').slice(1).join(':').trim();
     if (version) return { version, source: 'app-update.yml' };
     return { version: null, reason: 'app-update.yml has no version' };
+  }
+  // Установленная игра держит package.json внутри resources/app.asar.
+  // Читалка инжектится (ядро без зависимостей; asar-ридер живёт в приложении).
+  if (typeof readAsar === 'function') {
+    try {
+      const pkg = readAsar(join(dir, 'resources', 'app.asar'));
+      if (pkg && typeof pkg.version === 'string' && pkg.version.length > 0) {
+        return { version: pkg.version, source: 'app.asar' };
+      }
+      return { version: null, reason: 'app.asar package.json has no version' };
+    } catch {
+      return { version: null, reason: 'app.asar unreadable' };
+    }
   }
   return { version: null, reason: 'no package.json or app-update.yml' };
 }

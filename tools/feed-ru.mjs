@@ -13,6 +13,18 @@ export function buildFeed(entries) {
     const manifest = parseManifest(JSON.stringify(entry.manifest));
     const record = { ...manifest, url: entry.url };
     if (entry.sha !== undefined) record.sha = entry.sha;
+    if (entry.recipe !== undefined) {
+      if (!entry.recipe || typeof entry.recipe.url !== 'string' || typeof entry.recipe.sha !== 'string') {
+        throw new Error(`feed: entry ${i} recipe needs {url, sha}`);
+      }
+      record.recipe = { url: entry.recipe.url, sha: entry.recipe.sha };
+    }
+    if (entry.notes !== undefined) {
+      if (!Array.isArray(entry.notes) || !entry.notes.every((n) => typeof n === 'string')) {
+        throw new Error(`feed: entry ${i} notes must be string[]`);
+      }
+      record.notes = entry.notes;
+    }
     return record;
   });
   packs.sort((a, b) => cmpVersion(a.version, b.version));

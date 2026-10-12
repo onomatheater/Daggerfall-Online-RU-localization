@@ -42,3 +42,68 @@ test('missing or broken sources give null with reason, never throw', () => {
   assert.equal(badHit.version, null);
   assert.ok(badHit.reason.length > 0, 'reason present');
 });
+
+test('reads version from resources/app.asar via injected reader', () => {
+  const dir = mk();
+  const hit = detectGameVersion(dir, {
+    readAsar: (path) => {
+      assert.ok(path.endsWith('app.asar'), `asar path: ${path}`);
+      return { version: '0.1.7815' };
+    },
+  });
+  assert.equal(hit.version, '0.1.7815');
+  assert.equal(hit.source, 'app.asar');
+  const broken = detectGameVersion(mk(), {
+    readAsar: () => { throw new Error('boom'); },
+  });
+  assert.equal(broken.version, null);
+  assert.ok(broken.reason.length > 0, 'reason present');
+});
+
+test('asar reader roundtrips a real package', async () => {
+  const { createPackage } = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+  const { readAsarPackageJson } = await import('../updater/lib/asar.js');
+  const dir = mk();
+  const src = join(dir, 'src');
+  mkdirSync(src);
+  writeFileSync(join(src, 'package.json'), JSON.stringify({ name: 'game', version: '0.1.7815' }));
+  const dest = join(dir, 'app.asar');
+  await createPackage(src, dest);
+  assert.equal(readAsarPackageJson(dest).version, '0.1.7815');
+});
+
+test('describeIssue speaks Russian, never leaks raw English', async () => {
+  const { describeIssue } = await import('../updater/lib/flow.js');
+  assert.ok(describeIssue('no package.json or app-update.yml').includes('Игра не найдена'), 'game missing');
+  assert.ok(describeIssue('app.asar unreadable').includes('прочитать'), 'asar unreadable');
+  assert.ok(describeIssue('no package.json, app-update.yml or app.asar').includes('Игра не найдена'), 'legacy reason');
+  const unknown = describeIssue('something-else-entirely');
+  assert.ok(unknown.startsWith('Не получилось: '), `unknown stays loud: ${unknown}`);
+  for (const net of ['fetch failed', 'ENOTFOUND example.invalid', 'UND_ERR_CONNECT_TIMEOUT', 'network timeout']) {
+    assert.ok(describeIssue(net).includes('соединения'), `network speaks Russian: ${net}`);
+  }
+});
+
+test('describeIssue maps updater failure reasons to Russian', async () => {
+  const { describeIssue, restoreFailReason } = await import('../updater/lib/flow.js');
+  const cases = [
+    ['no pack entry selected', 'Пак'],
+    ['unpack failed: boom', 'распаковать'],
+    ['sha mismatch: expected a, got b', 'sha'],
+    ['missing file: C:/x/ru-pack.zip', 'найден'],
+    ['migrate: extract failed: boom', 'подготовить'],
+    ['base mismatch, missing: dist/a.js', 'версию игры'],
+    ['markers lost: foo', 'меток'],
+    ['content mismatch: dist/a.js', 'не встал'],
+    ['missing after apply: dist/a.js', 'не встал'],
+    ['apply failed: boom', 'не встал'],
+    ['bad recipe shape', 'испорчен'],
+    ['empty backup', 'Откат'],
+  ];
+  for (const [reason, needle] of cases) {
+    const ru = describeIssue(reason);
+    assert.ok(ru.includes(needle), `${reason} -> ${ru}`);
+  }
+  assert.equal(restoreFailReason(new Error('migrate: extract failed: x')), 'migrate: extract failed: x');
+  assert.equal(restoreFailReason(undefined), 'net-error');
+});

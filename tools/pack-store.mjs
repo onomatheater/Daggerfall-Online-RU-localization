@@ -25,7 +25,7 @@ function writeIndex(storeDir, entries) {
   writeFileSync(join(storeDir, INDEX), JSON.stringify(entries, null, 2) + '\n');
 }
 
-export function storePack(storeDir, { srcPath, version, game, sha, keep = DEFAULT_KEEP } = {}) {
+export function storePack(storeDir, { srcPath, version, game, sha, notes, keep = DEFAULT_KEEP } = {}) {
   if (typeof srcPath !== 'string' || typeof version !== 'string' || typeof game !== 'string') {
     throw new Error('storePack: need {srcPath, version, game}');
   }
@@ -34,6 +34,7 @@ export function storePack(storeDir, { srcPath, version, game, sha, keep = DEFAUL
   copyFileSync(srcPath, join(storeDir, file));
   const entry = { file, version, game, storedAt: new Date().toISOString() };
   if (sha !== undefined) entry.sha = sha;
+  if (notes !== undefined) entry.notes = notes;
   const rest = readIndex(storeDir).filter((e) => e.version !== version);
   const entries = [entry, ...rest].slice(0, Math.max(1, keep));
   const pruned = rest.slice(Math.max(1, keep) - 1).map((e) => e.version);
