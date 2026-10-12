@@ -99,9 +99,15 @@ export function describeIssue(reason) {
   return text.length > 0 ? text : 'Неизвестная ошибка';
 }
 
-// Фид настроен? example.invalid — заглушка до релиза (URL задаёт человек
-// при выпуске, см. docs/updater.md): её не трогаем сетью и не врём про
-// «нет соединения». Локальный путь — стенд, он настроен всегда.
+// Паки лежат в нашем репозитории: packs/feed.json + свежий zip на main
+// (решение человека 12.10: репо открывается, в main только свежий пак).
+// Стенд — RU_FEED_URL с локальным путём.
+export const FEED_PACKS_BASE = 'https://raw.githubusercontent.com/onomatheater/Daggerfall-Online-RU-localization/main/packs';
+export const DEFAULT_FEED_URL = `${FEED_PACKS_BASE}/feed.json`;
+
+// Фид настроен? example.invalid — заглушка (осталась для чужих форков):
+// её не трогаем сетью и не врём про «нет соединения».
+// Локальный путь — стенд, он настроен всегда.
 export function isFeedConfigured(url) {
   const src = String(url ?? '').trim();
   if (src.length === 0) return false;

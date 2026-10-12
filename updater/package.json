@@ -7,6 +7,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "icons": "node assets/make-icon.mjs",
     "dist": "electron-builder --win nsis"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
   "devDependencies": {
     "electron": "^35.0.0",
     "electron-builder": "^26.15.3",
+    "png-to-ico": "^3.0.2",
     "wawoff2": "^2.0.1"
   },
   "allowScripts": {
@@ -24,7 +26,9 @@
   "build": {
     "appId": "dev.daggerfall-ru.updater",
     "productName": "Daggerfall RU Updater",
-    "directories": { "output": "release" },
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "main.js",
       "preload.js",
@@ -33,10 +37,24 @@
       "vendor-dfo/**/*"
     ],
     "extraResources": [
-      { "from": "../tools", "to": "tools" },
-      { "from": "../src/locale", "to": "src/locale" }
+      {
+        "from": "../tools",
+        "to": "tools"
+      },
+      {
+        "from": "../src/locale",
+        "to": "src/locale"
+      }
     ],
-    "win": { "target": ["nsis"] },
-    "nsis": { "oneClick": false, "perMachine": false }
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false
+    }
   }
 }
