@@ -3,7 +3,7 @@
 // готовые feedText/zipPath. Порядок: sha -> распаковка -> installPack -> стор.
 // Ложь наружу не идёт: каждый отказ — {ok:false} с причиной, клиент живёт дальше.
 import { selectPack } from '../../tools/feed-ru.mjs';
-import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
+import { verifyFileSha, installPack, installPackToPrefs } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
@@ -140,7 +140,7 @@ export function shaProblem(entry) {
   return null;
 }
 
-export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, keep } = {}) {
+export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, keep, prefsDir } = {}) {
   if (!entry || typeof entry.version !== 'string') return { ok: false, reason: 'no pack entry selected' };
   const shaIssue = shaProblem(entry);
   if (shaIssue !== null) return { ok: false, reason: shaIssue };
@@ -162,5 +162,13 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
     notes: entry.notes,
     keep,
   });
+  // Data-only контур: проверенный пак — в Prefs-локаль игры (вне resources/app,
+  // обновление игры его не сносит). prefsDir не задан — старое поведение (стор).
+  // Prefs не встал — успех не заявляем: игра осталась бы на старом паке молча.
+  if (prefsDir !== undefined) {
+    const laid = installPackToPrefs(unpackDir, prefsDir);
+    if (!laid.ok) return { ok: false, reason: laid.reason };
+    return { ok: true, version: entry.version, shaChecked: true, stats: installed.stats, prefs: laid.installed };
+  }
   return { ok: true, version: entry.version, shaChecked: true, stats: installed.stats };
 }

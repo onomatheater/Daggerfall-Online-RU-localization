@@ -5,9 +5,10 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
+import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
@@ -30,6 +31,9 @@ const userData = () => app.getPath('userData');
 const storeDir = () => join(userData(), 'packs');
 const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
 const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
+// Prefs-локаль игры (<userData>/Prefs/Locale/ru): пак кладём туда (data-only),
+// рецепт-dist — только fallback для игр без Prefs-поддержки (не трогаем).
+const prefsLocaleDir = () => resolveGameLocaleDir({ platform: process.platform, env: process.env, home: homedir() });
 const installed = () => listPacks(storeDir());
 
 const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null };
@@ -125,7 +129,7 @@ async function runInstall(entry) {
   try {
     const zipPath = join(tmp, 'ru-pack.zip');
     await fetchZip(entry.url, zipPath);
-    return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir: storeDir(), unpack: unpackZip });
+    return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir: storeDir(), unpack: unpackZip, prefsDir: prefsLocaleDir() });
   } catch {
     return { ok: false, reason: 'net-error' };
   } finally {
@@ -315,6 +319,7 @@ app.whenReady().then(() => {
             unpackDir: join(tmp, 'pack'),
             storeDir: storeDir(),
             unpack: unpackZip,
+            prefsDir: prefsLocaleDir(),
           });
           state.check = rep.ok
             ? { status: 'up-to-date', entry: prev }
