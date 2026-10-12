@@ -6,6 +6,28 @@ import { selectPack } from '../../tools/feed-ru.mjs';
 import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
+import updateCheck from '../vendor-dfo/updateCheck.cjs';
+
+// Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
+export async function loadFeedText(source, { fetchText, readText } = {}) {
+  const src = String(source ?? '');
+  if (/^https?:\/\//i.test(src)) return fetchText(src);
+  return readText(src);
+}
+
+// Notice-механика разработчиков (их чистый updateCheck.cjs, MIT):
+// новее ли релизный тег текущей версии. Мусор = тихо available:false.
+// Игру никогда не трогаем — только баннер и кнопка на страницу релизов.
+export function checkGameUpdate({ apiText, currentVersion } = {}) {
+  let tag = null;
+  try {
+    tag = JSON.parse(String(apiText))?.tag_name ?? null;
+  } catch {
+    return { available: false };
+  }
+  const ok = updateCheck.isNewerRelease(currentVersion, tag);
+  return ok ? { available: true, tag } : { available: false };
+}
 
 // Человеческие причины на русском: сырой английский наружу не идёт.
 const ISSUE_RU = [

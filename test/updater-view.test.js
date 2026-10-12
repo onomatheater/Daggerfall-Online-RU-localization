@@ -47,3 +47,28 @@ test('install failure speaks Russian in status', () => {
   const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'install-failed', reason: 'net-error' }, busy: false, prefs: {}, gameDir: '' });
   assert.ok(v.status.includes('соединения'), v.status);
 });
+
+test('game update is a separate banner with download action, pack untouched', () => {
+  const v = viewOf({
+    game: GAME,
+    installed: INSTALLED,
+    check: { status: 'up-to-date', entry: ENTRY },
+    gameUpdate: { status: 'available', tag: 'app-v0.1.8127' },
+    busy: false, prefs: {}, gameDir: '',
+  });
+  assert.ok(v.status.includes('0.1.8127'), v.status);
+  const dl = v.statusActions.find((a) => a.id === 'download-game');
+  assert.ok(dl, 'download action present');
+  assert.ok(!v.statusActions.some((a) => a.id === 'install'), 'pack install stays separate');
+});
+
+test('current game shows no banner', () => {
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: null, gameUpdate: { status: 'current' }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(!v.statusActions.some((a) => a.id === 'download-game'), 'no banner when current');
+});
+
+test('failed game check lands in detail, pack status stays', () => {
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'up-to-date', entry: ENTRY }, gameUpdate: { status: 'failed' }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(v.status.includes('последний перевод'), v.status);
+  assert.ok(v.detail.includes('игры'), v.detail);
+});

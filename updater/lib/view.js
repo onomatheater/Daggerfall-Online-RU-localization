@@ -3,7 +3,7 @@
 // Играть всегда disabled: запуск игры — не scope апдейтера перевода.
 import { describeIssue } from './flow.js';
 
-export function viewOf({ game, installed = [], check = null, busy = false, prefs = {}, gameDir = '' } = {}) {
+export function viewOf({ game, installed = [], check = null, gameUpdate = null, busy = false, prefs = {}, gameDir = '' } = {}) {
   const actions = [{ id: 'check', label: 'Проверить обновления' }];
   let status = 'Готов.';
   let detail = '';
@@ -28,6 +28,15 @@ export function viewOf({ game, installed = [], check = null, busy = false, prefs
     status = describeIssue(check.reason ?? check.status);
   }
   if (installed.length >= 2) actions.push({ id: 'rollback', label: 'Откатить' });
+  // Обновление игры — отдельным баннером (их notice-транспорт): только текст
+  // и кнопка на страницу релизов, игру не трогаем. Состояние пака — в detail.
+  if (gameUpdate?.status === 'available' && gameUpdate.tag) {
+    if (status !== 'Готов.') detail = status;
+    status = `Вышла версия игры ${String(gameUpdate.tag).replace(/^app-v/, '')}.`;
+    actions.push({ id: 'download-game', label: 'Скачать игру', primary: !actions.some((a) => a.primary) });
+  } else if (gameUpdate?.status === 'failed') {
+    detail = 'Не получилось проверить обновления игры.';
+  }
   return {
     busy,
     panel: 'news',

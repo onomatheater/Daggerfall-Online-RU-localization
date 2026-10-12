@@ -6,17 +6,20 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
 import { loadPrefs, savePrefs } from './lib/prefs.js';
 
 // Хост фида заполняет человек при релизе (стабильный URL feed.json).
-const FEED_URL = 'https://example.invalid/ru-pack-feed.json';
+// RU_FEED_URL — стенд: локальный путь к feed.json вместо сети.
+const FEED_URL = process.env.RU_FEED_URL || 'https://example.invalid/ru-pack-feed.json';
+const GAME_API_URL = 'https://api.github.com/repos/Lattymoy/daggerfall-js-source/releases/latest';
+const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
 // Ссылки разработчиков — те же, что в их лаунчере (Lattymoy, MIT).
 const LINKS = {
   site: 'https://daggerfalljs.dev/',
@@ -30,13 +33,14 @@ const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
 const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
 const installed = () => listPacks(storeDir());
 
-const state = { check: null, busy: false, pending: null };
+const state = { check: null, gameUpdate: null, busy: false, pending: null };
 
 function currentView() {
   return viewOf({
     game: game(),
     installed: installed(),
     check: state.check,
+    gameUpdate: state.gameUpdate,
     busy: state.busy,
     prefs: loadPrefs(userData()),
     gameDir: gameDir(),
@@ -54,20 +58,48 @@ async function fetchText(url) {
 }
 
 async function fetchZip(url, dest) {
+  // Демо/стенд: file-путь читается с диска, http(s) — сетью по кнопке.
+  if (/^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('file://')) {
+    const { copyFileSync } = await import('node:fs');
+    copyFileSync(url.replace(/^file:\/\//, ''), dest);
+    return dest;
+  }
   const res = await fetch(url);
   if (!res.ok) throw new Error(`zip ${res.status}`);
   writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
   return dest;
 }
 
+async function loadFeed() {
+  if (/^https?:\/\//i.test(FEED_URL)) return fetchText(FEED_URL);
+  return loadFeedText(FEED_URL, {
+    fetchText,
+    readText: (path) => readFileSync(path, 'utf8'),
+  });
+}
+
 async function runCheck() {
   const hit = game();
   if (hit.version === null) return { status: 'unknown-game', reason: hit.reason };
   try {
-    const feedText = await fetchText(FEED_URL);
-    return checkForUpdate({ feedText, gameVersion: hit.version, currentVersion: installed()[0]?.version });
+    const text = await loadFeed();
+    return checkForUpdate({ feedText: text, gameVersion: hit.version, currentVersion: installed()[0]?.version });
   } catch {
     return { status: 'net-error' };
+  }
+}
+
+// Проверка игры — их notice-механика: новее тег = баннер + кнопка на релизы,
+// всё остальное = тишина (игру не трогаем никогда).
+async function runGameCheck(current) {
+  if (!current) return { status: 'unknown' };
+  try {
+    const res = await fetch(GAME_API_URL);
+    if (!res.ok) return { status: 'failed' };
+    const verdict = checkGameUpdate({ apiText: await res.text(), currentVersion: current });
+    return verdict.available ? { status: 'available', tag: verdict.tag } : { status: 'current' };
+  } catch {
+    return { status: 'failed' };
   }
 }
 
@@ -110,6 +142,7 @@ app.whenReady().then(() => {
       if (!canceled && filePaths[0]) {
         savePrefs(userData(), { ...loadPrefs(userData()), gameDir: filePaths[0] });
         state.check = null;
+        state.gameUpdate = null;
         state.pending = null;
       }
       refresh();
@@ -119,10 +152,13 @@ app.whenReady().then(() => {
       try {
         state.check = await runCheck();
         state.pending = state.check.status === 'available' ? state.check.entry : null;
+        state.gameUpdate = await runGameCheck(game().version);
       } finally {
         state.busy = false;
       }
       refresh();
+    } else if (action === 'download-game') {
+      shell.openExternal(GAME_RELEASES_PAGE);
     } else if (action === 'install') {
       const entry = state.pending;
       if (!entry) return;
@@ -169,6 +205,8 @@ app.whenReady().then(() => {
     if (decideStartup({ autoCheck: loadPrefs(userData()).autoCheck, gameVersion: hit.version }) === 'check') {
       state.check = await runCheck();
       state.pending = state.check.status === 'available' ? state.check.entry : null;
+      const gu = await runGameCheck(hit.version);
+      state.gameUpdate = gu.status === 'available' ? gu : null;
       refresh();
     }
   })();

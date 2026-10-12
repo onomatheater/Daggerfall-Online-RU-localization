@@ -12,3 +12,9 @@ Copyright (c) 2026 Lattymoy), побайтовая копия на 12.10.2026.
 
 `pad.js`/`menuPad.js` не забирали сознательно: геймпад-петля игровых меню,
 апдейтеру перевода не нужна.
+
+## updater/vendor-dfo/updateCheck.cjs
+
+Чистое сравнение версий из их `app/lib/updateCheck.cjs` (MIT) — побайтово.
+Наша notice-проверка игры (новее ли тег): `checkGameUpdate` в
+`updater/lib/flow.js`. Игру не трогаем — только баннер и кнопка.
