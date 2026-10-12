@@ -71,3 +71,12 @@ test('asar reader roundtrips a real package', async () => {
   await createPackage(src, dest);
   assert.equal(readAsarPackageJson(dest).version, '0.1.7815');
 });
+
+test('describeIssue speaks Russian, never leaks raw English', async () => {
+  const { describeIssue } = await import('../updater/lib/flow.js');
+  assert.ok(describeIssue('no package.json or app-update.yml').includes('Игра не найдена'), 'game missing');
+  assert.ok(describeIssue('app.asar unreadable').includes('прочитать'), 'asar unreadable');
+  assert.ok(describeIssue('no package.json, app-update.yml or app.asar').includes('Игра не найдена'), 'legacy reason');
+  const unknown = describeIssue('something-else-entirely');
+  assert.ok(unknown.startsWith('Не получилось: '), `unknown stays loud: ${unknown}`);
+});

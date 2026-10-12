@@ -9,15 +9,16 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate } from './lib/flow.js';
+import { checkForUpdate, installUpdate, describeIssue } from './lib/flow.js';
 import { unpackZip } from './lib/unzip.js';
+import { readAsarPackageJson } from './lib/asar.js';
 
 // Хост фида заполняет человек при релизе (стабильный URL feed.json).
 const FEED_URL = 'https://example.invalid/ru-pack-feed.json';
 const GAME_DIR = `${process.env.LOCALAPPDATA ?? ''}\\Programs\\Daggerfall Online`;
 const STORE_DIR = join(app.getPath('userData'), 'packs');
 
-const gameVersion = () => detectGameVersion(GAME_DIR);
+const gameVersion = () => detectGameVersion(GAME_DIR, { readAsar: readAsarPackageJson });
 const currentVersion = () => listPacks(STORE_DIR)[0]?.version;
 
 async function fetchText(url) {
@@ -48,6 +49,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   ipcMain.handle('game', () => gameVersion());
+  ipcMain.handle('describe', (_ev, reason) => describeIssue(reason));
   ipcMain.handle('installed', () => listPacks(STORE_DIR));
   ipcMain.handle('check', async () => {
     const game = gameVersion();

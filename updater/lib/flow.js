@@ -7,6 +7,27 @@ import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
 
+// Человеческие причины на русском: сырой английский наружу не идёт.
+const ISSUE_RU = [
+  [/no package\.json or app-update\.yml/, 'Игра не найдена: нет package.json и app-update.yml'],
+  [/no package\.json, app-update\.yml or app\.asar/, 'Игра не найдена: нет package.json, app-update.yml и app.asar'],
+  [/app\.asar unreadable/, 'Не получилось прочитать версию из app.asar'],
+  [/app\.asar package\.json has no version/, 'В app.asar нет версии'],
+  [/package\.json is not JSON/, 'package.json испорчен'],
+  [/package\.json has no version/, 'В package.json нет версии'],
+  [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
+];
+
+export function describeIssue(reason) {
+  const text = String(reason ?? '');
+  for (const [pattern, ru] of ISSUE_RU) {
+    if (pattern.test(text)) return ru;
+  }
+  const latin = text.replace(/[^A-Za-z ]/g, '').trim();
+  if (latin.length >= 4) return `Не получилось: ${text}`;
+  return text.length > 0 ? text : 'Неизвестная ошибка';
+}
+
 export function checkForUpdate({ feedText, gameVersion, currentVersion } = {}) {
   const entry = selectPack(feedText, gameVersion);
   if (entry === null) return { status: 'no-compatible', entry: null };

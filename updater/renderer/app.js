@@ -8,12 +8,13 @@ async function refresh() {
   try {
     const game = await window.ruUpdater.game();
     $('game').textContent = game.version === null
-      ? `Игра: не найдена (${game.reason})`
+      ? `Игра: не найдена (${await window.ruUpdater.describe(game.reason)})`
       : `Игра: ${game.version}`;
     const installed = await window.ruUpdater.installed();
     $('installed').textContent = installed.length > 0
       ? `Установлен: ${installed[0].version}`
       : 'Установлен: нет';
+    $('rollback').disabled = installed.length < 2;
   } catch (err) {
     say(`Ошибка: ${err.message}`);
   }
@@ -35,7 +36,7 @@ $('check').onclick = async () => {
     } else if (rep.status === 'no-compatible') {
       say('Под твою версию игры пака пока нет — жди следующий выпуск.');
     } else {
-      say(`Не получилось: ${rep.reason ?? 'неизвестная ошибка'}`);
+      say(await window.ruUpdater.describe(rep.reason ?? 'unknown'));
     }
   } catch (err) {
     say(`Не получилось: ${err.message}`);

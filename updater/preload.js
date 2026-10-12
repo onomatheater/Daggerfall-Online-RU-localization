@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('ruUpdater', {
   game: () => ipcRenderer.invoke('game'),
+  describe: (reason) => ipcRenderer.invoke('describe', reason),
   installed: () => ipcRenderer.invoke('installed'),
   check: () => ipcRenderer.invoke('check'),
   install: (entry) => ipcRenderer.invoke('install', entry),
