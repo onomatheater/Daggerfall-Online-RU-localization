@@ -66,3 +66,13 @@ test('unconfigured feed url is reported, not mistaken for offline', async () => 
   assert.equal(isFeedConfigured('C:\\packs\\feed.json'), true, 'local stand stays usable');
   assert.equal(isFeedConfigured(''), false);
 });
+
+test('default feed points at packs/feed.json on main', async () => {
+  const { DEFAULT_FEED_URL, FEED_PACKS_BASE, isFeedConfigured } = await import('../updater/lib/flow.js');
+  assert.equal(
+    DEFAULT_FEED_URL,
+    'https://raw.githubusercontent.com/onomatheater/Daggerfall-Online-RU-localization/main/packs/feed.json',
+  );
+  assert.equal(FEED_PACKS_BASE + '/feed.json', DEFAULT_FEED_URL);
+  assert.equal(isFeedConfigured(DEFAULT_FEED_URL), true);
+});

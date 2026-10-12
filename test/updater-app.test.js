@@ -138,3 +138,14 @@ test('renderer is self-contained and phone-home free', () => {
   assert.doesNotMatch(html, /src="https?:/, 'no remote scripts');
   assert.doesNotMatch(html, /href="https?:/, 'no remote links');
 });
+
+test('dist ships the game icon, config points at a real file', async () => {
+  const { statSync, existsSync } = await import('node:fs');
+  const pkg = JSON.parse(readFileSync(new URL('../updater/package.json', import.meta.url), 'utf8'));
+  const icon = pkg?.build?.win?.icon;
+  assert.equal(icon, 'assets/icon.ico');
+  const ico = new URL('../updater/' + icon, import.meta.url);
+  assert.ok(existsSync(ico), 'icon.ico committed');
+  assert.ok(statSync(ico).size > 1000, 'icon.ico non-trivial');
+  assert.ok(existsSync(new URL('../updater/assets/icon-src.png', import.meta.url)), 'png source vendored');
+});

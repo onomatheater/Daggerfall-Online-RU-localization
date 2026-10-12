@@ -9,15 +9,15 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
 import { loadPrefs, savePrefs } from './lib/prefs.js';
 
-// Хост фида заполняет человек при релизе (стабильный URL feed.json).
+// Хост фида — packs/feed.json на main нашего репозитория.
 // RU_FEED_URL — стенд: локальный путь к feed.json вместо сети.
-const FEED_URL = process.env.RU_FEED_URL || 'https://example.invalid/ru-pack-feed.json';
+const FEED_URL = process.env.RU_FEED_URL || DEFAULT_FEED_URL;
 const GAME_API_URL = 'https://api.github.com/repos/Lattymoy/daggerfall-js-source/releases/latest';
 // Ссылки разработчиков — те же, что в их лаунчере (Lattymoy, MIT).
 const LINKS = {
@@ -159,6 +159,7 @@ function createWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#0a0c11',
     title: 'Обновление перевода',
+    icon: join(root, 'assets', 'icon.ico'),
     webPreferences: { preload: join(root, 'preload.js'), sandbox: true },
   });
   win.loadFile(join(root, 'launcher/index.html'));
