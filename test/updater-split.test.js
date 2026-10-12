@@ -76,3 +76,19 @@ test('planGameUpdate: setup runs installer, portable replaces exe, running game 
   const idle = await isGameRunning(async () => 'chrome.exe');
   assert.equal(idle, false);
 });
+
+test('download cache: stable path per tag, yml sha512 gates the file', async () => {
+  const { cachedDownloadPath, findYmlEntry, verifyFileSha512 } = await import('../updater/lib/flow.js');
+  assert.ok(cachedDownloadPath('/dl', 'app-v0.1.8127', 'Setup.exe').includes('0.1.8127'), 'tag in name');
+  const yml = 'version: 0.1.8127\nfiles:\n  - url: Setup.exe\n    sha512: abc123\n    size: 3\n';
+  assert.deepEqual(findYmlEntry(yml, 'Setup.exe'), { sha512: 'abc123' });
+  assert.equal(findYmlEntry(yml, 'Nope.exe'), null);
+  const dir = mkdtempSync(join(tmpdir(), 'ruyml-'));
+  const path = join(dir, 'f.bin');
+  writeFileSync(path, 'bytes');
+  const { createHash } = await import('node:crypto');
+  const b64 = createHash('sha512').update('bytes').digest('base64');
+  assert.equal(verifyFileSha512(path, b64).ok, true);
+  assert.equal(verifyFileSha512(path, 'bogus').ok, false);
+  assert.equal(verifyFileSha512(join(dir, 'missing'), b64).ok, false);
+});
