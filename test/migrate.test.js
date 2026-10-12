@@ -21,6 +21,7 @@ test('ensureUnpacked migrates once, second run is a no-op', async () => {
   const dir = mk();
   const src = join(dir, 'src');
   mkdirSync(join(src, 'dist'), { recursive: true });
+  writeFileSync(join(src, 'package.json'), '{"v":1}');
   writeFileSync(join(src, 'dist', 'a.js'), 'AAA');
   const resDir = join(dir, 'resources');
   mkdirSync(resDir, { recursive: true });
@@ -57,4 +58,60 @@ test('applyRecipe backups vanilla, rollbackVanilla restores it', async () => {
   assert.equal(readFileSync(join(app, 'old.js'), 'utf8'), 'OLD');
   const empty = await rollback({ appDir: join(dir, 'app', 'dist'), backupDir: join(dir, 'nope') });
   assert.equal(empty.ok, false);
+});
+
+test('ensureUnpacked on corrupt asar keeps asar, cleans own artifacts', async () => {
+  const asar = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+  const { truncateSync, statSync } = await import('node:fs');
+  const dir = mk();
+  const src = join(dir, 'src');
+  mkdirSync(join(src, 'dist'), { recursive: true });
+  writeFileSync(join(src, 'package.json'), '{"v":1}');
+  writeFileSync(join(src, 'dist', 'a.js'), 'AAA');
+  const resDir = join(dir, 'resources');
+  mkdirSync(resDir, { recursive: true });
+  const ap = join(resDir, 'app.asar');
+  await asar.createPackage(src, ap);
+  truncateSync(ap, 100);
+  assert.ok(statSync(ap).size === 100);
+
+  await assert.rejects(
+    ensureUnpacked({ resourcesDir: resDir, backupPath: join(dir, 'bak.asar') }),
+    /migrat|corrupt|extract|package\.json/i,
+    'corrupt asar refuses with a reason',
+  );
+  assert.equal(existsSync(ap), true, 'corrupt asar is never deleted');
+  assert.equal(existsSync(join(resDir, 'app')), false, 'no half-tree left behind');
+  assert.equal(existsSync(join(dir, 'bak.asar')), false, 'no backup of corrupt bytes');
+});
+
+test('ensureUnpacked refuses asar without package.json sentinel', async () => {
+  const asar = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+  const dir = mk();
+  const src = join(dir, 'src');
+  mkdirSync(join(src, 'dist'), { recursive: true });
+  writeFileSync(join(src, 'dist', 'a.js'), 'AAA');
+  const resDir = join(dir, 'resources');
+  mkdirSync(resDir, { recursive: true });
+  await asar.createPackage(src, join(resDir, 'app.asar'));
+
+  await assert.rejects(ensureUnpacked({ resourcesDir: resDir, backupPath: join(dir, 'bak.asar') }), /package\.json/);
+  assert.equal(existsSync(join(resDir, 'app.asar')), true, 'unverified tree never replaces asar');
+});
+
+test('ensureUnpacked never clobbers an existing backup', async () => {
+  const asar = await import('../updater/node_modules/@electron/asar/lib/asar.js');
+  const dir = mk();
+  const src = join(dir, 'src');
+  mkdirSync(join(src, 'dist'), { recursive: true });
+  writeFileSync(join(src, 'package.json'), '{"v":1}');
+  const resDir = join(dir, 'resources');
+  mkdirSync(resDir, { recursive: true });
+  await asar.createPackage(src, join(resDir, 'app.asar'));
+  const bak = join(dir, 'bak.asar');
+  writeFileSync(bak, 'OLDER-GOOD-BACKUP');
+
+  const rep = await ensureUnpacked({ resourcesDir: resDir, backupPath: bak });
+  assert.equal(rep.migrated, true);
+  assert.equal(readFileSync(bak, 'utf8'), 'OLDER-GOOD-BACKUP', 'existing backup wins');
 });

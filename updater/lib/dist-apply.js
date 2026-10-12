@@ -75,7 +75,7 @@ export function verifyApplied({ appDir, recipe } = {}) {
     } catch {
       return { ok: false, reason: `missing after apply: ${file.path}` };
     }
-    if (!text.includes(file.content.slice(0, 64))) return { ok: false, reason: `content mismatch: ${file.path}` };
+    if (text !== file.content) return { ok: false, reason: `content mismatch: ${file.path}` };
   }
   return { ok: true };
 }

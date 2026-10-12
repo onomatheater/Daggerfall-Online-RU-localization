@@ -71,3 +71,19 @@ test('applyRecipe swaps files in unpacked tree, refuses cleanly', async () => {
   assert.equal(badMarker.ok, false);
   assert.equal(readFileSync(join(appDir, 'assets/a.js'), 'utf8'), before, 'refused applies leave tree intact');
 });
+
+test('verifyApplied compares full content, not a prefix', async () => {
+  const { verifyApplied } = await import('../updater/lib/dist-apply.js');
+  const dir = mk();
+  const app = join(dir, 'app');
+  const full = 'AAA-CHANGED:' + 'x'.repeat(200);
+  dist(app, { 'assets/a.js': full });
+  const appDir = join(app, 'dist');
+  const recipe = { game: '7815', add: [{ path: 'assets/a.js', content: full }], delete: [] };
+  assert.equal(verifyApplied({ appDir, recipe }).ok, true);
+
+  writeFileSync(join(appDir, 'assets/a.js'), full.slice(0, 64), 'utf8');
+  const cut = verifyApplied({ appDir, recipe });
+  assert.equal(cut.ok, false, 'truncated tail must fail verification');
+  assert.ok(typeof cut.reason === 'string' && cut.reason.length > 0, 'reason present');
+});
