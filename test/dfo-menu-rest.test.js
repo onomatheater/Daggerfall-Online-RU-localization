@@ -44,6 +44,7 @@ test('menu-rest batch: EN+RU share the new keys, RU non-empty', () => {
 test('menu-rest exact RU values (QA-gated)', () => {
   const eq = (k, v) => assert.equal(ru.dfo[k], v, k);
   eq('shots.empty', 'Нет снимков');
+  eq('shots.under_enhanced', 'Экраны загрузки рисуются под улучшенным интерфейсом — в классическом остаются загрузки оригинальной игры.');
   eq('shots.single', 'Снимок экрана');
   eq('shots.newer', 'Новее');
   eq('shots.older', 'Старше');
