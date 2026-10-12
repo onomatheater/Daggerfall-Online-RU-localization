@@ -8,7 +8,7 @@
 // Electron в тестах не участвует (flow.js его не импортирует).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -126,6 +126,22 @@ test('unpackZip roundtrips bytes', async () => {
   const rep = unpackZip(zipPath, out);
   assert.equal(rep.ok, true);
   assert.equal(readFileSync(join(out, 'hello.txt'), 'utf8'), 'привет');
+});
+
+test('packZip zips a directory for release', async () => {
+  const { packZip } = await import('../updater/lib/unzip.js');
+  const dir = mk();
+  const src = join(dir, 'pack');
+  mkdirSync(join(src, 'sub'), { recursive: true });
+  writeFileSync(join(src, 'ru.json'), '{"a":1}');
+  writeFileSync(join(src, 'sub', 'b.txt'), 'BB');
+  const zipPath = join(dir, 'p.zip');
+  const rep = packZip(src, zipPath);
+  assert.equal(rep.ok, true);
+  const out = join(dir, 'out');
+  assert.equal(unpackZip(zipPath, out).ok, true);
+  assert.equal(readFileSync(join(out, 'ru.json'), 'utf8'), '{"a":1}');
+  assert.equal(readFileSync(join(out, 'sub', 'b.txt'), 'utf8'), 'BB');
 });
 
 test('renderer is self-contained and phone-home free', () => {

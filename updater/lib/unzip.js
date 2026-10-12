@@ -8,3 +8,11 @@ export function unpackZip(zipPath, destDir) {
   new AdmZip(zipPath).extractAllTo(destDir, true);
   return { ok: true, dir: destDir };
 }
+
+// Упаковка директории в zip для релиза (та же adm-zip, та же сторона).
+export function packZip(srcDir, zipPath) {
+  const zip = new AdmZip();
+  zip.addLocalFolder(srcDir);
+  zip.writeZip(zipPath);
+  return { ok: true, zip: zipPath };
+}

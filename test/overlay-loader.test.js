@@ -82,3 +82,19 @@ test('has() reports overlay presence without fallback', async () => {
   assert.equal(ov.has('strings:bye', 'ru'), false);
   assert.equal(ov.has('strings:hello', 'de'), false);
 });
+
+test('version canon: dotted game matches short pack claims', async () => {
+  const { isCompatible, choosePack } = await import('../src/locale/loader.js');
+  assert.ok(isCompatible({ locale: 'ru', version: '1.0', game: '7553', files: [] }, '0.1.7553'), 'exact across formats');
+  assert.ok(
+    isCompatible({ locale: 'ru', version: '1.0', gameMin: '7506', gameMax: '7553', files: [] }, '0.1.7524'),
+    'range across formats',
+  );
+  assert.ok(!isCompatible({ locale: 'ru', version: '1.0', game: '7553', files: [] }, '0.1.7506'), 'other build rejected');
+  assert.ok(isCompatible({ locale: 'ru', version: '1.0', game: '7553', files: [] }, '7553'), 'short still works');
+  const packs = [
+    { version: '1.0.0', game: '7506' },
+    { version: '1.2.0', gameMin: '7506', gameMax: '7553' },
+  ];
+  assert.equal(choosePack(packs, '0.1.7553').version, '1.2.0');
+});

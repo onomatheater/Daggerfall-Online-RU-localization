@@ -21,16 +21,26 @@ export function parseManifest(text) {
   return parsed;
 }
 
+// Канон версии игры: клиент отдаёт dotted ('0.1.7553'), клейма паков —
+// короткий билд ('7553'). Сравниваем по канону с обеих сторон, иначе
+// фид никогда не сходится с живой игрой. Мусор — как есть (ложь, не краш).
+export function canonGameVersion(version) {
+  const parts = String(version ?? '').split('.');
+  const last = parts[parts.length - 1] ?? '';
+  return /^\d+$/.test(last) ? String(Number(last)) : String(version ?? '');
+}
+
 // Совместимость пака с игрой: точный тег game ИЛИ inclusive-диапазон
 // gameMin/gameMax (паки пересобирать при каждом чихе не надо —
 // диапазон заявляет проверенный отрезок; без клейма — несовместим,
 // молча не едем, только явный выбор). Инвертированный диапазон — брак.
 export function isCompatible(manifest, gameVersion) {
   if (!manifest || typeof gameVersion !== 'string' || gameVersion.length === 0) return false;
-  if (manifest.game !== undefined) return manifest.game === gameVersion;
+  const game = canonGameVersion(gameVersion);
+  if (manifest.game !== undefined) return canonGameVersion(manifest.game) === game;
   const { gameMin, gameMax } = manifest;
   if (typeof gameMin !== 'string' || typeof gameMax !== 'string') return false;
-  return cmpVersion(gameMin, gameVersion) <= 0 && cmpVersion(gameVersion, gameMax) <= 0;
+  return cmpVersion(canonGameVersion(gameMin), game) <= 0 && cmpVersion(game, canonGameVersion(gameMax)) <= 0;
 }
 
 export const cmpVersion = (a, b) => {
