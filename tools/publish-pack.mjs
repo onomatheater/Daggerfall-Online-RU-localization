@@ -7,7 +7,7 @@
 // Отклонение от плана: частичный stage без рецепта не делаем — любой
 // затык роняет прогон целиком (hold, зовём человека), молчаливого
 // полупака не существует.
-import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -23,7 +23,7 @@ const REPO_TOOLS = dirname(fileURLToPath(import.meta.url));
 export const STEPS = [
   'vanilla-build',
   'verify-probe',
-  'tables-copy',
+  'assets-copy',
   'rebase-apply',
   'patched-build',
   'markers',
@@ -72,6 +72,36 @@ const need = (venue, key) => {
   }
 };
 
+// Ассеты, которые очередь ждёт готовыми: таблицы локали целиком +
+// шрифты в public/fonts (читаются скриптами как base64). Отсутствует
+// хоть один — стоп до начала, а не ANCHOR GONE в середине.
+export const ASSET_FONTS = [
+  ['vendor/handjet/handjet-cyrillic-400-normal.woff2', 'handjet-cyrillic-400-normal.woff2'],
+  ['vendor/handjet/handjet-cyrillic-500-normal.woff2', 'handjet-cyrillic-500-normal.woff2'],
+  ['vendor/handjet/handjet-cyrillic-700-normal.woff2', 'handjet-cyrillic-700-normal.woff2'],
+  ['vendor/handjet/handjet-latin-400-normal.woff2', 'handjet-latin-400-normal.woff2'],
+  ['vendor/handjet/handjet-latin-500-normal.woff2', 'handjet-latin-500-normal.woff2'],
+  ['vendor/handjet/handjet-latin-700-normal.woff2', 'handjet-latin-700-normal.woff2'],
+  ['vendor/guildenstern-nbp/GuildensternNbp.ttf', 'guildenstern.ttf'],
+  ['vendor/probe-fonts/Handjet-full.ttf', 'Handjet-full.ttf'],
+  ['vendor/probe-fonts/ps2p-full.ttf', 'ps2p-full.ttf'],
+  ['vendor/probe-fonts/handjet-cyrillic-600-normal.woff2', 'handjet-cyrillic-600-normal.woff2'],
+  ['vendor/probe-fonts/handjet-latin-600-normal.woff2', 'handjet-latin-600-normal.woff2'],
+];
+
+export function copyAssets(repoRoot, probeTree) {
+  cpSync(join(repoRoot, 'src', 'locale'), join(probeTree, 'src', 'locale'), { recursive: true });
+  mkdirSync(join(probeTree, 'public', 'fonts'), { recursive: true });
+  const missing = [];
+  for (const [from, to] of ASSET_FONTS) {
+    const src = join(repoRoot, ...from.split('/'));
+    if (!existsSync(src)) { missing.push(from); continue; }
+    copyFileSync(src, join(probeTree, 'public', 'fonts', to));
+  }
+  if (missing.length > 0) throw new Error(`pipeline: missing assets: ${missing.join(', ')}`);
+  return { ok: true, fonts: ASSET_FONTS.length };
+}
+
 const shaFile = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } = {}) {
@@ -81,7 +111,6 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   if (!Array.isArray(venue.markers) || venue.markers.length === 0) throw new Error('pipeline: need venue.markers[]');
   if (dryRun) return { executed: false, steps: [...STEPS] };
   const run = (cmd, args, cwd) => sh({ cmd, args, cwd });
-  const repoLocale = join(REPO_TOOLS, '..', 'src', 'locale');
   const ctx = {
     ...venue,
     vanillaDir: join(venue.workRoot, 'vanilla'),
@@ -94,8 +123,9 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   if (probeHead.output.trim() !== venue.gameTag) {
     throw new Error(`pipeline: probe tree at ${probeHead.output.trim()}, need ${venue.gameTag}`);
   }
-  const { cpSync } = await import('node:fs');
-  cpSync(repoLocale, join(venue.probeTree, 'src', 'locale'), { recursive: true });
+  const repoRoot = join(REPO_TOOLS, '..');
+  copyAssets(repoRoot, venue.probeTree);
+  process.env.RU_FONT_PROD = join(repoRoot, 'src', 'font', 'scale.js');
   run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', venue.probeTree, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply']);
   run('npm', ['run', 'build'], venue.probeTree);
   const patchedDist = join(venue.probeTree, 'dist');
@@ -105,8 +135,7 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   }
   mkdirSync(ctx.stageDir, { recursive: true });
   const packDir = join(ctx.stageDir, 'pack');
-  const fromVersion = venue.fromTag.replace(/^app-v/, '');
-  pack({ out: packDir, version: venue.packVersion, gameMin: fromVersion, gameMax: venue.version });
+  pack({ out: packDir, version: venue.packVersion, game: venue.version });
   const packZipPath = join(ctx.stageDir, 'dfo-ru-pack.zip');
   packZip(packDir, packZipPath);
   const recipe = buildRecipe({ vanillaDir: ctx.vanillaDir, patchedDir: patchedDist, game: venue.version });

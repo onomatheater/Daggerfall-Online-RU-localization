@@ -8,8 +8,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { bundleHasMarkers, STEPS, runPipeline } from '../tools/publish-pack.mjs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { bundleHasMarkers, STEPS, runPipeline, copyAssets } from '../tools/publish-pack.mjs';
 
 const mk = () => mkdtempSync(join(tmpdir(), 'rupipe-'));
 
@@ -45,4 +46,20 @@ test('runPipeline dry-run lists steps, touches nothing', async () => {
   assert.equal(rep.executed, false);
   assert.equal(existsSync(venue.workRoot), false, 'no fs side effects');
   await assert.rejects(runPipeline({ ...venue, gameTag: '' }, { dryRun: true }), /gameTag/);
+});
+
+test('copyAssets lays tables and fonts, refuses on gaps', async () => {
+  const probe = mk();
+  mkdirSync(join(probe, 'src'), { recursive: true });
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const rep = copyAssets(repoRoot, probe);
+  assert.equal(rep.ok, true);
+  assert.equal(rep.fonts, 11);
+  assert.ok(existsSync(join(probe, 'src', 'locale', 'ru.json')), 'tables copied');
+  assert.ok(existsSync(join(probe, 'public', 'fonts', 'Handjet-full.ttf')), 'ttf copied');
+  assert.ok(existsSync(join(probe, 'public', 'fonts', 'guildenstern.ttf')), 'renamed ttf copied');
+  const thin = mk();
+  mkdirSync(join(thin, 'src', 'locale'), { recursive: true });
+  writeFileSync(join(thin, 'src', 'locale', 'x.json'), '{}');
+  assert.throws(() => copyAssets(thin, mk()), /missing assets/);
 });

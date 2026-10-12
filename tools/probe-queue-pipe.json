@@ -2,6 +2,14 @@
   "note": "pipeline order: vanilla-cumulative. BOOT-LOCALE (tables+boot import) runs before #0 via glue, not a script. Dropped: wt-7815 scripts (49,50,53), acct-tail (absorbed by account), forceru (absorbed by BOOT).",
   "order": [
     {
+      "script": "patch-boot-locale.mjs",
+      "touches": [
+        "src/main.js",
+        "src/scenes/world.js"
+      ],
+      "note": "boot ru + ruT import, pipe-first"
+    },
+    {
       "script": "patch-7361-locale-default.mjs",
       "touches": [
         "src/locale/locale.js"
