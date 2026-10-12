@@ -1,5 +1,5 @@
 {
-  "note": "pipeline order: vanilla-cumulative. BOOT-LOCALE (tables+boot import) runs before #0 via glue, not a script. Dropped: wt-7815 scripts (49,50,53), acct-tail (absorbed by account), forceru (absorbed by BOOT).",
+  "note": "pipeline order: vanilla-cumulative. BOOT-LOCALE (tables+boot import) runs before #0 via glue, not a script. Dropped: wt-7815 scripts (49,50,53), acct-tail (absorbed by account), forceru (absorbed by BOOT). Dropped mini (needs ruByEn.js product batch).",
   "order": [
     {
       "script": "patch-boot-locale.mjs",
@@ -209,13 +209,6 @@
       "note": ""
     },
     {
-      "script": "fix-700b-latin.mjs",
-      "touches": [
-        "src/ui/enhancedMenu.js"
-      ],
-      "note": "style-block, audit-first"
-    },
-    {
       "script": "patch-launcher.mjs",
       "touches": [
         "app/launcher/index.html",
@@ -223,20 +216,6 @@
         "app/lib/launcherState.cjs"
       ],
       "note": "app/ paths (R=dfjs/app); launcherRu.cjs is our own overlay"
-    },
-    {
-      "script": "patch-comma.mjs",
-      "touches": [
-        "src/ui/enhancedMenu.js"
-      ],
-      "note": "one-off repair, may be stale"
-    },
-    {
-      "script": "patch-tipfix.mjs",
-      "touches": [
-        "src/ui/loadingScreen.js"
-      ],
-      "note": "one-off repair, may be stale"
     },
     {
       "script": "patch-stale-defaults.mjs",
@@ -322,11 +301,25 @@
       "note": ""
     },
     {
+      "script": "patch-tipfix.mjs",
+      "touches": [
+        "src/ui/loadingScreen.js"
+      ],
+      "note": "one-off repair, may be stale"
+    },
+    {
       "script": "patch-7506-tail2-fix.mjs",
       "touches": [
         "src/ui/enhancedMenu.js"
       ],
       "note": "audit-first, must run right after tail2"
+    },
+    {
+      "script": "patch-comma.mjs",
+      "touches": [
+        "src/ui/enhancedMenu.js"
+      ],
+      "note": "one-off repair, may be stale"
     },
     {
       "script": "patch-7506-troom-data.mjs",
@@ -385,16 +378,6 @@
         "src/characters/nameHelper.js"
       ],
       "note": "needs translit.js + ru/names/syllables.json overlay"
-    },
-    {
-      "script": "patch-7815-mini.mjs",
-      "touches": [
-        "src/main.js",
-        "src/ui/enhancedMenu.js",
-        "src/ui/settingsCopy.js",
-        "src/ui/saveTile.js"
-      ],
-      "note": "7815 fresh-tree mini-queue: boot ru + rails/head + labelOf/helpOf + agoText (needs src/locale overlay incl. ruByEn.js)"
     },
     {
       "script": "patch-7815-font.mjs",
