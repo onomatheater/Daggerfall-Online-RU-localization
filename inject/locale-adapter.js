@@ -19,8 +19,8 @@
 // пака поверх bundled. Чужой/битый пак -> {ok:false}, bundled не тронут.
 // wrap* сначала смотрят в пак (has), иначе — как раньше через t().
 export { t, setLocale, getLocale, splitKey } from '../src/locale/locale.js';
-import { t, getLocale } from '../src/locale/locale.js';
-import { createOverlay, parseManifest, isCompatible } from '../src/locale/loader.js';
+import { t, tp, getLocale } from '../src/locale/locale.js';
+import { createOverlay, parseManifest, isCompatible, resolvePlural } from '../src/locale/loader.js';
 
 const packOverlay = createOverlay({});
 let gameVersion = '';
@@ -57,4 +57,11 @@ export function wrapLiteral(key, params = {}) {
 
 export function wrapTemplate(key, params = {}) {
   return wrap(key, params);
+}
+
+// Plural-рендер поверх пака: объект {one,few,many} -> строка через plural(),
+// иначе (нет в паке) — как bundled через tp(). Строковый путь не тронут.
+export function wrapPlural(key, n) {
+  if (packOverlay.has(key, getLocale())) return resolvePlural(packOverlay, key, n, getLocale());
+  return tp(key, n);
 }

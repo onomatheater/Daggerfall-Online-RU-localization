@@ -5,6 +5,7 @@
 // Почему так: статический import в locale.js перетирается апдейтером
 // вместе с asar; overlay-таблицы живут поверх и гейтятся по версии игры.
 import { splitKey } from './locale.js';
+import { plural } from './morph.js';
 export { splitKey };
 
 export function parseManifest(text) {
@@ -77,5 +78,18 @@ export function createOverlay(bundled) {
       const [table, key] = splitKey(rawKey);
       return overlay[locale]?.[table]?.[key] !== undefined;
     },
+    // Plural-рендер запечённых форм {one,few,many} (см. morph.js):
+    // объект -> plural(n), строка -> как resolve(), miss -> key + warn.
+    resolvePlural(rawKey, n, locale = 'ru') {
+      const [table, key] = splitKey(rawKey);
+      const hit = overlay[locale]?.[table]?.[key] ?? en?.[table]?.[key];
+      if (hit !== undefined && typeof hit === 'object') return plural(n, hit);
+      return this.resolve(rawKey, {}, locale);
+    },
   };
+}
+
+// Отдельный хелпер для тестов и адаптера: выбор формы поверх overlay-экземпляра.
+export function resolvePlural(ov, rawKey, n, locale = 'ru') {
+  return ov.resolvePlural(rawKey, n, locale);
 }
