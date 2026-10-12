@@ -93,3 +93,18 @@ test('download progress passes through to their bar', () => {
   assert.deepEqual(v.progress, { percent: 42, label: 'Качаю 42%' });
   assert.equal(v.busy, true);
 });
+
+test('installer launched: primary continue action, no other moves', () => {
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: null, busy: false, prefs: {}, gameDir: '', installerLaunched: true });
+  const cont = v.statusActions.find((a) => a.id === 'finish-game-update');
+  assert.ok(cont, 'continue present');
+  assert.equal(cont.primary, true);
+  assert.ok(v.status.includes('установки'), v.status);
+});
+
+test('translation restored and missing recipe speak plainly', () => {
+  const done = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'translation-restored' }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(done.status.includes('Перевод возвращён'), done.status);
+  const none = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'no-recipe' }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(none.status.includes('Нет рецепта'), none.status);
+});

@@ -3,7 +3,7 @@
 // Играть всегда disabled: запуск игры — не scope апдейтера перевода.
 import { describeIssue } from './flow.js';
 
-export function viewOf({ game, installed = [], check = null, gameNews = [], gameUpdate = null, busy = false, progress = null, prefs = {}, gameDir = '' } = {}) {
+export function viewOf({ game, installed = [], check = null, gameNews = [], gameUpdate = null, busy = false, progress = null, installerLaunched = false, prefs = {}, gameDir = '' } = {}) {
   const actions = [{ id: 'check', label: 'Проверить' }];
   let status = 'Готов.';
   let detail = '';
@@ -32,11 +32,20 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
     note = note || 'Жди следующий выпуск — игра при этом работает.';
   } else if (check?.status === 'net-error' || check?.status === 'unknown-game') {
     status = describeIssue(check.reason ?? check.status);
+  } else if (check?.status === 'translation-restored') {
+    status = 'Перевод возвращён.';
+  } else if (check?.status === 'no-recipe') {
+    status = 'Нет рецепта под эту версию — игра обновлена, перевод английский.';
   } else if (check?.status !== undefined && check?.status !== null) {
     status = describeIssue(check.reason ?? check.status);
   }
   if (installed.length >= 2) actions.push({ id: 'rollback', label: 'Откатить' });
   if (!packNoted && installed[0]) pushNotes(installed[0].version, installed[0].notes);
+  // Установщик игры запущен: ждём конца установки, дальше — «Продолжить».
+  if (installerLaunched) {
+    status = 'Дождись конца установки игры и нажми «Продолжить».';
+    actions.push({ id: 'finish-game-update', label: 'Продолжить', primary: true });
+  }
   // Обновление игры — отдельным баннером (их notice-транспорт): только текст
   // и кнопка на страницу релизов, игру не трогаем. Состояние пака — в detail.
   if (gameUpdate?.status === 'available' && gameUpdate.tag) {

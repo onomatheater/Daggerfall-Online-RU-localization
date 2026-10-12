@@ -22,10 +22,11 @@ test('release entry carries manifest, url and real zip sha', () => {
   pack({ out: packDir, version: '1.3.0', gameMin: '7506', gameMax: '7553' });
   const zipPath = join(mk(), 'ru-pack-1.3.0.zip');
   writeFileSync(zipPath, 'zip-bytes-1.3.0');
-  const entry = releaseEntry({ zipPath, packDir, url: 'https://example.invalid/ru-pack-1.3.0.zip', notes: ['Фикс шрифтов.'] });
+  const entry = releaseEntry({ zipPath, packDir, url: 'https://example.invalid/ru-pack-1.3.0.zip', notes: ['Фикс шрифтов.'], recipe: { url: 'https://example.invalid/r1.zip', sha: 'abc' } });
   assert.equal(entry.manifest.version, '1.3.0');
   assert.equal(entry.url, 'https://example.invalid/ru-pack-1.3.0.zip');
   assert.deepEqual(entry.notes, ['Фикс шрифтов.']);
+  assert.deepEqual(entry.recipe, { url: 'https://example.invalid/r1.zip', sha: 'abc' });
   assert.equal(entry.sha, createHash('sha256').update('zip-bytes-1.3.0', 'utf8').digest('hex'));
 });
 

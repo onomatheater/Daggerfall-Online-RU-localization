@@ -48,13 +48,14 @@ test('verifyPack: legacy passes, inconsistent claims fail', () => {
 test('feed roundtrip: newest compatible wins, none -> null', () => {
   const feed = buildFeed([
     { manifest: { locale: 'ru', version: '1.0.0', game: '7506', files: ['ru.json'] }, url: 'https://example.invalid/p1.zip' },
-    { manifest: { locale: 'ru', version: '1.2.0', gameMin: '7506', gameMax: '7553', files: ['ru.json'] }, url: 'https://example.invalid/p2.zip', notes: ['Фикс шрифтов.', 'Новый пак.'] },
+    { manifest: { locale: 'ru', version: '1.2.0', gameMin: '7506', gameMax: '7553', files: ['ru.json'] }, url: 'https://example.invalid/p2.zip', notes: ['Фикс шрифтов.', 'Новый пак.'], recipe: { url: 'https://example.invalid/r2.zip', sha: 'abc' } },
     { manifest: { locale: 'ru', version: '2.0.0', game: '9999', files: ['ru.json'] }, url: 'https://example.invalid/p3.zip' },
   ]);
   const sel = selectPack(JSON.stringify(feed), '7553');
   assert.equal(sel.version, '1.2.0');
   assert.equal(sel.url, 'https://example.invalid/p2.zip');
   assert.deepEqual(sel.notes, ['Фикс шрифтов.', 'Новый пак.']);
+  assert.deepEqual(sel.recipe, { url: 'https://example.invalid/r2.zip', sha: 'abc' });
   assert.equal(selectPack(JSON.stringify(feed), '0000'), null);
   assert.throws(() => selectPack('not json', '7553'), /feed/);
 });

@@ -14,7 +14,7 @@ const manifestOf = (packDir) => {
   return JSON.parse(readFileSync(`${packDir}/locale-version.json`, 'utf8'));
 };
 
-export function releaseEntry({ zipPath, packDir, url, notes } = {}) {
+export function releaseEntry({ zipPath, packDir, url, notes, recipe } = {}) {
   if (typeof url !== 'string' || url.length === 0) throw new Error('release: entry needs string url');
   const manifest = manifestOf(packDir);
   let bytes;
@@ -26,6 +26,12 @@ export function releaseEntry({ zipPath, packDir, url, notes } = {}) {
   const sha = createHash('sha256').update(bytes).digest('hex');
   const entry = { manifest, url, sha };
   if (notes !== undefined) entry.notes = notes;
+  if (recipe !== undefined) {
+    if (!recipe || typeof recipe.url !== 'string' || typeof recipe.sha !== 'string') {
+      throw new Error('release: recipe needs {url, sha}');
+    }
+    entry.recipe = { url: recipe.url, sha: recipe.sha };
+  }
   return entry;
 }
 

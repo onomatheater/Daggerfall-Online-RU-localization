@@ -32,7 +32,7 @@ const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
 const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
 const installed = () => listPacks(storeDir());
 
-const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null };
+const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null, installerLaunched: false };
 
 function currentView() {
   return viewOf({
@@ -43,6 +43,7 @@ function currentView() {
     gameUpdate: state.gameUpdate,
     busy: state.busy,
     progress: state.progress,
+    installerLaunched: state.installerLaunched,
     prefs: loadPrefs(userData()),
     gameDir: gameDir(),
   });
@@ -227,6 +228,7 @@ app.whenReady().then(() => {
           state.progress = null;
           if (plan.kind === 'installer') {
             shell.openPath(dest);
+            state.installerLaunched = true;
             state.gameUpdate = null;
           } else {
             shell.showItemInFolder(dest);
@@ -261,6 +263,68 @@ app.whenReady().then(() => {
         state.busy = false;
       }
       refresh();
+    } else if (action === 'finish-game-update') {
+      // Продолжение после установщика: версия -> миграция -> рецепт -> маркеры.
+      state.installerLaunched = false;
+      state.busy = true;
+      state.progress = { percent: 5, label: 'Смотрю версию игры…' };
+      refresh();
+      const done = (check) => {
+        state.check = check;
+        state.pending = null;
+        state.busy = false;
+        state.progress = null;
+        refresh();
+      };
+      try {
+        const hit = game();
+        if (hit.version === null) return done({ status: 'unknown-game', reason: hit.reason });
+        const recipeRef = state.pending?.recipe;
+        if (!recipeRef || typeof recipeRef.url !== 'string') return done({ status: 'no-recipe' });
+        state.progress = { percent: 20, label: 'Готовлю распакованную установку…' };
+        refresh();
+        const { ensureUnpacked } = await import('./lib/migrate.js');
+        await ensureUnpacked({
+          resourcesDir: join(gameDir(), 'resources'),
+          backupPath: join(userData(), 'backups', `app-asar-${hit.version}.asar`),
+        });
+        state.progress = { percent: 50, label: 'Качаю рецепт перевода…' };
+        refresh();
+        const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
+        const zipPath = join(tmp, 'recipe.zip');
+        if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
+          const { copyFileSync } = await import('node:fs');
+          copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
+        } else {
+          await fetchZip(recipeRef.url, zipPath);
+        }
+        if (recipeRef.sha) {
+          const { verifyFileSha } = await import('../tools/update-ru.mjs');
+          const sha = verifyFileSha(zipPath, recipeRef.sha);
+          if (!sha.ok) return done({ status: 'install-failed', reason: sha.reason });
+        }
+        state.progress = { percent: 75, label: 'Возвращаю перевод…' };
+        refresh();
+        const { unpackZip } = await import('./lib/unzip.js');
+        const unpackDir = join(tmp, 'recipe');
+        unpackZip(zipPath, unpackDir);
+        const { readFileSync: readJson } = await import('node:fs');
+        const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
+        if (recipe.game !== hit.version) return done({ status: 'no-recipe' });
+        const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
+        const appDir = join(gameDir(), 'resources', 'app', 'dist');
+        const rep = await applyRecipe({
+          appDir,
+          recipe,
+          backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
+        });
+        if (!rep.ok) return done({ status: 'install-failed', reason: rep.reason });
+        const verify = verifyApplied({ appDir, recipe });
+        if (!verify.ok) return done({ status: 'install-failed', reason: verify.reason });
+        return done({ status: 'translation-restored' });
+      } catch {
+        return done({ status: 'install-failed', reason: 'net-error' });
+      }
     } else if (action === 'rollback') {
       const prev = rollbackPack(storeDir());
       if (prev === null) return;
