@@ -270,13 +270,16 @@ app.whenReady().then(() => {
     }
   });
   (async () => {
+    // Новости игры — всегда при старте, как у них (один GET к публичным
+    // релизам, без данных пользователя). Проверка пака — за кнопкой.
+    state.gameNews = await runGameNews();
+    refresh();
     const hit = game();
     if (decideStartup({ autoCheck: loadPrefs(userData()).autoCheck, gameVersion: hit.version }) === 'check') {
       state.check = await runCheck();
       state.pending = state.check.status === 'available' ? state.check.entry : null;
       const gu = await runGameCheck(hit.version);
       state.gameUpdate = gu.status === 'available' ? gu : null;
-      state.gameNews = await runGameNews();
       refresh();
     }
   })();
