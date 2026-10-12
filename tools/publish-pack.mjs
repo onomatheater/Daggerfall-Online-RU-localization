@@ -118,3 +118,30 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   });
   return { executed: true, steps: [...STEPS], ctx, staged: { entry, packZipPath, recipeZipPath } };
 }
+
+if (process.argv[1]?.endsWith('publish-pack.mjs')) {
+  const args = process.argv.slice(2);
+  if (args.includes('--help') || args.length === 0) {
+    console.log([
+      'usage: node tools/publish-pack.mjs [--run] --tag <app-vX> --from <app-vY> --version <0.1.X>',
+      '  --pack-version <1.2.3> --scripts <dir> --queue <json> --markers <a,b> --notes <t> --url-base <url> --work-root <dir>',
+      '  default: dry-run (steps only, touches nothing). --run executes in tmp workRoot.',
+    ].join('\n'));
+    process.exit(0);
+  }
+  const get = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : undefined);
+  const venue = {
+    gameTag: get('--tag'),
+    fromTag: get('--from'),
+    version: get('--version'),
+    packVersion: get('--pack-version'),
+    scriptsDir: get('--scripts'),
+    queuePath: get('--queue'),
+    markers: (get('--markers') ?? '').split(',').filter((s) => s.length > 0),
+    notes: (get('--notes') ?? '').split('|').filter((s) => s.length > 0),
+    urlBase: get('--url-base'),
+    workRoot: get('--work-root'),
+  };
+  const rep = await runPipeline(venue, { dryRun: !args.includes('--run') });
+  console.log(JSON.stringify({ executed: rep.executed, steps: rep.steps }));
+}
