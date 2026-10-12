@@ -1,5 +1,7 @@
 // Рецепт перестановки патча: сверка двух dist-деревьев (ваниль vs наш билд).
-// Выход: {game, add: [{path, content}], delete: [paths]} — только разница.
+// Выход: {game, add: [{path, content, encoding}], delete: [paths]} — только разница.
+// content — всегда base64 (encoding: 'base64'): чанки едут байт-в-байт через
+// JSON, шрифты/картинки не манглятся utf8. Чужой shape дальше не идёт.
 // Неизменные чанки совпадают байтом и в рецепт не едут (поэтому 2 МБ, а не 173).
 // Чистый fs, ноль зависимостей. Рецепты живут в релизах, не в репозитории.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -23,7 +25,7 @@ export function buildRecipe({ vanillaDir, patchedDir, game } = {}) {
   const add = [];
   for (const [rel, bytes] of patched) {
     const old = vanilla.get(rel);
-    if (!old || !old.equals(bytes)) add.push({ path: rel, content: bytes.toString('utf8') });
+    if (!old || !old.equals(bytes)) add.push({ path: rel, content: bytes.toString('base64'), encoding: 'base64' });
   }
   const gone = [...vanilla.keys()].filter((rel) => !patched.has(rel));
   // Удаляем только переименованные чанки сборки (*.js внутри assets):

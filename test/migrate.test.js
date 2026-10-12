@@ -47,7 +47,7 @@ test('applyRecipe backups vanilla, rollbackVanilla restores it', async () => {
 
   const ok = await apply({
     appDir: join(dir, 'app', 'dist'),
-    recipe: { game: 'x', add: [{ path: 'a.js', content: 'AAA-CHANGED' }], delete: ['old.js'], markers: ['AAA-CHANGED'] },
+    recipe: { game: 'x', add: [{ path: 'a.js', content: Buffer.from('AAA-CHANGED', 'utf8').toString('base64'), encoding: 'base64' }], delete: ['old.js'], markers: ['AAA-CHANGED'] },
     backupDir: bak,
   });
   assert.equal(ok.ok, true);
