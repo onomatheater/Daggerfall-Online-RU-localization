@@ -27,11 +27,26 @@ test('available pack: primary install action, notes in news, game dir shown', ()
   assert.equal(v.version, 'v0.1.7815');
   const install = v.statusActions.find((a) => a.id === 'install');
   assert.equal(install.primary, true);
-  assert.ok(install.label.includes('1.3.0'), install.label);
+  assert.equal(install.label, 'Установить');
   assert.equal(v.news.items.length, 1);
   assert.equal(v.news.items[0].version, '1.3.0');
   assert.ok(v.options.files.path.includes('Game'), v.options.files.path);
   assert.equal(v.options.checkOnLaunch, true);
+});
+
+test('news always: installed pack notes without fresh check, then game news first', () => {
+  const withNotes = [{ file: 'ru-pack-1.2.0.zip', version: '1.2.0', game: '7815', notes: ['Старый чейнджлог.'] }];
+  const v = viewOf({ game: GAME, installed: withNotes, check: null, busy: false, prefs: {}, gameDir: '' });
+  assert.equal(v.news.items.length, 1);
+  assert.ok(v.news.items[0].text.includes('Старый чейнджлог'), v.news.items[0].text);
+  const g = viewOf({
+    game: GAME, installed: withNotes, check: null,
+    gameNews: [{ version: '0.1.8127', date: '12 Окт 2026', badge: 'update', text: 'Игровые новости.' }],
+    busy: false, prefs: {}, gameDir: '',
+  });
+  assert.equal(g.news.items.length, 2);
+  assert.ok(g.news.items[0].text.includes('Игровые новости'), 'game news first');
+  assert.ok(g.news.items[1].text.includes('Старый чейнджлог'), 'pack notes second');
 });
 
 test('rollback action only with two packs; up-to-date has no install', () => {
@@ -71,4 +86,10 @@ test('failed game check lands in detail, pack status stays', () => {
   const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'up-to-date', entry: ENTRY }, gameUpdate: { status: 'failed' }, busy: false, prefs: {}, gameDir: '' });
   assert.ok(v.status.includes('последний перевод'), v.status);
   assert.ok(v.detail.includes('игры'), v.detail);
+});
+
+test('download progress passes through to their bar', () => {
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: null, busy: true, prefs: {}, gameDir: '', progress: { percent: 42, label: 'Качаю 42%' } });
+  assert.deepEqual(v.progress, { percent: 42, label: 'Качаю 42%' });
+  assert.equal(v.busy, true);
 });

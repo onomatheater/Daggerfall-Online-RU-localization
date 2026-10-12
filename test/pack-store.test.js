@@ -34,6 +34,13 @@ test('store keeps newest, prunes tail, lists newest-first', () => {
   assert.equal(index.length, 3, 'index matches disk');
 });
 
+test('store keeps entry notes for the news feed', () => {
+  const store = mk();
+  const src = mk();
+  storePack(store, { srcPath: zip(src, 'p.zip', 'bytes'), version: '1.0.0', game: '7553', notes: ['Чейнджлог.'] });
+  assert.deepEqual(listPacks(store)[0].notes, ['Чейнджлог.']);
+});
+
 test('rollback gives previous entry, null when nothing to roll back to', () => {
   const store = mk();
   const src = mk();

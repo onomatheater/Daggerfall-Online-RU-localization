@@ -151,6 +151,8 @@ body[data-busy] .gem { animation: gleam 1.6s steps(8) infinite; }
 .progress .label { flex: none; font-size: 13px; color: #a89f88; letter-spacing: 0.08em; }
 .status-actions { flex: none; display: flex; gap: 10px; }
 .status-actions:empty { display: none; }
+/* RU-fork: у нас до трёх экшенов в баре — разрешаем перенос, бар не рвёт. */
+.status-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 46%; }
 .go { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 #version { font-size: 12px; letter-spacing: 0.14em; text-transform: none; }
 

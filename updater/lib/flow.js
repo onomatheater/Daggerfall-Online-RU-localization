@@ -7,6 +7,20 @@ import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
+import downloads from '../vendor-dfo/downloads.cjs';
+
+// Стабильная страница релизов игры (их REL5: версия в теге, не в имени файла).
+export const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
+
+// Какой файл качать для обновления игры (их manualDownloadFile, MIT).
+// null = нечего качать напрямую (dev-запуск) -> открываем страницу релизов.
+export function resolveGameFile({ platform, packaged, portable } = {}) {
+  return downloads.manualDownloadFile({ platform, packaged, portable });
+}
+
+export function latestGameFileUrl(file) {
+  return downloads.latestDownloadUrl(file);
+}
 
 // Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
 export async function loadFeedText(source, { fetchText, readText } = {}) {
@@ -88,6 +102,7 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
     version: entry.version,
     game: entry.game ?? entry.gameMin ?? 'unknown',
     sha: entry.sha,
+    notes: entry.notes,
     keep,
   });
   return { ok: true, version: entry.version, shaChecked, stats: installed.stats };

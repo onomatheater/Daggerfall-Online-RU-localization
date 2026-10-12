@@ -39,3 +39,12 @@ test('checkGameUpdate: newer tag detected, garbage is silence', () => {
   const siteTag = checkGameUpdate({ apiText: JSON.stringify({ tag_name: 'site-123' }), currentVersion: '0.1.7815' });
   assert.equal(siteTag.available, false);
 });
+
+test('resolveGameFile: installer per platform, null when unpackaged', async () => {
+  const { resolveGameFile, GAME_RELEASES_PAGE } = await import('../updater/lib/flow.js');
+  assert.ok(GAME_RELEASES_PAGE.includes('releases/latest'), 'stable releases page');
+  assert.equal(resolveGameFile({ platform: 'win32', packaged: true, portable: false }), 'DaggerfallOnline-win-x64-setup.exe');
+  assert.equal(resolveGameFile({ platform: 'win32', packaged: true, portable: true }), 'DaggerfallOnline-win-x64-portable.exe');
+  assert.equal(resolveGameFile({ platform: 'darwin', packaged: true, portable: false }), 'DaggerfallOnline-mac-arm64.dmg');
+  assert.equal(resolveGameFile({ platform: 'win32', packaged: false, portable: false }), null);
+});

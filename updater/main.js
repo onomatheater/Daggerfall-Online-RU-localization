@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, resolveGameFile, latestGameFileUrl, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -19,7 +19,6 @@ import { loadPrefs, savePrefs } from './lib/prefs.js';
 // RU_FEED_URL — стенд: локальный путь к feed.json вместо сети.
 const FEED_URL = process.env.RU_FEED_URL || 'https://example.invalid/ru-pack-feed.json';
 const GAME_API_URL = 'https://api.github.com/repos/Lattymoy/daggerfall-js-source/releases/latest';
-const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
 // Ссылки разработчиков — те же, что в их лаунчере (Lattymoy, MIT).
 const LINKS = {
   site: 'https://daggerfalljs.dev/',
@@ -33,15 +32,17 @@ const gameDir = () => loadPrefs(userData()).gameDir || DEFAULT_GAME_DIR;
 const game = () => detectGameVersion(gameDir(), { readAsar: readAsarPackageJson });
 const installed = () => listPacks(storeDir());
 
-const state = { check: null, gameUpdate: null, busy: false, pending: null };
+const state = { check: null, gameUpdate: null, gameNews: [], busy: false, progress: null, pending: null };
 
 function currentView() {
   return viewOf({
     game: game(),
     installed: installed(),
     check: state.check,
+    gameNews: state.gameNews,
     gameUpdate: state.gameUpdate,
     busy: state.busy,
+    progress: state.progress,
     prefs: loadPrefs(userData()),
     gameDir: gameDir(),
   });
@@ -70,6 +71,24 @@ async function fetchZip(url, dest) {
   return dest;
 }
 
+async function downloadWithProgress(url, dest, onProgress) {
+  const res = await fetch(url);
+  if (!res.ok || !res.body) throw new Error(`zip ${res.status}`);
+  const total = Number(res.headers.get('content-length')) || 0;
+  const { createWriteStream } = await import('node:fs');
+  const out = createWriteStream(dest);
+  let done = 0;
+  for await (const chunk of res.body) {
+    out.write(chunk);
+    done += chunk.length;
+    if (total > 0) onProgress(Math.min(99, Math.round((done / total) * 100)));
+  }
+  out.end();
+  await new Promise((resolve) => out.on('finish', resolve));
+  onProgress(100);
+  return dest;
+}
+
 async function loadFeed() {
   if (/^https?:\/\//i.test(FEED_URL)) return fetchText(FEED_URL);
   return loadFeedText(FEED_URL, {
@@ -89,8 +108,23 @@ async function runCheck() {
   }
 }
 
-// Проверка игры — их notice-механика: новее тег = баннер + кнопка на релизы,
-// всё остальное = тишина (игру не трогаем никогда).
+// Лента новостей игры — их releases API (note: текст целиком, движок режет сам).
+async function runGameNews() {
+  try {
+    const res = await fetch(`${GAME_API_URL.replace('/releases/latest', '/releases?per_page=5')}`);
+    if (!res.ok) return [];
+    const list = await res.json();
+    if (!Array.isArray(list)) return [];
+    return list.slice(0, 5).map((r) => ({
+      version: String(r.tag_name ?? '').replace(/^app-v/, ''),
+      date: String(r.published_at ?? '').slice(0, 10),
+      badge: 'update',
+      text: String(r.body ?? '').slice(0, 2000),
+    }));
+  } catch {
+    return [];
+  }
+}
 async function runGameCheck(current) {
   if (!current) return { status: 'unknown' };
   try {
@@ -117,9 +151,13 @@ async function runInstall(entry) {
 function createWindow() {
   const root = dirname(fileURLToPath(import.meta.url));
   const win = new BrowserWindow({
-    width: 900,
-    height: 640,
+    width: 960,
+    height: 600,
+    useContentSize: true,
+    resizable: false,
+    maximizable: false,
     autoHideMenuBar: true,
+    backgroundColor: '#0a0c11',
     title: 'Обновление перевода',
     webPreferences: { preload: join(root, 'preload.js'), sandbox: true },
   });
@@ -153,12 +191,43 @@ app.whenReady().then(() => {
         state.check = await runCheck();
         state.pending = state.check.status === 'available' ? state.check.entry : null;
         state.gameUpdate = await runGameCheck(game().version);
+        state.gameNews = await runGameNews();
       } finally {
         state.busy = false;
       }
       refresh();
     } else if (action === 'download-game') {
-      shell.openExternal(GAME_RELEASES_PAGE);
+      // Обновление самой игры: качаем установщик с их стабильного URL
+      // (REL5: имя не двигается) и открываем его — дальше их установщик.
+      // В dev-запуске качать нечего: открываем страницу релизов.
+      const file = resolveGameFile({
+        platform: process.platform,
+        packaged: app.isPackaged,
+        portable: !!process.env.PORTABLE_EXECUTABLE_DIR,
+      });
+      if (file === null) {
+        shell.openExternal(GAME_RELEASES_PAGE);
+      } else {
+        state.busy = true;
+        state.progress = { percent: 0, label: 'Качаю установщик…' };
+        refresh();
+        try {
+          const dest = join(tmpdir(), file);
+          await downloadWithProgress(latestGameFileUrl(file), dest, (percent) => {
+            state.progress = { percent, label: `Качаю установщик ${percent}%` };
+            refresh();
+          });
+          state.progress = null;
+          state.check = { status: 'up-to-date', entry: state.pending };
+          shell.openPath(dest);
+        } catch {
+          state.progress = null;
+          state.check = { status: 'install-failed', reason: 'net-error' };
+        } finally {
+          state.busy = false;
+        }
+        refresh();
+      }
     } else if (action === 'install') {
       const entry = state.pending;
       if (!entry) return;
@@ -207,6 +276,7 @@ app.whenReady().then(() => {
       state.pending = state.check.status === 'available' ? state.check.entry : null;
       const gu = await runGameCheck(hit.version);
       state.gameUpdate = gu.status === 'available' ? gu : null;
+      state.gameNews = await runGameNews();
       refresh();
     }
   })();
