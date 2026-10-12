@@ -142,7 +142,11 @@ export async function runPipeline(venue = {}, { dryRun = true, sh = defaultSh } 
   const repoRoot = join(REPO_TOOLS, '..');
   copyAssets(repoRoot, venue.probeTree);
   process.env.RU_FONT_PROD = join(repoRoot, 'src', 'font', 'scale.js');
-  run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', venue.probeTree, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply']);
+  // --allow-dirty: к этому моменту грязь в дереве — только наши ассеты
+  // (verify выше пропустил чистое, после него писал только copyAssets).
+  // probe-rebase их не трогает (не в touches очереди), при отказе restore
+  // чистит только наносное очереди.
+  run('node', [`${REPO_TOOLS}/probe-rebase.mjs`, '--scripts', venue.scriptsDir, '--clone', venue.probeTree, '--queue', venue.queuePath, '--from', venue.fromTag, '--to', venue.gameTag, '--apply', '--allow-dirty']);
   run('npm', ['install'], venue.probeTree);
   run('npm', ['run', 'build'], venue.probeTree);
   const patchedDist = join(venue.probeTree, 'dist');
