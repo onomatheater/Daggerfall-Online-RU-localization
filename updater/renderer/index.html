@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Обновление перевода</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main>
+  <h1>Русский перевод</h1>
+  <p id="game">Игра: …</p>
+  <p id="installed">Установлен: …</p>
+  <div class="row">
+    <button id="check" type="button">Проверить обновления</button>
+  </div>
+  <p id="found"></p>
+  <div class="row">
+    <button id="install" type="button" disabled>Установить</button>
+    <button id="rollback" type="button">Откатить</button>
+  </div>
+  <p id="status" role="status"></p>
+  <p class="privacy">Приложение только скачивает список паков и сам пак — и только
+  когда ты нажимаешь кнопку. Ничего о тебе никуда не отправляется.</p>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>

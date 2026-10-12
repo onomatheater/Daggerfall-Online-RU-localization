@@ -1,0 +1,8 @@
+body { font-family: 'Segoe UI', sans-serif; background: #14110d; color: #e9e4d9; margin: 0; }
+main { max-width: 420px; margin: 24px auto; padding: 0 20px; }
+h1 { font-size: 22px; }
+button { font: inherit; font-size: 16px; padding: 10px 16px; margin: 4px 8px 4px 0; cursor: pointer; }
+button:disabled { opacity: 0.45; cursor: default; }
+.row { margin: 12px 0; }
+#status { min-height: 24px; }
+.privacy { font-size: 13px; opacity: 0.75; }
