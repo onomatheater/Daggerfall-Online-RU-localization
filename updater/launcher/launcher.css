@@ -18,10 +18,7 @@
 @font-face { font-family: 'Handjet'; font-weight: 400; font-display: block; src: url(fonts/handjet-cyrillic-400-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
 @font-face { font-family: 'Handjet'; font-weight: 500; font-display: block; src: url(fonts/handjet-cyrillic-500-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
 @font-face { font-family: 'Handjet'; font-weight: 700; font-display: block; src: url(fonts/handjet-cyrillic-700-normal.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
-/* RU-fork: Press Start 2P — только 400 (других весов нет), в заголовки.
-   Решение человека 12.10. Кириллица проверена парсером (test/pressstart). */
-@font-face { font-family: 'Press Start 2P'; font-display: block; src: url(fonts/pressstart-cyrillic-400.woff2) format('woff2'); unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
-@font-face { font-family: 'Press Start 2P'; font-display: block; src: url(fonts/pressstart-latin-400.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+/* RU-fork: Press Start 2P откачен решением 12.10 — вордмарк снова Jacquard. */
 
 :root { --brass: #c08a3e; --ruby: #b91309; }
 * { box-sizing: border-box; }
@@ -30,7 +27,7 @@
 html, body { height: 100%; margin: 0; overflow: hidden; }
 body {
   color: #d8cfae; background: #0a0c11;
-  font-family: 'Handjet', 'Pixelify Five', 'Pixelify Sans', monospace; font-size: 15px; line-height: 1.5;
+  font-family: 'Handjet', 'Pixelify Five', 'Pixelify Sans', monospace; font-size: 15px; font-weight: 500; line-height: 1.5;
   -webkit-font-smoothing: none; font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'clig' 0;
   user-select: none; cursor: default;
 }
@@ -57,7 +54,7 @@ button { font: inherit; color: inherit; }
 /* THE MARK, left, as a game's own launcher wears it; the two doors out, right. */
 .top { flex: none; display: flex; align-items: flex-end; justify-content: space-between; }
 .wordmark {
-  margin: 0; font-family: 'Press Start 2P', 'Jacquard 12', serif; font-weight: 400; font-size: 44px; line-height: 1;
+  margin: 0; font-family: 'Jacquard 12', serif; font-weight: 400; font-size: 58px; line-height: 0.9;
   text-shadow: 4px 4px 0 rgba(0,0,0,0.7);
 }
 .wordmark small {
@@ -159,6 +156,7 @@ body[data-busy] .gem { animation: gleam 1.6s steps(8) infinite; }
 
 .plaque {
   min-height: 44px; padding: 8px 22px; cursor: pointer;
+  font-family: 'Handjet', monospace; font-weight: 700;
   font-size: 16px; letter-spacing: 0.14em; text-indent: 0.14em; text-transform: uppercase;
   color: #d8cfae; background: rgba(10,12,17,0.55); border: 2px solid #7d7460; text-shadow: 2px 2px 0 rgba(0,0,0,0.8);
 }
@@ -177,7 +175,7 @@ body[data-busy] .gem { animation: gleam 1.6s steps(8) infinite; }
 }
 .play:disabled { cursor: default; color: #7d7460; background: rgba(10,12,17,0.55); border-color: #7d7460; box-shadow: none; }
 
-.caps { font-family: 'Press Start 2P', 'Handjet', monospace; font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: #a89f88; text-shadow: 2px 2px 0 rgba(0,0,0,0.7); }
+.caps { font-family: 'Handjet', monospace; font-weight: 700; font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: #a89f88; text-shadow: 2px 2px 0 rgba(0,0,0,0.7); }
 .link { padding: 2px 4px; border: 0; background: none; cursor: pointer; color: #a89f88; letter-spacing: inherit; text-transform: inherit; }
 .link:hover, .link:focus-visible { outline: none; color: rgb(243,239,44); text-shadow: 2px 2px 0 rgb(93,77,12); }
 .opt .link { padding: 2px 0; font-size: 14px; letter-spacing: 0.08em; }
