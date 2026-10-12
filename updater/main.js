@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { readAsarPackageJson } from './lib/asar.js';
@@ -82,6 +82,7 @@ async function loadFeed() {
 async function runCheck() {
   const hit = game();
   if (hit.version === null) return { status: 'unknown-game', reason: hit.reason };
+  if (!isFeedConfigured(FEED_URL)) return { status: 'feed-unconfigured' };
   try {
     const text = await loadFeed();
     return checkForUpdate({ feedText: text, gameVersion: hit.version, currentVersion: installed()[0]?.version });

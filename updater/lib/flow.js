@@ -99,6 +99,16 @@ export function describeIssue(reason) {
   return text.length > 0 ? text : 'Неизвестная ошибка';
 }
 
+// Фид настроен? example.invalid — заглушка до релиза (URL задаёт человек
+// при выпуске, см. docs/updater.md): её не трогаем сетью и не врём про
+// «нет соединения». Локальный путь — стенд, он настроен всегда.
+export function isFeedConfigured(url) {
+  const src = String(url ?? '').trim();
+  if (src.length === 0) return false;
+  if (/^https?:\/\//i.test(src)) return !/example\.invalid/i.test(src);
+  return true;
+}
+
 // Тихая автопроверка при старте — только с согласия (флаг) и известной игрой.
 // Их закон DA6: авто = тишина (ошибка никому не показывается), ручная = громко.
 export function decideStartup({ autoCheck, gameVersion } = {}) {

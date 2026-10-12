@@ -63,6 +63,11 @@ test('install failure speaks Russian in status', () => {
   assert.ok(v.status.includes('соединения'), v.status);
 });
 
+test('unconfigured feed says so, not offline', () => {
+  const v = viewOf({ game: GAME, installed: INSTALLED, check: { status: 'feed-unconfigured' }, busy: false, prefs: {}, gameDir: '' });
+  assert.ok(v.status.includes('хост'), v.status);
+});
+
 test('game update is a separate banner with download action, pack untouched', () => {
   const v = viewOf({
     game: GAME,

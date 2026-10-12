@@ -58,3 +58,11 @@ test('isGameRunning matches mac/linux lines, picks list command per platform', a
   assert.deepEqual(psCommand('darwin'), { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] });
   assert.deepEqual(psCommand('linux'), { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] });
 });
+
+test('unconfigured feed url is reported, not mistaken for offline', async () => {
+  const { isFeedConfigured } = await import('../updater/lib/flow.js');
+  assert.equal(isFeedConfigured('https://example.invalid/ru-pack-feed.json'), false);
+  assert.equal(isFeedConfigured('https://releases.example.com/ru-pack-feed.json'), true);
+  assert.equal(isFeedConfigured('C:\\packs\\feed.json'), true, 'local stand stays usable');
+  assert.equal(isFeedConfigured(''), false);
+});

@@ -31,6 +31,9 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
   } else if (check?.status === 'no-compatible') {
     status = 'Под твою версию игры пака пока нет.';
     note = note || 'Жди следующий выпуск — игра при этом работает.';
+  } else if (check?.status === 'feed-unconfigured') {
+    status = 'Релизный хост паков не настроен.';
+    note = note || 'Жди выпуск апдейтера — игра при этом работает.';
   } else if (check?.status === 'net-error' || check?.status === 'unknown-game') {
     status = describeIssue(check.reason ?? check.status);
   } else if (check?.status === 'translation-restored') {
