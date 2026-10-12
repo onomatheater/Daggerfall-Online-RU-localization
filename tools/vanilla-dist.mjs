@@ -16,14 +16,14 @@ export function distReady(distDir) {
   }
 }
 
-const defaultRun = ({ cwd, args }) => {
-  const hit = spawnSync('npm', args, { cwd, encoding: 'utf8' });
+export const defaultRun = ({ cmd = 'npm', args, cwd }) => {
+  const hit = spawnSync(cmd, args, { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
   if (hit.status !== 0) return { ok: false, reason: String(hit.stderr ?? hit.error ?? 'build failed').slice(0, 300) };
   return { ok: true };
 };
 
 export async function buildVanilla({ cloneDir, outDir, run = defaultRun } = {}) {
-  const built = await run({ cwd: cloneDir, args: ['run', 'build'] });
+  const built = await run({ cmd: 'npm', cwd: cloneDir, args: ['run', 'build'] });
   if (!built || built.ok !== true) {
     throw new Error(`vanilla-dist: build failed: ${built?.reason ?? 'unknown'}`);
   }

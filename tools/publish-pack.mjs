@@ -59,7 +59,7 @@ export function bundleHasMarkers(distDir, markers) {
 }
 
 const defaultSh = ({ cmd, args, cwd }) => {
-  const hit = spawnSync(cmd, args, { cwd, encoding: 'utf8' });
+  const hit = spawnSync(cmd, args, { cwd, encoding: 'utf8', shell: process.platform === 'win32' });
   if (hit.status !== 0) {
     throw new Error(`pipeline: ${cmd} ${args.join(' ')} failed: ${String(hit.stderr ?? hit.error ?? '').slice(0, 300)}`);
   }
