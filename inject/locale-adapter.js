@@ -18,9 +18,10 @@
 // Рантайм-пак (оверлей-исход): setGameVersion + registerPack кладут таблицы
 // пака поверх bundled. Чужой/битый пак -> {ok:false}, bundled не тронут.
 // wrap* сначала смотрят в пак (has), иначе — как раньше через t().
-export { t, setLocale, getLocale, splitKey } from '../src/locale/locale.js';
-import { t, tp, getLocale } from '../src/locale/locale.js';
+import { t, tp, getLocale, hasKey, splitKey, setLocale } from '../src/locale/locale.js';
 import { createOverlay, parseManifest, isCompatible, resolvePlural } from '../src/locale/loader.js';
+import { applyParams } from '../src/locale/params.js';
+export { t, tp, getLocale, hasKey, splitKey, setLocale };
 
 const packOverlay = createOverlay({});
 let gameVersion = '';
@@ -46,19 +47,14 @@ export function registerPack(pack, version = gameVersion) {
   return { ok: true, version: manifest.version };
 }
 
-function applyParams(s, params) {
-  for (const v of Object.values(params)) s = s.replaceAll('%s', String(v));
-  for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
-  return s;
-}
-
 function wrap(key, params, fallback) {
   if (packOverlay.has(key, getLocale())) return packOverlay.resolve(key, params, getLocale());
-  const hit = t(key, params);
-  // Total miss: t() returns the raw key (keys always carry 'table:' shape,
-  // human values never equal it). Call sites keep their EN default (tOr parity).
-  if (hit === key && fallback !== undefined) return applyParams(String(fallback), params);
-  return hit;
+  if (!hasKey(key)) {
+    // Явный total miss (без сравнения строк): call site держит EN-дефолт.
+    if (fallback !== undefined) return applyParams(String(fallback), params);
+    return t(key, params);
+  }
+  return t(key, params);
 }
 
 export function wrapLiteral(key, params = {}, fallback) {

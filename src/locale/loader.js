@@ -6,6 +6,7 @@
 // вместе с asar; overlay-таблицы живут поверх и гейтятся по версии игры.
 import { splitKey } from './locale.js';
 import { plural } from './morph.js';
+import { applyParams } from './params.js';
 export { splitKey };
 
 export function parseManifest(text) {
@@ -23,11 +24,14 @@ export function parseManifest(text) {
 
 // Канон версии игры: клиент отдаёт dotted ('0.1.7553'), клейма паков —
 // короткий билд ('7553'). Сравниваем по канону с обеих сторон, иначе
-// фид никогда не сходится с живой игрой. Мусор — как есть (ложь, не краш).
+// фид никогда не сходится с живой игрой. Мусор -> '' + warn (ложь, не краш,
+// но несовместим: isCompatible вернёт false).
 export function canonGameVersion(version) {
   const parts = String(version ?? '').split('.');
   const last = parts[parts.length - 1] ?? '';
-  return /^\d+$/.test(last) ? String(Number(last)) : String(version ?? '');
+  if (/^\d+$/.test(last)) return String(Number(last));
+  if (typeof console !== 'undefined') console.warn(`[locale] bad game version: ${version}`);
+  return '';
 }
 
 // Совместимость пака с игрой: точный тег game ИЛИ диапазон gameMin/gameMax.
@@ -52,7 +56,10 @@ export const cmpVersion = (a, b) => {
   const pa = String(a).split('.').map(Number);
   const pb = String(b).split('.').map(Number);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    const x = pa[i] ?? 0;
+    const y = pb[i] ?? 0;
+    if (Number.isNaN(x) || Number.isNaN(y)) return NaN;
+    const d = x - y;
     if (d !== 0) return d;
   }
   return 0;
@@ -83,9 +90,7 @@ export function createOverlay(bundled) {
       let s = hit ?? rawKey;
       if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] missing key: ${rawKey}`);
       if (typeof s !== 'string') return s;
-      for (const v of Object.values(params)) s = s.replaceAll('%s', String(v));
-      for (const [k, v] of Object.entries(params)) s = s.replaceAll(`{${k}}`, String(v));
-      return s;
+      return applyParams(s, params);
     },
     // Явное наличие в паке (без фолбэка): адаптер решает, кому рендерить —
     // overlay-паку или bundled t(). Сравнением строк это не делается.
