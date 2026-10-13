@@ -19,6 +19,11 @@ test('localized text in, error out', () => {
   assert.throws(() => toWire({ templateId: 'steel_cuirass', name: 'Steel Cuirass' }), /ID-only/);
 });
 
+test('technical fields containing the substrings pass through', () => {
+  assert.deepEqual(toWire({ templateId: 'steel_cuirass', filename: 'icon.png' }).templateId, 'steel_cuirass');
+  assert.deepEqual(toWire({ templateId: 'steel_cuirass', subtitle: 'x' }).templateId, 'steel_cuirass');
+});
+
 test('each side renders in its own locale', () => {
   const wire = toWire({ templateId: 'steel_cuirass' });
   assert.equal(renderLink(wire, 'ru', NAMES), 'Стальная кираса');

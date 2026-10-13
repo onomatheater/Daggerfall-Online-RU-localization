@@ -47,7 +47,7 @@ function stripComments(src) {
   return out;
 }
 
-function decodeEscape(ch, next, src, i) {
+function decodeEscape(ch, src, i) {
   switch (ch) {
     case 'n': return { text: '\n', len: 1 };
     case 't': return { text: '\t', len: 1 };
@@ -67,7 +67,6 @@ function decodeEscape(ch, next, src, i) {
       return { text: 'x', len: 0 };
     }
     default:
-      void next;
       return { text: ch, len: 0 };
   }
 }
@@ -82,7 +81,7 @@ function parseString(src, i) {
   while (j < src.length) {
     const ch = src[j];
     if (ch === '\\') {
-      const d = decodeEscape(src[j + 1], src[j + 2], src, j + 2);
+      const d = decodeEscape(src[j + 1], src, j + 2);
       value += d.text;
       j += 2 + d.len;
       continue;
@@ -286,7 +285,6 @@ export function scanCalls(src, specs) {
   function foldArg(span) {
     let [s, e] = span;
     let acc = '';
-    let any = false;
     for (;;) {
       s = skipWs(text, s);
       const q = text[s];
@@ -294,7 +292,6 @@ export function scanCalls(src, specs) {
       const p = parseString(text, s);
       if (p.error || p.dynamic) return undefined;
       acc += p.value;
-      any = true;
       const nx = skipWs(text, p.end);
       if (text[nx] === '+') { s = skipWs(text, nx + 1); continue; }
       // Хвост после литерала — только пробелы до конца span.
@@ -304,7 +301,6 @@ export function scanCalls(src, specs) {
       }
       return acc;
     }
-    void any;
     return acc;
   }
 

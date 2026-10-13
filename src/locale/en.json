@@ -5383,5 +5383,19 @@
     "credits.mods.43.terms": "Its winter ground carried from the shipped bundle on Mac’s word of the author’s permission (Port-Doctrine’s second exception) - see vendor/snowfall/README.md for the permission record.",
     "credits.mods.44.what": "The desert’s ground repainted (ALIKR1): pale dune sand with ripples over Daggerfall’s own desert tiles, worn with the enhanced outdoors.",
     "credits.mods.44.terms": "Its pictures carried byte for byte on Mac’s word of the author’s permission (Port-Doctrine’s second exception); the archive names no author - see vendor/sands-of-the-alikr/README.md for the permission record."
+  },
+  "months": {
+    "0": { "nom": "January", "gen": "January", "dat": "January", "acc": "January", "inst": "January", "prep": "January" },
+    "1": { "nom": "February", "gen": "February", "dat": "February", "acc": "February", "inst": "February", "prep": "February" },
+    "2": { "nom": "March", "gen": "March", "dat": "March", "acc": "March", "inst": "March", "prep": "March" },
+    "3": { "nom": "April", "gen": "April", "dat": "April", "acc": "April", "inst": "April", "prep": "April" },
+    "4": { "nom": "May", "gen": "May", "dat": "May", "acc": "May", "inst": "May", "prep": "May" },
+    "5": { "nom": "June", "gen": "June", "dat": "June", "acc": "June", "inst": "June", "prep": "June" },
+    "6": { "nom": "July", "gen": "July", "dat": "July", "acc": "July", "inst": "July", "prep": "July" },
+    "7": { "nom": "August", "gen": "August", "dat": "August", "acc": "August", "inst": "August", "prep": "August" },
+    "8": { "nom": "September", "gen": "September", "dat": "September", "acc": "September", "inst": "September", "prep": "September" },
+    "9": { "nom": "October", "gen": "October", "dat": "October", "acc": "October", "inst": "October", "prep": "October" },
+    "10": { "nom": "November", "gen": "November", "dat": "November", "acc": "November", "inst": "November", "prep": "November" },
+    "11": { "nom": "December", "gen": "December", "dat": "December", "acc": "December", "inst": "December", "prep": "December" }
   }
 }
