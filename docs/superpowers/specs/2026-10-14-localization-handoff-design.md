@@ -82,7 +82,7 @@ This is a required, separate handoff document. Organize entries into:
 3. known integration or test coverage gaps;
 4. claims that require maintainer or upstream confirmation.
 
-Each entry should include **status**, **evidence** (file/symbol/test paths), **impact**, and **next decision or verification needed**. Avoid turning historical TODO entries into commitments. Give each claim an “as of” date and distinguish source-code inspection from a test or live-client verification.
+Each entry should include **status**, **evidence** (file/symbol/test paths), **impact**, and **next decision or verification needed**. Include still-open items from the current maintainer-approved work queue only after checking them against code; label them as a dated roadmap snapshot, not a promise to continue. Do not copy local TODO history or machine-specific details. Give each claim an “as of” date and distinguish source-code inspection from a test or live-client verification.
 
 ### 8. `CONTRIBUTING.md` — contribution entry point
 
