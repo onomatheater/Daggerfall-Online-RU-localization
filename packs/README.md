@@ -1,48 +1,90 @@
-# Паки перевода (раздача с main)
+# RU pack feed and release operations
 
-Лаунчер тянет перевод отсюда: `packs/feed.json` + свежий zip.
-URL фида зашит в апдейтер (`DEFAULT_FEED_URL` в `updater/lib/flow.js`).
+This is an operator guide, not player installation instructions. For the
+player-facing flow, see [the updater guide](../docs/updater.md); for updater
+internals and test limits, see [the maintainer guide](../LAUNCHER.md) and
+[Known Gaps](../docs/KNOWN-GAPS.md). Source and test behavior were inspected on
+2026-10-14; a green fixture test is not a live release check.
 
-## Политика (решение человека 12.10)
+## Package and feed formats
 
-- В `main` лежит ТОЛЬКО свежий пак: `packs/dfo-ru-pack.zip` + `packs/feed.json`
-  с одной записью. Пак заявляет пол (`gameMin`), не точную сборку: на новее —
-  ставится, новые ключи падают в EN + очередь синка. Старые версии остаются
-  в истории git, в рабочую копию не едут. Старая игра без совместимого пака
-  остаётся на английском — это честный `no-compatible`, не поломка.
-- Рецепт возврата перевода после обновления игры — рядом:
-  `packs/recipe-<game>.zip` + ссылка `recipe: {url, sha}` в записи фида.
-  Один пак — один рецепт под его `game`.
+`tools/pack-ru.mjs` writes a pack directory containing `ru.json`, the selected
+Handjet font files, quest and book `-LOC` files, and `locale-version.json`. The
+manifest identifies `locale: "ru"`, a pack `version`, the relative `files`
+list, and a game compatibility stamp: exact `game`, or `gameMin` with optional
+`gameMax`. This packer does not include BIOG files. Preserve the directory's
+relative paths when making the ZIP.
 
-## Как выпустить пак (руками, CI нет)
+`tools/verify-pack.mjs <pack-dir>` checks the manifest/file list, translation
+JSON, version range, quest/book content, and WOFF2 signatures. A successful
+check is package validation, not proof that a game client loads the package or
+its `-LOC` files.
 
-1. `node tools/pack-ru.mjs` — собрать пак (гейт `verify-pack` внутри).
-2. Упаковать директорию пака в `packs/dfo-ru-pack.zip`.
-3. `node tools/dist-recipe.mjs --vanilla <ванильный dist> --patched <наш dist> --game <версия> --out recipe.json`,
-   упаковать рецепт в `packs/recipe-<версия>.zip`.
-4. `node tools/release-ru.mjs --in release-items.json --out packs/feed.json`,
-   где `release-items.json` — `[{zipPath, packDir, url, notes, recipe}]`
-   с URL вида `https://raw.githubusercontent.com/onomatheater/Daggerfall-Online-RU-localization/main/packs/<файл>`.
-   `releaseEntry` сам сверит пак и посчитает sha; битый пак — throw, частичный
-   фид не публикуется.
-5. Закоммитить `packs/` в `main`, запушить. Лаунчер подтянет обнову сам.
+`packs/feed.json` is `{ "generated": "…", "packs": [...] }`. Each pack entry
+contains the manifest fields plus `url` and `sha` (SHA-256 of the ZIP); optional
+fields are `notes` and `recipe: { "url": "…", "sha": "…" }`. The client
+selection logic picks the newest compatible version. An entry without a valid
+game stamp is not compatible. `tools/release-ru.mjs --in <items.json> --out
+<feed.json>` builds the feed from items with `zipPath`, `packDir`, and `url`,
+plus optional `notes` and `recipe`. It verifies the pack and computes the pack
+ZIP hash; recipe hash is supplied in the input. The checked-in feed currently
+has no pack entries, so inspect it before announcing a release.
 
-## Автоконвейер (вместо рук)
+## Manual pack preparation
 
-Машина сама следит за версиями игры и шьёт паки. Руки — только когда
-гейты красные (якоря уплыли, сборка упала).
+From the repository root, prepare and validate a package with a compatibility
+stamp appropriate to the target game:
 
-- `tools/game-watch.mjs` — есть ли тег новее max клейма в фиде
-  (состояние и есть фид, отдельного стейта нет).
-- `tools/vanilla-dist.mjs` — ванильный dist сборкой тега из исходников.
-- `tools/publish-pack.mjs` — склейка: клон → ваниль → очередь патчей
-  (`probe-rebase --apply`) → пропатченная сборка → маркеры → stage.
-  Дефолт dry-run (только шаги, ничего не трогает).
-- `tools/publish-gates.mjs` — публикация: все гейты зелёные, пишем
-  только `packs/**` на `main`, дерево вне `packs/` обязано быть чистым.
-- Прогон руками из корня репозитория (всё в tmp, репозиторий не трогаем
-  до публикации):
-  `node tools/publish-pack.mjs --run --tag app-vX --from app-vY ...`
-  (точные флаги — `--help` скрипта; без `--run` только план).
-- Запуск по расписанию на машине owner'а (планировщик, не CI).
-  Actions отложены сознательно.
+```sh
+node tools/pack-ru.mjs --out <pack-dir> --version <pack-version> --game <game-version>
+node tools/verify-pack.mjs <pack-dir>
+```
+
+Use `--game-min <version>` and optional `--game-max <version>` instead of
+`--game` for a compatibility range. Create the archive and recipe artifacts,
+then prepare `items.json` and generate `packs/feed.json` with the release tool.
+The manual preparation commands write the output directory, ZIP, and feed path
+you provide. Review the generated feed and artifacts before any publication.
+
+## Staging pipeline is not publication
+
+First inspect the command's usage (safe; no pipeline execution):
+
+```sh
+node tools/publish-pack.mjs --help
+```
+
+Required arguments are `--tag <app-vX>`, `--from <app-vY>`,
+`--version <game-version>`, `--pack-version <version>`, `--scripts <dir>`,
+`--queue <json>`, `--markers <comma-separated-values>`, `--notes <text>`,
+`--url-base <url>`, `--work-root <dir>`, `--vanilla-clone <dir>`, and
+`--probe-tree <dir>`. The default invocation is a plan-only dry-run.
+
+**`--run` has write side effects and is not publication.** It removes only the
+pipeline's owned assets from the probe tree, copies locale/font assets, applies
+the selected probe queue, installs dependencies in the clone trees, builds
+vanilla and patched outputs, checks markers, and stages pack and recipe ZIPs
+under the work root. It returns a release-entry object (not written to a file).
+It mutates the probe workflow. It does not publish the staged files or write
+`packs/feed.json`.
+Do not run it without explicit authorization and a reviewed target workspace.
+
+## Publication helper and side effects
+
+`tools/publish-gates.mjs` has no CLI interface; `node tools/publish-gates.mjs
+--help` does not print command help. It exports two independent helpers:
+
+- `gatesOk(report)` returns true only when the supplied `build`, `markers`,
+  `pack`, and `probe` fields are all `true`.
+- `publishPack({ repoDir, files, message, dryRun })` defaults to `dryRun: true`
+  and returns a plan without writing. A non-dry call accepts only files under
+  `packs/**`; it refuses a dirty tree outside `packs/` or a branch other than
+  `main`, writes the supplied files, runs `git add packs`, commits, and pushes
+  `origin main`.
+
+`publishPack` does not call `gatesOk` itself. Verify gates and inspect exact
+files before requesting publication; a non-dry call can commit and push to
+`main` and requires explicit maintainer authorization. Tests exercise the
+publisher using temporary local Git repositories, not the project remote.
+Staging and publication are separate steps; never infer that staged artifacts
+have been released.
