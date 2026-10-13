@@ -9,8 +9,9 @@ import { join } from 'node:path';
 
 import {
   FEED_PACKS_BASE, DEFAULT_FEED_URL, GAME_RELEASES_PAGE,
-  GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, NEWS, EXE_NAMES,
-  TMP_PREFIXES, PS_TIMEOUT_MS, defaultGameDir,
+  GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, WINDOW_CHROME, ICON_FILE,
+  NEWS, EXE_NAMES, TMP_PREFIXES, PS_TIMEOUT_MS, defaultGameDir,
+  RECIPE, PACK, APP_DIST,
 } from '../updater/lib/config.js';
 
 test('config: single source pinned', () => {
@@ -30,6 +31,20 @@ test('config: single source pinned', () => {
 test('config: default game dir without LOCALAPPDATA is empty, not broken', () => {
   assert.equal(defaultGameDir({ LOCALAPPDATA: 'C:\\Users\\x\\AppData\\Local' }), 'C:\\Users\\x\\AppData\\Local\\Programs\\Daggerfall Online');
   assert.equal(defaultGameDir({}), '');
+});
+
+test('config: window chrome, recipe/pack layout pinned', () => {
+  assert.deepEqual(WINDOW_CHROME, {
+    resizable: false,
+    maximizable: false,
+    autoHideMenuBar: true,
+    backgroundColor: '#0a0c11',
+    title: 'Обновление перевода',
+  });
+  assert.equal(ICON_FILE, 'assets/icon.ico');
+  assert.deepEqual(RECIPE, { zip: 'recipe.zip', dir: 'recipe', file: 'recipe.json' });
+  assert.deepEqual(PACK, { zip: 'ru-pack.zip', dir: 'pack' });
+  assert.deepEqual(APP_DIST, ['resources', 'app', 'dist']);
 });
 
 test('prefs: corrupt file is backed up, default returned', async () => {

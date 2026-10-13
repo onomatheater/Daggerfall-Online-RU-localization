@@ -4,13 +4,15 @@
 // JSON, шрифты/картинки не манглятся utf8. Чужой shape дальше не идёт.
 // Неизменные чанки совпадают байтом и в рецепт не едут (поэтому 2 МБ, а не 173).
 // Чистый fs, ноль зависимостей. Рецепты живут в релизах, не в репозитории.
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 function walk(dir, base = dir, out = []) {
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) walk(full, base, out);
+  // Dirent вместо statSync: висячий симлинк идёт файлом и падает громко
+  // в readFileSync с понятным путём, а не throw без контекста из обхода.
+  for (const ent of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, ent.name);
+    if (ent.isDirectory()) walk(full, base, out);
     else out.push(relative(base, full).split(sep).join('/'));
   }
   return out;

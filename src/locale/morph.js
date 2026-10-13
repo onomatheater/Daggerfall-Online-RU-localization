@@ -31,7 +31,9 @@ const CASES = Object.freeze(['nom', 'gen', 'dat', 'acc', 'inst', 'prep']);
 export function month(index, cas = 'nom') {
   const key = String(index);
   const forms = ru.months?.[key] ?? en.months?.[key];
-  const hit = forms?.[CASES.includes(cas) ? cas : 'nom'];
+  const sane = CASES.includes(cas) ? cas : 'nom';
+  if (sane !== cas && typeof console !== 'undefined') console.warn(`[locale] month: bad cas=${cas}, falling back to nom`);
+  const hit = forms?.[sane];
   if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] month: bad index=${index} cas=${cas}`);
   return hit ?? '';
 }

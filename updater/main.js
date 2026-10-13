@@ -11,9 +11,9 @@ import { detectGameVersion } from '../tools/detect-game.mjs';
 import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
-import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, NEWS, TMP_PREFIXES, defaultGameDir } from './lib/config.js';
+import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, WINDOW_CHROME, ICON_FILE, NEWS, TMP_PREFIXES, defaultGameDir, RECIPE, PACK, APP_DIST } from './lib/config.js';
 import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
-import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl } from './lib/paths.js';
+import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl, pruneTmpDir, backupAsarName, backupVanillaName } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { launchGame } from './lib/launch.js';
@@ -63,10 +63,10 @@ async function fetchText(url) {
 
 async function fetchZip(url, dest) {
   // Демо/стенд: file-путь читается с диска, http(s) — сетью по кнопке.
-  // Предикат один на оба места (см. restoreTranslation): updater/lib/paths.js.
+  // Предикаты и file-пути — updater/lib/paths.js (тестируются в node).
   if (isLocalPath(url)) {
     const { copyFileSync } = await import('node:fs');
-    copyFileSync(filePathFromUrl(url), dest);
+    copyFileSync(filePathFromUrl(url, homedir()), dest);
     return dest;
   }
   const res = await fetch(url);
@@ -148,20 +148,15 @@ async function runInstall(entry) {
   }
 }
 
-// Подбор мусора прошлых прогонов (наши префиксы), молча.
+// Подбор мусора прошлых прогонов (наши префиксы): логика тестируема
+// в updater/lib/paths.js (pruneTmpDir переживает занятые записи),
+// здесь только замыкания Electron.
 function pruneTmp() {
-  let names = [];
-  try {
-    names = readdirSync(tmpdir());
-  } catch {
-    // tmp не читается — подбирать нечего, следующий запуск попробует снова.
-    return;
-  }
-  for (const name of names) {
-    if (TMP_PREFIXES.some((p) => name.startsWith(p))) {
-      rmSync(join(tmpdir(), name), { recursive: true, force: true });
-    }
-  }
+  pruneTmpDir(tmpdir(), {
+    readdir: (d) => readdirSync(d),
+    rm: (p) => rmSync(p, { recursive: true, force: true }),
+    joinPath: join,
+  });
 }
 
 function createWindow() {
@@ -170,12 +165,8 @@ function createWindow() {
     width: WINDOW.width,
     height: WINDOW.height,
     useContentSize: true,
-    resizable: false,
-    maximizable: false,
-    autoHideMenuBar: true,
-    backgroundColor: '#0a0c11',
-    title: 'Обновление перевода',
-    icon: join(root, 'assets', 'icon.ico'),
+    ...WINDOW_CHROME,
+    icon: join(root, ICON_FILE),
     webPreferences: { preload: join(root, 'preload.js'), sandbox: true },
   });
   win.loadFile(join(root, 'launcher/index.html'));
@@ -203,18 +194,14 @@ app.whenReady().then(() => {
     const { ensureUnpacked } = await import('./lib/migrate.js');
     await ensureUnpacked({
       resourcesDir: join(gameDir(), 'resources'),
-      backupPath: join(userData(), 'backups', `app-asar-${hit.version}.asar`),
+      backupPath: join(userData(), 'backups', backupAsarName(hit.version)),
     });
     onStage(50, 'Качаю рецепт перевода…');
     const tmp = mkdtempSync(join(tmpdir(), TMP_PREFIXES[1]));
     try {
-      const zipPath = join(tmp, 'recipe.zip');
-      if (isLocalPath(recipeRef.url)) {
-        const { copyFileSync } = await import('node:fs');
-        copyFileSync(filePathFromUrl(recipeRef.url), zipPath);
-      } else {
-        await fetchZip(recipeRef.url, zipPath);
-      }
+      const zipPath = join(tmp, RECIPE.zip);
+      // fetchZip умеет обе ветки (сеть и локальный стенд): дубля file-копии нет.
+      await fetchZip(recipeRef.url, zipPath);
       const { verifyFileSha } = await import('../tools/update-ru.mjs');
       const shaIssue = shaProblem(recipeRef);
       if (shaIssue !== null) return { status: 'install-failed', reason: shaIssue };
@@ -224,17 +211,17 @@ app.whenReady().then(() => {
       }
       onStage(75, 'Возвращаю перевод…');
       const { unpackZip } = await import('./lib/unzip.js');
-      const unpackDir = join(tmp, 'recipe');
+      const unpackDir = join(tmp, RECIPE.dir);
       unpackZip(zipPath, unpackDir);
       const { readFileSync: readJson } = await import('node:fs');
-      const recipe = JSON.parse(readJson(join(unpackDir, 'recipe.json'), 'utf8'));
+      const recipe = JSON.parse(readJson(join(unpackDir, RECIPE.file), 'utf8'));
       if (recipe.game !== hit.version) return { status: 'no-recipe' };
       const { applyRecipe, verifyApplied } = await import('./lib/dist-apply.js');
-      const appDir = join(gameDir(), 'resources', 'app', 'dist');
+      const appDir = join(gameDir(), ...APP_DIST);
       const rep = await applyRecipe({
         appDir,
         recipe,
-        backupDir: join(userData(), 'backups', `vanilla-${hit.version}`),
+        backupDir: join(userData(), 'backups', backupVanillaName(hit.version)),
       });
       if (!rep.ok) return { status: 'install-failed', reason: rep.reason };
       const verify = verifyApplied({ appDir, recipe });
@@ -269,6 +256,7 @@ app.whenReady().then(() => {
   ipcMain.on('launcher:act', async (_ev, { action, arg }) => {
     if (action === 'open') {
       if (Object.hasOwn(LINKS, arg)) shell.openExternal(LINKS[arg]);
+      else console.error(`[updater] unknown link id: ${arg}`);
     } else if (action === 'set-update-check') {
       savePrefs(userData(), { ...loadPrefs(userData()), autoCheck: arg === true });
       refresh();
@@ -310,6 +298,7 @@ app.whenReady().then(() => {
       shell.openExternal(GAME_RELEASES_PAGE);
     } else if (action === 'install') {
       const entry = state.pending;
+      // Некого ставить (гонка дабл-клика: pending уже снят) — не баг, выходим.
       if (!entry) return;
       state.busy = true;
       refresh();
@@ -328,6 +317,7 @@ app.whenReady().then(() => {
     } else if (action === 'restore-translation') {
       await runRestore(state.pending?.recipe);
     } else if (action === 'play') {
+      // Ставится пак — игра подождёт (кнопка и так гаснет через play.enabled).
       if (state.busy) return;
       const hit = game();
       if (hit.version === null) {
@@ -339,6 +329,7 @@ app.whenReady().then(() => {
       refresh();
     } else if (action === 'rollback') {
       const prev = rollbackPack(storeDir());
+      // Предыдущего пака нет (кнопка скрыта при <2 паков) — не баг, выходим.
       if (prev === null) return;
       state.busy = true;
       refresh();
@@ -364,6 +355,10 @@ app.whenReady().then(() => {
         state.busy = false;
       }
       refresh();
+    } else {
+      // Неизвестный action/arg от страницы: опечатка в id кнопки иначе
+      // давала бы мёртвую кнопку без следа. UI молчит, консоль — нет.
+      console.error(`[updater] unknown launcher action: ${action} ${arg ?? ''}`);
     }
   });
   (async () => {

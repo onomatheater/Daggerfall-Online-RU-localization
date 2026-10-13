@@ -25,3 +25,18 @@ test('coverage is a frozen sorted contract, stable across imports', async () => 
   const again = (await import('../src/font/coverage.js')).COVERAGE;
   assert.equal(again, COVERAGE, 'same frozen instance (module-level build runs once)');
 });
+
+test('font-face unicode-ranges cover the whole SDF seed (no drift)', async () => {
+  const { HANDJET_FACE } = await import('../src/font/handjet.js');
+  const face = new Set();
+  for (const [, ranges] of HANDJET_FACE.matchAll(/unicode-range:([^;]+);/g)) {
+    for (const part of ranges.split(',')) {
+      const m = part.trim().match(/^U\+([0-9A-F]+)(?:-([0-9A-F]+))?$/i);
+      assert.ok(m, 'parseable range: ' + part);
+      const [lo, hi] = [parseInt(m[1], 16), parseInt(m[2] ?? m[1], 16)];
+      for (let cp = lo; cp <= hi; cp++) face.add(cp);
+    }
+  }
+  const missing = COVERAGE.filter((cp) => !face.has(cp));
+  assert.deepEqual(missing, [], 'SDF seed outside @font-face: ' + missing.map((c) => 'U+' + c.toString(16)).join(','));
+});

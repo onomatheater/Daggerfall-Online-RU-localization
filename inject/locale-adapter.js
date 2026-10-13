@@ -24,10 +24,16 @@ import { applyParams } from '../src/locale/params.js';
 export { t, tp, getLocale, hasKey, splitKey, setLocale };
 
 const packOverlay = createOverlay({});
+// Локаль рантайм-пака одна — именованная константа, не магия 'ru' по файлу.
+const PACK_LOCALE = 'ru';
 let gameVersion = '';
 
 export function setGameVersion(version) {
-  gameVersion = typeof version === 'string' ? version : '';
+  if (typeof version === 'string') {
+    gameVersion = version;
+    return;
+  }
+  if (typeof console !== 'undefined') console.warn(`[adapter] setGameVersion: bad version, keeping '${gameVersion}'`);
 }
 
 export function registerPack(pack, version = gameVersion) {
@@ -42,7 +48,7 @@ export function registerPack(pack, version = gameVersion) {
   if (!isCompatible(manifest, version)) return fail(`pack ${manifest.version} incompatible with game ${version || '<unknown>'}`);
   if (!pack.tables || typeof pack.tables !== 'object') return fail('pack: need tables');
   for (const [table, rows] of Object.entries(pack.tables)) {
-    packOverlay.register('ru', table, rows);
+    packOverlay.register(PACK_LOCALE, table, rows);
   }
   return { ok: true, version: manifest.version };
 }
@@ -66,6 +72,6 @@ export function wrapTemplate(key, params = {}, fallback) {
 // Plural-рендер поверх пака: объект {one,few,many} -> строка через plural(),
 // иначе (нет в паке) — как bundled через tp(). Строковый путь не тронут.
 export function wrapPlural(key, n) {
-  if (packOverlay.has(key, getLocale())) return resolvePlural(packOverlay, key, n, getLocale());
+  if (packOverlay.has(key, getLocale())) return resolvePlural(packOverlay, key, n, {}, getLocale());
   return tp(key, n);
 }

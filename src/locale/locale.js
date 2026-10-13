@@ -10,7 +10,12 @@ const tables = { en, ru };
 let cur = 'en';
 
 export const setLocale = (l) => {
-  cur = tables[l] ? l : 'en';
+  if (tables[l]) {
+    cur = l;
+    return;
+  }
+  if (typeof console !== 'undefined') console.warn(`[locale] unknown locale=${l}, falling back to en`);
+  cur = 'en';
 };
 export const getLocale = () => cur;
 
