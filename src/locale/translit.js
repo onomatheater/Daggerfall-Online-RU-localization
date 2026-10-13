@@ -10,6 +10,6 @@ export const NORD_SUFFIX_RU = typeof table['@nordSuffix'] === 'string' ? table['
 export function translitPart (part) {
   const hit = table[part];
   if (typeof hit === 'string' && hit) return hit;
-  console.warn(`[locale] missing translit: ${part}`);
+  if (typeof console !== 'undefined') console.warn(`[locale] missing translit: ${part}`);
   return part;
 }

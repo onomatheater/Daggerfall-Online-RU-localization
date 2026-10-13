@@ -35,10 +35,12 @@ export function hasKey(rawKey, locale) {
   return tables[loc]?.[table]?.[key] !== undefined || tables.en?.[table]?.[key] !== undefined;
 }
 
-// tp(key, n): plural-рендер запечённых форм {one,few,many} (см. morph.js).
+// tp(key, n, params?, locale?): plural-рендер запечённых форм {one,few,many}.
 // Нет ключа — как t(): fallback-строка без падения (предупреждение уже в t).
-export function tp(rawKey, n) {
-  const hit = t(rawKey);
-  if (hit && typeof hit === 'object') return plural(n, hit);
+export function tp(rawKey, n, params = {}, locale) {
+  const hit = t(rawKey, params, locale);
+  // Объект возвращается из t() нетронутым: plural выбирает форму по n,
+  // остаток params ({k}) подставляется здесь — в t() он объект не трогал.
+  if (hit && typeof hit === 'object') return applyParams(plural(n, hit), params);
   return hit;
 }

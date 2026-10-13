@@ -19,7 +19,9 @@ export function plural(n, forms) {
 }
 
 export function select(key, forms) {
-  return forms[key] ?? forms.other ?? '';
+  const hit = forms[key] ?? forms.other;
+  if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] select: bad key=${key}`);
+  return hit ?? '';
 }
 
 // month(index 0-11, case) — чтение словаря months (ru, фолбэк en).

@@ -33,3 +33,18 @@ test('each side renders in its own locale', () => {
 test('unknown id falls back to templateId, never crashes', () => {
   assert.equal(renderLink(toWire({ templateId: 'nope' }), 'ru', NAMES), 'nope');
 });
+
+test('dropped extras and unknown ids warn (nothing silent)', () => {
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (m) => warns.push(String(m));
+  try {
+    toWire({ templateId: 'steel_cuirass', count: 2 });
+    renderLink(toWire({ templateId: 'nope' }), 'ru', NAMES);
+  } finally {
+    console.warn = orig;
+  }
+  assert.equal(warns.length, 2);
+  assert.match(warns[0], /drops extras/);
+  assert.match(warns[1], /unknown id/);
+});

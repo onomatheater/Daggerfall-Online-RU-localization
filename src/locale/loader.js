@@ -9,11 +9,21 @@ import { plural } from './morph.js';
 import { applyParams } from './params.js';
 export { splitKey };
 
+// Имена файлов пака: загрузчик и адаптер читают одни константы,
+// а не дублируют строки 'locale-version.json'/'ru.json'.
+export const MANIFEST_FILE = 'locale-version.json';
+export const RU_FILE = 'ru.json';
+
 export function parseManifest(text) {
-  let parsed;
-  try {
-    parsed = JSON.parse(String(text));
-  } catch {
+  // Строка (сеть/файл) или готовый объект (рантайм-пак): валидация одна.
+  let parsed = text;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      throw new Error('manifest: not JSON');
+    }
+  } else if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('manifest: not JSON');
   }
   if (!parsed || parsed.locale !== 'ru' || typeof parsed.version !== 'string' || !Array.isArray(parsed.files)) {
@@ -42,13 +52,18 @@ export function canonGameVersion(version) {
 export function isCompatible(manifest, gameVersion) {
   if (!manifest || typeof gameVersion !== 'string' || gameVersion.length === 0) return false;
   const game = canonGameVersion(gameVersion);
+  // Мусор с любой стороны — несовместим: пустой канон ведёт себя как 0
+  // в cmpVersion, так что '' отбрасываем явно, а не сравнением.
+  if (game === '') return false;
   if (manifest.game !== undefined) return canonGameVersion(manifest.game) === game;
   const { gameMin, gameMax } = manifest;
-  if (typeof gameMin === 'string' && typeof gameMax === 'string') {
-    return cmpVersion(canonGameVersion(gameMin), game) <= 0 && cmpVersion(game, canonGameVersion(gameMax)) <= 0;
+  const min = typeof gameMin === 'string' ? canonGameVersion(gameMin) : '';
+  const max = typeof gameMax === 'string' ? canonGameVersion(gameMax) : '';
+  if (min !== '' && max !== '') {
+    return cmpVersion(min, game) <= 0 && cmpVersion(game, max) <= 0;
   }
-  if (typeof gameMin === 'string') return cmpVersion(canonGameVersion(gameMin), game) <= 0;
-  if (typeof gameMax === 'string') return cmpVersion(game, canonGameVersion(gameMax)) <= 0;
+  if (min !== '') return cmpVersion(min, game) <= 0;
+  if (max !== '') return cmpVersion(game, max) <= 0;
   return false;
 }
 
@@ -66,9 +81,20 @@ export const cmpVersion = (a, b) => {
 };
 
 // Новейший совместимый пак под игру, иначе null (не краш, не пустота в UI).
+// Битая version пака сортируется ниже здоровой (а не стабильно-мусорно):
+// NaN-компаратор детерминированно проигрывает любой валидной версии.
+const isSaneVersion = (v) => String(v).split('.').every((p) => /^\d+$/.test(p));
 export function choosePack(packs, gameVersion) {
   const fitting = (packs ?? []).filter((p) => isCompatible(p, gameVersion));
-  fitting.sort((a, b) => cmpVersion(a.version, b.version));
+  fitting.sort((a, b) => {
+    const d = cmpVersion(a.version, b.version);
+    if (!Number.isNaN(d)) return d;
+    const aBad = !isSaneVersion(a.version);
+    const bBad = !isSaneVersion(b.version);
+    if (aBad && !bBad) return -1;
+    if (bBad && !aBad) return 1;
+    return 0;
+  });
   return fitting.length > 0 ? fitting[fitting.length - 1] : null;
 }
 
@@ -125,14 +151,14 @@ export async function loadExternalPackFetch({ baseUrl, gameVersion, bundled = { 
   let manifestRaw;
   let tablesRaw;
   try {
-    manifestRaw = await fetchJson(`${baseUrl}/locale-version.json`);
-    tablesRaw = await fetchJson(`${baseUrl}/ru.json`);
+    manifestRaw = await fetchJson(`${baseUrl}/${MANIFEST_FILE}`);
+    tablesRaw = await fetchJson(`${baseUrl}/${RU_FILE}`);
   } catch (err) {
     return fail(`external-pack: fetch failed: ${err?.message ?? err}`);
   }
   let manifest;
   try {
-    manifest = parseManifest(JSON.stringify(manifestRaw));
+    manifest = parseManifest(manifestRaw);
   } catch (err) {
     return fail(`external-pack: ${err?.message ?? err}`);
   }
