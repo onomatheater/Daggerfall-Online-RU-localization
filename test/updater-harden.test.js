@@ -132,8 +132,7 @@ function rawZip(name, content) {
   return Buffer.concat([lh, nm, data, cd, nm, eocd]);
 }
 
-test('installUpdate propagates unpack reason (no silent unpack failed)', async () => {
-  const { createHash } = await import('node:crypto');
+test('installUpdate propagates unpack reason (no silent unpack failed)', async () => {  const { createHash } = await import('node:crypto');
   const { writeFileSync: write } = await import('node:fs');
   const { installUpdate } = await import('../updater/lib/flow.js');
   const dir = mk();
@@ -150,4 +149,22 @@ test('installUpdate propagates unpack reason (no silent unpack failed)', async (
   });
   assert.equal(rep.ok, false);
   assert.match(rep.reason, /zip-slip/);
+});
+
+test('rollbackVanilla restores nested backup without statSync', async () => {
+  const { rollbackVanilla } = await import('../updater/lib/dist-apply.js');
+  const { mkdirSync: mkdir, writeFileSync: write, readFileSync: read } = await import('node:fs');
+  const dir = mk();
+  const backup = join(dir, 'bak');
+  const app = join(dir, 'app');
+  mkdir(join(backup, 'assets', 'deep'), { recursive: true });
+  mkdir(join(app, 'assets', 'deep'), { recursive: true });
+  write(join(backup, 'assets', 'a.js'), 'VANILLA-A');
+  write(join(backup, 'assets', 'deep', 'b.js'), 'VANILLA-B');
+  write(join(app, 'assets', 'a.js'), 'PATCHED');
+  const rep = await rollbackVanilla({ appDir: app, backupDir: backup });
+  assert.equal(rep.ok, true);
+  assert.equal(rep.restored, 2);
+  assert.equal(read(join(app, 'assets', 'a.js'), 'utf8'), 'VANILLA-A');
+  assert.equal(read(join(app, 'assets', 'deep', 'b.js'), 'utf8'), 'VANILLA-B');
 });

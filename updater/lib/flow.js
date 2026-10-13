@@ -21,10 +21,15 @@ export function psCommand(platform = process.platform) {
   return { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] };
 }
 
+// Таймаут списка процессов: зависший tasklist/pgrep не вешает проверку
+// «игра запущена» навсегда — ошибка превращается в '' (не запущена),
+// как отсутствие утилиты. Значение запечено тестом ниже по файлу.
+export const PS_TIMEOUT_MS = 10000;
+
 const defaultListProcesses = () => new Promise((resolve) => {
   import('node:child_process').then(({ execFile }) => {
     const { cmd, args } = psCommand();
-    execFile(cmd, args, (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
+    execFile(cmd, args, { timeout: PS_TIMEOUT_MS }, (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
   });
 });
 
@@ -69,6 +74,7 @@ const ISSUE_RU = [
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
   [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo|net-error/i, 'Нет соединения с сервером паков'],
   [/no pack entry selected/, 'Пак не выбран: нечего устанавливать'],
+  [/^feed: /, 'Фид паков испорчен: жди следующий выпуск, остаёшься на старом паке'],
   [/unpack failed/, 'Не получилось распаковать пак: скачай его заново из релизов'],
   [/sha mismatch/, 'Скачанный файл не сошёлся по sha: подмена или битый файл, остаёшься на старом паке'],
   [/sha missing/, 'У пака нет sha в фиде: ставить нечего, остаёшься на старом паке'],
