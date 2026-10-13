@@ -6,7 +6,7 @@
 //   новее -> {tag, version}, иначе null. Отдельного стейта нет.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { latestGameTag, pendingUpdate } from '../tools/game-watch.mjs';
+import { latestGameTag, latestGameTagYml, pendingUpdate, pendingUpdateYml } from '../tools/game-watch.mjs';
 
 const RELEASES = JSON.stringify([
   { tag_name: 'app-v0.1.7506' },
@@ -37,4 +37,25 @@ test('pendingUpdate compares latest tag against feed claims', () => {
   });
   assert.equal(pendingUpdate('not json', RELEASES), null);
   assert.equal(pendingUpdate(FEED_7524, 'not json'), null);
+});
+
+const YML_8404 = 'version: 0.1.8404\nfiles:\n  - url: DFO-Online-win-x64-setup.exe\n';
+
+test('latestGameTagYml reads version line, garbage is silence', () => {
+  assert.equal(latestGameTagYml(YML_8404), 'app-v0.1.8404');
+  assert.equal(latestGameTagYml('provider: github\n'), null);
+  assert.equal(latestGameTagYml('not yml {{{'), null);
+  assert.equal(latestGameTagYml(''), null);
+});
+
+test('pendingUpdateYml compares yml tag against feed claims', () => {
+  assert.deepEqual(pendingUpdateYml(FEED_7524, YML_8404), { tag: 'app-v0.1.8404', version: '0.1.8404' });
+  assert.equal(pendingUpdateYml('not json', YML_8404), null);
+  assert.equal(pendingUpdateYml(FEED_7524, 'garbage'), null);
+});
+
+test('floor-only pack covers all newer (open range needs no release)', () => {
+  const feed = JSON.stringify({ packs: [{ version: '1.0.0', gameMin: '8127' }] });
+  assert.equal(pendingUpdate(feed, RELEASES), null);
+  assert.equal(pendingUpdateYml(feed, YML_8404), null);
 });
