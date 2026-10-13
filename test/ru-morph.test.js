@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { plural, select, month } from '../src/locale/morph.js';
 
 test('russian plural: 1/2/5 книга', () => {
@@ -22,4 +23,15 @@ test('month case: 15 Января, not Январь', () => {
   assert.equal(month(0, 'nom'), 'Январь');
   assert.equal(month(0, 'gen'), 'Января');
   assert.equal(month(0, 'prep'), 'Январе');
+});
+
+test('month forms live in the dictionary, not in code', async () => {
+  const ru = JSON.parse(fs.readFileSync(new URL('../src/locale/ru.json', import.meta.url), 'utf8'));
+  for (let i = 0; i < 12; i++) {
+    const forms = ru.months?.[String(i)];
+    assert.ok(forms && typeof forms === 'object', 'ru.months.' + i + ' exists');
+    for (const cas of ['nom', 'gen', 'dat', 'acc', 'inst', 'prep']) {
+      assert.equal(month(i, cas), forms[cas], `month(${i}, ${cas})`);
+    }
+  }
 });
