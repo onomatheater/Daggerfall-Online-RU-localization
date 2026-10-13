@@ -13,6 +13,7 @@ import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
+import { launchGame } from './lib/launch.js';
 import { readAsarPackageJson } from './lib/asar.js';
 import { loadPrefs, savePrefs } from './lib/prefs.js';
 
@@ -305,6 +306,16 @@ app.whenReady().then(() => {
       refresh();
     } else if (action === 'restore-translation') {
       await runRestore(state.pending?.recipe);
+    } else if (action === 'play') {
+      if (state.busy) return;
+      const hit = game();
+      if (hit.version === null) {
+        state.check = { status: 'unknown-game', reason: hit.reason };
+      } else {
+        const launched = launchGame({ gameDir: gameDir() });
+        if (!launched.ok) state.check = { status: 'install-failed', reason: launched.reason };
+      }
+      refresh();
     } else if (action === 'rollback') {
       const prev = rollbackPack(storeDir());
       if (prev === null) return;

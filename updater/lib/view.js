@@ -1,6 +1,7 @@
 // Состояние окна апдейтера в форме движка разработчиков (их launcher.js
 // рисует view как есть; этот модуль — единственное место наших решений).
-// Играть всегда disabled: запуск игры — не scope апдейтера перевода.
+// «Играть» — по их правилу canPlay: игра известна (версия) и ничего не
+// ставится (не busy). Запуск — detached exe (см. launch.js).
 import { describeIssue } from './flow.js';
 
 export function viewOf({ game, installed = [], check = null, gameNews = [], gameUpdate = null, busy = false, progress = null, prefs = {}, gameDir = '' } = {}) {
@@ -62,7 +63,7 @@ export function viewOf({ game, installed = [], check = null, gameNews = [], game
     detail,
     progress,
     statusActions: actions,
-    play: { enabled: false, label: 'Играть' },
+    play: { enabled: game?.version != null && busy !== true, label: 'Играть' },
     news: { items, note },
     options: {
       files: gameDir

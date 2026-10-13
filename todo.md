@@ -20,6 +20,8 @@
 
 ## Открытые PR (ждут «мерж»)
 
+- [~] PR #97 `feat/play-launch → dev` — Task A ревю (Играть по canPlay + запуск exe); G0 323/323, wire OK, живая проверка exe
+
 - [x] PR #85 `feat/prefs-locale → dev` — ВЛИТ (Task 1 иммунитета + план в `todo.md`); ветка удалена везде
 - [x] PR #87 `feat/adapter-wiring → dev` — ВЛИТ (Task 2 иммунитета: Prefs-boot + wrap-default + render-proof); ветка удалена везде
 - [x] PR #89 `feat/updater-data-only → dev` — ВЛИТ (Task 3 иммунитета: пак в Prefs, рецепт как fallback); ветка удалена везде
@@ -225,6 +227,19 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 - [x] Task 3 `feat/updater-data-only`: пак в `Prefs/Locale/ru/` (код в `dev`; чтение страницей — сторона апстрим-PR) + `test/updater-data-only.test.js` (NEED: пак в Prefs → RU без рецепта; старая игра → рецепт-fallback; `recipe.game !== version` → честный `no-recipe`) → PR → апрув → мерж
 - [x] Task 4 синк ключей: новый ключ апстрима без RU → EN-fallback + warn + очередь синка + `test/key-sync.test.js` (NEED: инверсия диапазона — брак) → PR → апрув → мерж
 - [ ] RISK-очередь: PR в апстрим отклонён → остаёмся на рецепте-fallback (зафиксировать здесь, не молча)
+
+## Апдейтер-ревью (вскрытие их апдейтера 13.10, сверка здесь)
+
+Разобрали их `app/`: два транспорта (electron-updater NSIS/AppImage vs notice),
+полный NSIS 239 МБ в кэше, `latest.yml` + blockmap, REL5-имена + BR5-алиасы,
+лаунчер до игры с правилом `canPlay = setupDone && !updateHolds`, userData живёт.
+Наши выводы: форк не нужен, Prefs-путь верный, «Играть» чиним их правилом.
+Влито: nested-gamedir (PR #95, гнездо DFO Online), open-range (PR #96, потолка нет).
+
+- [~] Task A `feat/play-launch`: «Играть» по правилу canPlay (игра известна + не занят)
+  → запуск exe (с учётом гнезда), `updater/lib/launch.js` + тесты → PR → апрув → мерж
+- [ ] Task B `feat/latest-yml`: game-watch читает их `latest.yml` вместо API-списка
+  (легче, их контракт) → PR → апрув → мерж
 
 ## Как продолжать перевод (инструкция)
 
