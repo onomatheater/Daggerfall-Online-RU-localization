@@ -74,8 +74,10 @@ These are current repository governance rules, not general Git advice:
   approval.
 - Include `## Patch notes: <what and why>` in the PR description. For RU value
   changes, list each key and its old/new text with the reason.
-- After an approved merge, remove the merged feature branch as directed by the
-  maintainer. Do not delete another contributor's branch.
+- After an approved merge, immediately delete your merged feature branch both
+  locally (`git branch -d`) and remotely (`git push origin --delete`). This
+  cleanup requirement applies only to your own merged feature branch; do not
+  delete another contributor's branch without the maintainer's authorization.
 
 Do not read private/local planning notes as public contribution commitments.
 Use the tracked documentation linked above for current behavior and gaps.
