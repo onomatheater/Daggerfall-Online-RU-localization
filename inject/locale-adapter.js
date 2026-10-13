@@ -70,8 +70,10 @@ export function wrapTemplate(key, params = {}, fallback) {
 }
 
 // Plural-рендер поверх пака: объект {one,few,many} -> строка через plural(),
-// иначе (нет в паке) — как bundled через tp(). Строковый путь не тронут.
-export function wrapPlural(key, n) {
-  if (packOverlay.has(key, getLocale())) return resolvePlural(packOverlay, key, n, {}, getLocale());
-  return tp(key, n);
+// иначе (нет в паке) — как bundled через tp(). Арность как у tp:
+// params и локаль пробрасываются, а не хардкодятся.
+export function wrapPlural(key, n, params = {}, locale) {
+  const loc = locale ?? getLocale();
+  if (packOverlay.has(key, loc)) return resolvePlural(packOverlay, key, n, params, loc);
+  return tp(key, n, params, loc);
 }

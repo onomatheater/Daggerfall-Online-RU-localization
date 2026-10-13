@@ -29,6 +29,9 @@ const V = `var(${SCALE_VAR},1)`;
 // с render-proof по живой игре — без неё это слепое ослабление.
 const SPEC = 'body';
 const leaf = (sel, base) => `${SPEC} ${sel}{font-size:calc(${base} * ${V});}`;
+// Десктопный брейкпоинт один на все правила (дрейф апстрима — в одну точку).
+const BREAKPOINT_PX = 481;
+export { BREAKPOINT_PX };
 
 // Листья как данные: селектор + стоковая база апстрима 15e6525cd.
 // Любая смена базы/селектора роняет пин-тест в test/font-scale.test.js.
@@ -60,7 +63,7 @@ export function buildScaleCSS() {
     ...LEAVES.map(([sel, base]) => leaf(sel, base)),
     // Десктопные двери: сток 28px (.px-menu button); телефонные 22px и
     // компакт не трогаем — там свои законы (44px-тап, узкий стейдж).
-    `@media (min-width:481px){${SPEC} .px-menu:not(.px-compact) button{font-size:calc(28px * ${V});}}`,
+    `@media (min-width:${BREAKPOINT_PX}px){${SPEC} .px-menu:not(.px-compact) button{font-size:calc(28px * ${V});}}`,
     // v3: коробки растут вместе со шрифтом (иначе пропорции рвёт: большой
     // текст в 44px-кнопке). Тот же SPEC-префикс бьёт правила апстрима.
     `${SPEC} .row{gap:calc(14px * ${V});padding:calc(11px * ${V}) calc(18px * ${V});min-height:calc(52px * ${V});}`,
@@ -68,7 +71,7 @@ export function buildScaleCSS() {
     `${SPEC} .subbtn{padding:calc(11px * ${V}) calc(16px * ${V});min-height:calc(46px * ${V});}`,
     `${SPEC} .px-home .px-menu{width:min(calc(384px * ${V}),100%);gap:calc(8px * ${V});}`,
     `${SPEC} .shell:not(.wizard) .railbtn{min-height:calc(44px * ${V});padding:calc(10px * ${V}) calc(16px * ${V});}`,
-    `@media (min-width:481px){${SPEC} .px-menu .doorbtn{padding:calc(6px * ${V}) calc(24px * ${V});}}`,
+    `@media (min-width:${BREAKPOINT_PX}px){${SPEC} .px-menu .doorbtn{padding:calc(6px * ${V}) calc(24px * ${V});}}`,
     `${SPEC} .px-menu .doorbtn,${SPEC} .railbtn .rk,${SPEC} .row-name,${SPEC} .px-divword{font-weight:600;}`,
     // Длинные RU-строки в фиксированных колонках: перенос вместо клипа
     // (СЕТЕВАЯ ИГР…). При 100% и коротком тексте layout не меняется.

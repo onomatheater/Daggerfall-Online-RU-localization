@@ -17,6 +17,11 @@ test('params: multiple %s fill in order, none lost', () => {
   assert.equal(applyParams('%s%s%s', { 0: 'a', 1: 'b', 2: 'c' }), 'abc');
 });
 
+test('params: {s} convention fills %s, numerics in order', () => {
+  assert.equal(applyParams('You see %s.', { s: 'gem' }), 'You see gem.');
+  assert.equal(applyParams('%s {name}', { 0: 'a', name: 'X' }), 'a X');
+});
+
 test('tp: passes params and locale through to t()', () => {
   setLocale('ru');
   try {

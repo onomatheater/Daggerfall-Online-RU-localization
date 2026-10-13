@@ -152,11 +152,12 @@ export function resolvePlural(ov, rawKey, n, params = {}, locale = 'ru') {
 export async function loadExternalPackFetch({ baseUrl, gameVersion, bundled = { en: {} }, fetchJson } = {}) {
   const fail = (reason) => ({ ok: false, reason });
   if (typeof fetchJson !== 'function') return fail('external-pack: need fetchJson');
+  const base = String(baseUrl ?? '').replace(/\/+$/, '');
   let manifestRaw;
   let tablesRaw;
   try {
-    manifestRaw = await fetchJson(`${baseUrl}/${MANIFEST_FILE}`);
-    tablesRaw = await fetchJson(`${baseUrl}/${RU_FILE}`);
+    manifestRaw = await fetchJson(`${base}/${MANIFEST_FILE}`);
+    tablesRaw = await fetchJson(`${base}/${RU_FILE}`);
   } catch (err) {
     return fail(`external-pack: fetch failed: ${err?.message ?? err}`);
   }
