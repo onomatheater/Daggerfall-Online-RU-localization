@@ -82,9 +82,14 @@ fallback and its **Download game** action write game-installation files. Pack
 preparation writes package/feed artifacts. `tools/publish-pack.mjs --run`
 mutates its probe workflow and stages artifacts; it is not publication. A
 non-dry `publishPack` operation can write pack files, commit, and push to
-`main`. Do not run probe-apply, package, installer, release, or publication
-operations without reviewing the target and obtaining the required
-authorization. Follow the [player updater guide](updater.md),
+`main`, but this legacy/low-level path is not approved under the current branch
+policy requiring approved merges from `dev`; maintainer permission alone does
+not make it compliant. The workflow and code must be reconciled before release
+use. Because it runs `git add packs`, pre-existing changes anywhere under
+`packs/**` can also be included; inspect and clean or account for the entire
+`packs/` working tree and index before any non-dry call. Do not run probe-apply,
+package, installer, release, or publication operations without reviewing the
+target and obtaining the required authorization. Follow the [player updater guide](updater.md),
 [launcher/operator guide](../LAUNCHER.md), and
 [pack operations guide](../packs/README.md) for the documented effects. This
 handoff authorizes no live-client or release operation.

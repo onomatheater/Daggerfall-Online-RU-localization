@@ -82,9 +82,17 @@ Do not run it without explicit authorization and a reviewed target workspace.
   `main`, writes the supplied files, runs `git add packs`, commits, and pushes
   `origin main`.
 
-`publishPack` does not call `gatesOk` itself. Verify gates and inspect exact
-files before requesting publication; a non-dry call can commit and push to
-`main` and requires explicit maintainer authorization. Tests exercise the
-publisher using temporary local Git repositories, not the project remote.
-Staging and publication are separate steps; never infer that staged artifacts
-have been released.
+This is a legacy/low-level publication path and is **not approved under the
+current branch policy**, which requires approved merges from `dev` into `main`.
+Maintainer permission alone does not make a direct commit/push compliant. The
+workflow and code must be reconciled with the current branch policy before this
+path is used for a release.
+
+**Operational precondition if this path is later reconciled for use:** inspect
+the entire `packs/` working tree and index, and clean or explicitly account for
+every pre-existing change before a non-dry call. The helper runs `git add packs`,
+so any dirty or staged file anywhere under `packs/**` can be swept into the
+commit, not only files supplied in its `files` argument. The helper does not
+call `gatesOk`; tests exercise it using temporary local Git repositories, not
+the project remote. Staging and publication are separate steps; never infer
+that staged artifacts have been released.

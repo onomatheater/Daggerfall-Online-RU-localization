@@ -6,12 +6,13 @@ code. Repository tests do not prove that a particular game-client build reads
 
 ## Install or update the translation pack
 
-The root [README](../README.md) points players to this repository's Releases
-page for the updater. This source tree does not verify that a currently
-available compatible binary is there and provides no direct asset URL. The
-checked-in pack feed is empty as of 2026-10-14. Confirm the current compatible
-build and feed with a maintainer before continuing; do not mistake the
-source-tree launcher script for a released installer.
+The root [README](../README.md) discusses generic release availability and
+cautions against assuming a pack or installer is available from the Releases
+page; it does not link to a release page or provide a direct asset URL. This
+source tree does not verify that a currently available compatible binary is
+there. The checked-in pack feed is empty as of 2026-10-14. Confirm the current
+compatible build and feed with a maintainer before continuing; do not mistake
+the source-tree launcher script for a released installer.
 
 1. Start a compatible RU updater build and confirm that it has found the right
    game folder. If it has not, use **Choose folder** (“Указать папку” or

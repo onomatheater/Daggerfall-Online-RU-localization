@@ -37,24 +37,25 @@ upstream check.
   rules and add tests before advertising German support.
 - **As of:** 2026-10-14.
 
-### The 11 October owner queue is a dated snapshot, not current scope
+### The 11 October internal owner queue is a dated snapshot, not current scope
 
-- **Status:** The queue in `AGENTS.md` §7 is dated 11 October and must not be
-  read as a promise or a reliable list of still-open work. Current tracked
-  evidence shows the named morphology batch test, BIOG `-LOC` data and
-  validation coverage, and credits-prose tests; that does not establish the
-  maintainer's current priorities or release status.
-- **Evidence:** [AGENTS.md §7](../AGENTS.md#L99-L104);
-  [dfo-morph-batch.test.js](../test/dfo-morph-batch.test.js#L9-L58);
+- **Status:** An internal owner queue dated 11 October is a historical snapshot,
+  not a promise or a reliable list of still-open work. Current tracked evidence
+  shows the named morphology batch test, BIOG `-LOC` data and validation
+  coverage, and credits-prose tests; that does not establish the maintainer's
+  current priorities or release status.
+- **Evidence:** [dfo-morph-batch.test.js](../test/dfo-morph-batch.test.js#L9-L58);
   [BIOG translation data](../src/locale/ru/biog/BIOG00T0-LOC.txt);
   [loc-check.test.js, BIOG checks](../test/loc-check.test.js#L65-L107);
   [dfo-credits-prose.test.js](../test/dfo-credits-prose.test.js#L24-L55).
-- **Evidence class:** Roadmap snapshot plus code inspection and automated
-  tests. Tests show tracked artifacts, not owner approval or live rendering.
+- **Evidence class:** Dated internal roadmap snapshot plus code inspection and
+  automated tests. Tests show tracked artifacts, not owner approval or live
+  rendering.
 - **Impact:** Treating the old queue as a commitment could mislead a new
   maintainer about ownership, priority, or what is unfinished.
 - **Next decision/check:** Ask the maintainer for a newly dated, approved
-  roadmap before planning work; do not infer outstanding tasks from §7 alone.
+  roadmap before planning work; do not infer outstanding tasks from that
+  snapshot alone.
 - **As of:** 2026-10-14.
 
 ## Partial/delivery gaps
@@ -123,26 +124,49 @@ upstream check.
   claiming the full switching contract.
 - **As of:** 2026-10-14.
 
-### Pack staging and publishing have different side effects
+### The legacy publisher conflicts with the current branch policy
 
-- **Status:** Implemented with distinct risk levels. `publish-pack.mjs` is a
-  dry-run by default; `--run` scrubs/copies probe assets, runs build/rebase
-  steps, and stages pack/recipe artifacts plus a release-entry object. It does
-  not itself publish or write `feed.json`. `publish-gates.mjs` is the explicit
-  path that writes `packs/**`, commits, and pushes `main` when run non-dry.
+- **Status:** `publish-pack.mjs` is a dry-run by default; `--run`
+  scrubs/copies probe assets, runs build/rebase steps, and stages pack/recipe
+  artifacts plus a release-entry object. It does not itself publish or write
+  `feed.json`. `publish-gates.mjs` is a legacy/low-level path that writes
+  `packs/**`, commits, and pushes directly to `main` when run non-dry. That path
+  is not approved under the current branch policy, which requires approved
+  merges from `dev` into `main`; maintainer permission alone does not make it
+  compliant. Reconcile the workflow and code before release use.
 - **Evidence:** [publish-pack.mjs, `runPipeline()` and CLI](../tools/publish-pack.mjs#L147-L203);
   [publish-gates.mjs, `publishPack()`](../tools/publish-gates.mjs#L21-L56);
   [publish-pack.test.js](../test/publish-pack.test.js#L26-L49);
   [publish-gates.test.js](../test/publish-gates.test.js#L43-L89);
-  [packs/README.md](../packs/README.md#L17-L48).
+  [packs/README.md](../packs/README.md#L72-L98);
+  [CONTRIBUTING.md, repository branch policy](../CONTRIBUTING.md#L66-L80).
 - **Evidence class:** Code inspection and automated tests (the publishing
   test uses a local fixture repository, not the project remote).
 - **Impact:** Treating staging as publishing can lead to unexpected local
-  probe changes; treating the publishing gate as a harmless build can commit
-  and push a release.
-- **Next decision/check:** Keep the commands and approvals separate in the
-  operator guide. Before any real run, review the target worktree, staged
-  paths, and explicit publication authorization.
+  probe changes. The legacy helper can directly commit and push to `main`,
+  bypassing the required approved-merge workflow.
+- **Next decision/check:** Reconcile the helper and release workflow with the
+  current branch policy before release use; do not treat authorization by
+  itself as policy compliance.
+- **As of:** 2026-10-14.
+
+### The publisher can stage unrelated dirty files under `packs/`
+
+- **Status:** `publishPack()` validates the supplied file paths and rejects
+  dirty paths outside `packs/`, but then runs `git add packs`. Existing staged
+  or unstaged changes anywhere under `packs/**` can therefore be committed
+  along with the files supplied to the helper.
+- **Evidence:** [publish-gates.mjs, dirty-tree filter and `git add packs`](../tools/publish-gates.mjs#L31-L52);
+  [publish-gates.test.js](../test/publish-gates.test.js#L43-L89).
+- **Evidence class:** Code inspection and automated tests; tests use temporary
+  local repositories, not the project remote.
+- **Impact:** Unrelated or unintended pack/feed files may be included in a
+  commit and push if an operator assumes only the helper's `files` argument is
+  staged.
+- **Next decision/check:** Before any non-dry invocation, inspect the entire
+  `packs/` working tree and index and clean or explicitly account for every
+  pre-existing change. Reconcile the publisher workflow with branch policy
+  before release use.
 - **As of:** 2026-10-14.
 
 ### Dependency health needs a current review

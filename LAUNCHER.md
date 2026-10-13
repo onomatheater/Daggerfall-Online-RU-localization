@@ -56,8 +56,11 @@ cd updater
 npm run dist
 ```
 
-The current NSIS target is unsigned. `npm run icons` writes `assets/icon.ico`
-from the checked-in source image and is needed only when that source changes.
+No signing credentials or configuration were found in the inspected tracked
+updater files. The build environment or produced artifact may differ; no
+artifact was inspected. Verify the actual artifact's signature status before
+distribution. `npm run icons` writes `assets/icon.ico` from the checked-in source
+image and is needed only when that source changes.
 `updater.bat` starts the local Electron app and therefore launches Electron;
 live Electron validation requires explicit authorization. Do not treat a
 successful build or unit suite as proof of a packaged release or client
@@ -142,11 +145,16 @@ It mutates the probe workflow.
 `publishPack({repoDir, files, message})` defaults to a dry-run. In a non-dry
 call, it accepts only `packs/**`, refuses a dirty tree outside `packs/` or a
 branch other than `main`, writes the provided files, commits `packs`, and
-pushes `origin main`. `publishPack` does not itself call `gatesOk`; the
-operator is responsible for verifying release gates and reviewing the exact
-files. Non-dry publication and releases require explicit maintainer
-authorization. The publisher tests use temporary local repositories, not the
-project remote.
+pushes `origin main`. This is a legacy/low-level path and is not approved under
+the current branch policy, which requires approved merges from `dev` into
+`main`; maintainer permission alone does not make this path compliant. The
+workflow and code must be reconciled with that policy before release use.
+Additionally, because it runs `git add packs`, any pre-existing dirty or staged
+files anywhere under `packs/**` can be included, not just the paths supplied to
+the helper. Before any non-dry invocation, inspect the entire `packs/` working
+tree and index and clean or explicitly account for every pre-existing change.
+`publishPack` does not itself call `gatesOk`; the publisher tests use temporary
+local repositories, not the project remote.
 
 ## Change and verification expectations
 
