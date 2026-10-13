@@ -79,6 +79,8 @@ const ISSUE_RU = [
   [/content mismatch|missing after apply|apply failed/, 'Перевод не встал: установка игры не тронута'],
   [/bad recipe shape/, 'Рецепт перевода испорчен: жди следующий выпуск'],
   [/empty backup|rollback failed/, 'Откат не удался: предыдущий пак недоступен'],
+  [/no game exe/, 'Игра не найдена: нет запускаемого файла в папке игры'],
+  [/launch failed/, 'Не получилось запустить игру'],
   [/^unknown(-game)?$/, 'Неизвестная ошибка'],
 ];
 
