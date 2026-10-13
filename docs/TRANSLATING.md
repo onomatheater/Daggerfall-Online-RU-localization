@@ -11,7 +11,7 @@ This repository contains a Russian localization overlay for [Daggerfall Online](
 
 ## Keeping keys aligned with upstream
 
-`tools/key-sync.mjs` compares upstream English tables with this repository’s `en.json`. For example:
+[`tools/key-sync.mjs`](../tools/key-sync.mjs) compares upstream English tables with this repository’s `en.json`; its queue behavior is covered by [`test/key-sync.test.js`](../test/key-sync.test.js). For example:
 
 ```sh
 node tools/key-sync.mjs --upstream <path-to-upstream-en.json> --en src/locale/en.json
@@ -30,7 +30,7 @@ Review its queues rather than treating them as automatic translation: `newKeys` 
 
 ## Rebasing upstream probes
 
-The current workflow tracks probe scripts and touched upstream files in `tools/probe-queue.json`; `tools/probe-rebase.mjs` can first report drift without mutation. Its CLI takes a scripts directory, disposable upstream clone, queue, and from/to refs; the default is dry-run. Review the drift report before considering `--apply`: that mode runs the patch queue against the clone and can change it. It refuses a dirty clone unless explicitly allowed; when it snapshots an allowed dirty tree, it restores that work after the queue. Probe success is not a live-client verification.
+The current workflow tracks probe scripts and touched upstream files in `tools/probe-queue.json`; [`tools/probe-rebase.mjs`](../tools/probe-rebase.mjs) can first report drift without mutation, with queue and restoration behavior covered by [`test/probe-rebase.test.js`](../test/probe-rebase.test.js). Its CLI takes a scripts directory, disposable upstream clone, queue, and from/to refs; the default is dry-run. Review the drift report before considering `--apply`: that mode runs the patch queue against the clone and can change it. It refuses a dirty clone unless explicitly allowed; when it snapshots an allowed dirty tree, it restores that work after the queue. Probe success is not a live-client verification.
 
 ## Adding another language
 
