@@ -43,6 +43,16 @@ test('menu-cover: risk-flagged strings are reported, not silently dropped', () =
   assert.equal(misses[0].risk, 'template-part');
 });
 
+test('menu-cover: scans every scope file, not just the injected one', () => {
+  const dir = fixtureDir({
+    'enhancedMenu.js': `el('button', 'act', 'Already covered');`,
+    'shotsPane.js': `el('button', 'act', 'Zzz sibling scope string');`,
+  });
+  const misses = coverReport(dir, new Set(['Already covered']));
+  assert.equal(misses.length, 1);
+  assert.equal(misses[0].en, 'Zzz sibling scope string');
+});
+
 test('menu-cover: covered and skipped strings stay silent', () => {
   const dir = fixtureDir({
     'enhancedMenu.js': [

@@ -37,3 +37,12 @@ test('titles guard: no table key names a badge', () => {
   );
   assert.deepEqual(hits, [], 'badge ids in keys: ' + hits.join(', '));
 });
+
+// ALLOW выше — не слепое пятно: смысл «глашатай, не титул» запечён
+// значениями. Смена смысла любого из трёх ключей уронит этот тест.
+test('titles guard: ALLOW-listed quest-herald values are pinned', () => {
+  assert.equal(en.dfo['feat.quest-herald'], 'Quest news');
+  assert.equal(ru.dfo['feat.quest-herald'], 'Новости квестов');
+  assert.match(ru.dfo['feat.quest-herald.note'], /выезжает, когда квест начинается/);
+  assert.equal(ru.dfo['feat.quest-herald.effect'], 'Вступает в силу сразу.');
+});
