@@ -10,7 +10,9 @@ import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'n
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { checkForUpdate, installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
+import { isLocalPath, filePathFromUrl, resolvePickedGameDir } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { launchGame } from './lib/launch.js';
@@ -65,9 +67,10 @@ async function fetchText(url) {
 
 async function fetchZip(url, dest) {
   // Демо/стенд: file-путь читается с диска, http(s) — сетью по кнопке.
-  if (/^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('file://')) {
+  // Предикат один на оба места (см. restoreTranslation): updater/lib/paths.js.
+  if (isLocalPath(url)) {
     const { copyFileSync } = await import('node:fs');
-    copyFileSync(url.replace(/^file:\/\//, ''), dest);
+    copyFileSync(filePathFromUrl(url), dest);
     return dest;
   }
   const res = await fetch(url);
@@ -85,15 +88,16 @@ async function loadFeed() {
 }
 
 async function runCheck() {
+  // Решения и статусы — updater/lib/actions.js (тестируется в node);
+  // здесь только замыкания Electron. Битый фид виден как bad-feed.
   const hit = game();
-  if (hit.version === null) return { status: 'unknown-game', reason: hit.reason };
-  if (!isFeedConfigured(FEED_URL)) return { status: 'feed-unconfigured' };
-  try {
-    const text = await loadFeed();
-    return checkForUpdate({ feedText: text, gameVersion: hit.version, currentVersion: installed()[0]?.version });
-  } catch {
-    return { status: 'net-error' };
-  }
+  return runCheckLib({
+    gameVersion: hit.version,
+    gameReason: hit.reason,
+    currentVersion: installed()[0]?.version,
+    loadFeed,
+    feedConfigured: isFeedConfigured(FEED_URL),
+  });
 }
 
 // Лента новостей игры — их releases API (note: текст целиком, движок режет сам).
@@ -109,7 +113,9 @@ async function runGameNews() {
       badge: 'update',
       text: String(r.body ?? '').slice(0, 2000),
     }));
-  } catch {
+  } catch (err) {
+    // Лента — тихая по DA6, но ошибку логируем: молчание в UI, не в консоли.
+    console.error('[updater] game news failed:', err);
     return [];
   }
 }
@@ -120,21 +126,29 @@ async function runGameCheck(current) {
     if (!res.ok) return { status: 'failed' };
     const verdict = checkGameUpdate({ apiText: await res.text(), currentVersion: current });
     return verdict.available ? { status: 'available', tag: verdict.tag } : { status: 'current' };
-  } catch {
+  } catch (err) {
+    console.error('[updater] game check failed:', err);
     return { status: 'failed' };
   }
 }
 
 async function runInstall(entry) {
-  const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
+  // Установка — updater/lib/actions.js; сеть падает в net-error внутри,
+  // остальное пробрасывает причины. Неожиданный throw логируем, а не
+  // маскируем молча: UI-контракт знает только net-error.
   try {
-    const zipPath = join(tmp, 'ru-pack.zip');
-    await fetchZip(entry.url, zipPath);
-    return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir: storeDir(), unpack: unpackZip, prefsDir: prefsLocaleDir() });
-  } catch {
+    return await runInstallLib({
+      entry,
+      fetchZip,
+      unpack: unpackZip,
+      storeDir: storeDir(),
+      prefsDir: prefsLocaleDir(),
+      mkTmp: () => mkdtempSync(join(tmpdir(), 'ruapp-')),
+      rmTmp: (tmp) => rmSync(tmp, { recursive: true, force: true }),
+    });
+  } catch (err) {
+    console.error('[updater] install crashed:', err);
     return { ok: false, reason: 'net-error' };
-  } finally {
-    rmSync(tmp, { recursive: true, force: true });
   }
 }
 
@@ -198,9 +212,9 @@ app.whenReady().then(() => {
     const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
     try {
       const zipPath = join(tmp, 'recipe.zip');
-      if (/^[a-zA-Z]:[\\/]/.test(recipeRef.url) || recipeRef.url.startsWith('file://')) {
+      if (isLocalPath(recipeRef.url)) {
         const { copyFileSync } = await import('node:fs');
-        copyFileSync(recipeRef.url.replace(/^file:\/\//, ''), zipPath);
+        copyFileSync(filePathFromUrl(recipeRef.url), zipPath);
       } else {
         await fetchZip(recipeRef.url, zipPath);
       }
@@ -263,11 +277,21 @@ app.whenReady().then(() => {
       refresh();
     } else if (action === 'choose-folder') {
       const { canceled, filePaths } = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
-      if (!canceled && filePaths[0]) {
-        savePrefs(userData(), { ...loadPrefs(userData()), gameDir: filePaths[0] });
+      // Папка сохраняется, только если в ней видна игра: иначе прежняя
+      // остаётся, а окно честно говорит, что папка не подошла.
+      const picked = !canceled
+        ? resolvePickedGameDir(filePaths, (dir) => detectGameVersion(dir, { readAsar: readAsarPackageJson }))
+        : null;
+      if (picked !== null) {
+        savePrefs(userData(), { ...loadPrefs(userData()), gameDir: picked });
         state.check = null;
         state.gameUpdate = null;
         state.pending = null;
+      } else if (!canceled) {
+        dialog.showMessageBox(win, {
+          message: 'В этой папке игра не найдена.',
+          detail: 'Выбери папку с установленной игрой.',
+        });
       }
       refresh();
     } else if (action === 'check') {

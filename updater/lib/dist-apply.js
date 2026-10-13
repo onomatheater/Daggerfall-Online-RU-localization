@@ -3,7 +3,7 @@
 // Порядок: цели delete на месте (нет — отказ, дерево не тронуто) ->
 // маркеры в добавляемом (нет — отказ) -> rm + write. Отказ = дерево цело.
 // Ноль зависимостей. Распаковка asar — разовая миграция (см. unpack.js).
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 
 // Путь рецепта обязан сидеть внутри appDir: только относительные пути без
@@ -82,13 +82,15 @@ export async function rollbackVanilla({ appDir, backupDir } = {}) {
   const walk = (dir, base = dir) => {
     let names;
     try {
-      names = readdirSync(dir);
+      // Dirent вместо statSync: висячий симлинк/гонка прав не роняет
+      // обход throw наружу — нечитаемое пропускается, как пустое.
+      names = readdirSync(dir, { withFileTypes: true });
     } catch {
       return;
     }
-    for (const name of names) {
-      const full = join(dir, name);
-      if (statSync(full).isDirectory()) walk(full, base);
+    for (const ent of names) {
+      const full = join(dir, ent.name);
+      if (ent.isDirectory()) walk(full, base);
       else rels.push(relative(base, full).split(sep).join('/'));
     }
   };

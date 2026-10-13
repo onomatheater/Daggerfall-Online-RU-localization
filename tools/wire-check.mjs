@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveProbeDir } from './probe-dir.mjs';
 
 const CALLS = ['ruTOr', 'tOr', 'ruT', 't'];
 
@@ -242,7 +243,7 @@ function collectJs(dir) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const srcDir = process.argv[2] ?? 'C:/Users/kblue/AppData/Local/Temp/opencode/dfjs/src';
+  const srcDir = resolveProbeDir(process.argv[2]);
   const here = path.dirname(fileURLToPath(import.meta.url));
   const en = JSON.parse(fs.readFileSync(path.join(here, '../src/locale/en.json'), 'utf8'));
   const ru = JSON.parse(fs.readFileSync(path.join(here, '../src/locale/ru.json'), 'utf8'));

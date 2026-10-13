@@ -27,7 +27,8 @@ test('dfo menu table complete: EN+RU same keys, RU non-empty', () => {
     assert.ok(en.dfo?.[k], 'en has ' + k);
     assert.ok(ru.dfo?.[k]?.length > 0, 'ru has ' + k);
   }
-  assert.ok(ek.length >= 600, 'menu table volume, got ' + ek.length);
+  // Объём таблицы держит dfo-org2.test.js (>= 850 на той же en.dfo):
+// слабый дубль >= 600 здесь удалён, чтобы гвозди не разъезжались.
   assert.deepEqual(new Set(ek), new Set(rk), 'en/ru key sets identical');
 });
 
