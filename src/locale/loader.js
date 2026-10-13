@@ -30,17 +30,22 @@ export function canonGameVersion(version) {
   return /^\d+$/.test(last) ? String(Number(last)) : String(version ?? '');
 }
 
-// Совместимость пака с игрой: точный тег game ИЛИ inclusive-диапазон
-// gameMin/gameMax (паки пересобирать при каждом чихе не надо —
-// диапазон заявляет проверенный отрезок; без клейма — несовместим,
-// молча не едем, только явный выбор). Инвертированный диапазон — брак.
+// Совместимость пака с игрой: точный тег game ИЛИ диапазон gameMin/gameMax.
+// Верх опционален: gameMin без gameMax = «эта и новее» (потолка нет by design:
+// пак — словарь, новые ключи честно падают в EN + очередь синка, старые лежат).
+// Пол обязателен снизу: на старше gameMin ключей может не быть вовсе.
+// Без клейма — несовместим, молча не едем. Инвертированный диапазон — брак.
 export function isCompatible(manifest, gameVersion) {
   if (!manifest || typeof gameVersion !== 'string' || gameVersion.length === 0) return false;
   const game = canonGameVersion(gameVersion);
   if (manifest.game !== undefined) return canonGameVersion(manifest.game) === game;
   const { gameMin, gameMax } = manifest;
-  if (typeof gameMin !== 'string' || typeof gameMax !== 'string') return false;
-  return cmpVersion(canonGameVersion(gameMin), game) <= 0 && cmpVersion(game, canonGameVersion(gameMax)) <= 0;
+  if (typeof gameMin === 'string' && typeof gameMax === 'string') {
+    return cmpVersion(canonGameVersion(gameMin), game) <= 0 && cmpVersion(game, canonGameVersion(gameMax)) <= 0;
+  }
+  if (typeof gameMin === 'string') return cmpVersion(canonGameVersion(gameMin), game) <= 0;
+  if (typeof gameMax === 'string') return cmpVersion(game, canonGameVersion(gameMax)) <= 0;
+  return false;
 }
 
 export const cmpVersion = (a, b) => {
