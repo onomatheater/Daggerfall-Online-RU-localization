@@ -49,7 +49,7 @@ Use a small text diagram if useful. Label each path as **implemented**, **exampl
 
 ### 3. `docs/LOCALIZATION.md` — locale data and translation workflow
 
-Document table/key structure, EN fallback, parameter placeholders, baked plural/select forms, month/case data, markup preservation, UTF-8 conventions, `-LOC` section boundaries, font constraints, and relevant validation commands. Explain how an existing translation is edited and how a new locale differs from editing RU values.
+Refresh `docs/TRANSLATING.md` and add `docs/LOCALIZATION.md` for the generic technical reference. Document table/key structure, EN fallback, parameter placeholders, baked plural/select forms, month/case data, markup preservation, UTF-8 conventions, `-LOC` section boundaries, font constraints, and relevant validation commands. Explain how an existing translation is edited and how a new locale differs from editing RU values.
 
 Keep locale-specific glossary and editorial decisions separate from generic mechanics. Do not present the Russian QA glossary as a German glossary.
 
@@ -65,9 +65,9 @@ Rewrite in English and distinguish:
 
 Examples must be checked against current exports and tests before being described as drop-in instructions.
 
-### 5. `LAUNCHER.md` and `packs/README.md` — operations
+### 5. `docs/updater.md`, `LAUNCHER.md`, and `packs/README.md` — user and operator docs
 
-Rewrite/update the existing guides in English rather than creating duplicate launcher guides. Cover launcher modules, package/feed/manifest shape, compatibility selection, hashes, installation and rollback, recipe fallback, build/test commands, publication flow, and which commands can write files, publish, or otherwise have side effects. State that live Electron validation and releases require explicit authorization.
+Rewrite `docs/updater.md` as the player-facing guide and `LAUNCHER.md` as the developer/operator guide; keep their audiences distinct rather than duplicating instructions. Update `packs/README.md`. Cover launcher modules, package/feed/manifest shape, compatibility selection, hashes, installation and rollback, recipe fallback, build/test commands, publication flow, and which commands can write files, publish, or otherwise have side effects. State that live Electron validation and releases require explicit authorization.
 
 ### 6. `docs/DEVELOPMENT.md` — contributor/developer setup
 
@@ -84,25 +84,36 @@ This is a required, separate handoff document. Organize entries into:
 
 Each entry should include **status**, **evidence** (file/symbol/test paths), **impact**, and **next decision or verification needed**. Avoid turning historical TODO entries into commitments. Give each claim an “as of” date and distinguish source-code inspection from a test or live-client verification.
 
-Initial candidates to verify while writing the final docs (not assertions of completion):
-
-- German/general multi-locale support may be incomplete: runtime tables, manifest validation, pack naming/output, and installation paths appear RU-specific (`src/locale/locale.js`, `src/locale/loader.js`, `tools/pack-ru.mjs`, updater paths).
-- The pack builder includes quest/book `-LOC` data, but the JSON overlay reader consumes only the manifest and `ru.json`; verify how, or whether, those `-LOC` files are consumed at runtime. The builder's listed directories should also be checked for BIOG coverage.
-- `setLocale()` changes locale state, but rerendering open client surfaces and SDF invalidation depend on client integration; the in-flight-operation contract may not have a current test.
-- Access from browser/Electron to `Prefs/Locale` is called out as unresolved in the injection guide.
-- The upstream integration choice (in-client PR versus external overlay) and current upstream compatibility need confirmation.
-- The launcher entry point may not be directly covered by tests, and release automation is not CI-based; verify current docs/code before recording.
-- A fresh `npm ci` in `updater/` reported 11 dependency advisories (8 moderate, 3 high); review current `npm audit` details and disposition before presenting dependency health as known.
-- Generic ICU claims should be compared with the actual morphology implementation and described precisely.
-- Redistribution/provenance status for translation text and font exceptions must be recorded only with verified evidence and permission.
-
 ### 8. `CONTRIBUTING.md` — contribution entry point
 
 Make it English and locale-neutral at the project-policy level. Link to the generic localization workflow and explain review, tests, and scope boundaries. Move RU-only permissions/key-ownership rules to an RU-specific appendix or clearly label them as non-portable policy; do not silently apply them to a German fork.
 
+## Findings from the preliminary audit (2026-10-14)
+
+These are source/document comparisons, not proof from a live game session. The final gaps document must cite the current evidence and preserve this distinction.
+
+1. **A German locale is not currently a drop-in data-only addition.** `src/locale/locale.js` statically registers only `en` and `ru`; `src/locale/loader.js` requires `manifest.locale === 'ru'` and reads `ru.json`; `inject/locale-adapter.js` registers the package under `PACK_LOCALE = 'ru'`; `tools/pack-ru.mjs` emits RU filenames and only packages RU data. `docs/TRANSLATING.md` currently says the machinery can be reused for any language by copying the EN table and wiring a locale, which understates the code changes needed for the external-pack/updater path.
+2. **The translation guide describes APIs and workflow that no longer match the repo.** It names `tOr()` as part of `src/locale/locale.js`, while the product module does not export it (`tOr` is probe-only per `AGENTS.md`). It also describes `extract-texts.mjs` as rewriting to `t()` and the overlay as a one-shot patch with no upstream tracking; current extractor output aliases `t` as `ruT`, and the repository has key-sync and probe-rebase tooling.
+3. **Packaged `-LOC` delivery is not the same as runtime consumption.** `tools/pack-ru.mjs` copies quest and book `-LOC` files but not BIOG. `tools/load-pack.mjs` and `src/locale/loader.js` load only the manifest and `ru.json` into the JSON overlay. The external client's separate `-LOC` loading path is not present in this repository and needs confirmation.
+4. **Client integration remains unproven here.** `loadExternalPackFetch()` and adapter methods have unit tests, but this repository has no client boot call that invokes them. `inject/README.md` itself leaves `Prefs/Locale` access unresolved. The README's `?lang=ru` instruction has no implementation reference in this repository and must be attributed to, and checked against, the external client.
+5. **Language switching is only part of the contract in this repo.** `setLocale()` changes the bundled locale; the host client must rerender open UI and invalidate font atlases. The AGENTS contract for in-flight trade/cast/quest operations says a future test should hold the guarantee; do not claim that case is currently verified.
+6. **The morphology docs overstate ICU support.** `src/locale/morph.js` selects baked `one/few/many` forms using the RU rule and `select()` chooses a supplied key. It is not a general ICU message parser; the generic guide must describe the actual helper/data format.
+7. **Updater documents conflict with current code and each other.** `docs/updater.md` says the feed URL is an `example.invalid` placeholder and describes requests as user-triggered, while `updater/lib/config.js` sets a real feed URL and `updater/main.js` fetches game news on every launch. The main process also has an explicit `download-game` action, while `LAUNCHER.md` says the updater does not download the game. Normal locale installation targets `Prefs/Locale`, but the recipe fallback migrates the installation and applies a recipe to `resources/app/dist`; document these as separate paths.
+8. **Release side effects need a precise operator guide.** `tools/publish-pack.mjs --run` mutates the probe workflow and stages the pack/recipe artifacts plus a release-entry object; it does not itself publish or write `feed.json`. `tools/publish-gates.mjs` is the path that can commit and push `packs/**` on `main`. The checked-in `packs/README.md` should be reconciled with actual CLI requirements and these side effects.
+9. **German glyph support needs a real proof.** Handjet's Latin face range includes U+00E4/U+00F6/U+00FC/U+00DF, but the font/SDF tests pin RU-specific glyphs and do not explicitly assert German text rendering in the game client. Record this as unverified until cmap and rendered output are checked.
+10. **Dependency health needs review.** A fresh `npm ci` in `updater/` reported 11 dependency advisories (8 moderate, 3 high). Inspect current `npm audit` details and disposition before describing dependency health as known; do not run automatic dependency fixes as part of a docs task.
+11. **Translation-text rights are not documented consistently.** The tracked README says Jagget content is used with permission; the local policy notes no response and a private-use decision. Do not export the permission claim or infer German derivative/redistribution rights without documentary confirmation. The Guildenstern font has a tracked CC BY-SA attribution/exception that should remain explicit.
+12. **Other user instructions need reconciliation.** The README says `node --test test/`, but `package.json` pins the Windows-safe `node --test "test/*.test.js"` command. Updater tests additionally require `npm ci` in `updater/`. Record exact tested commands and environments in the contributor docs.
+
+## Documentation audiences and exclusions
+
+- `docs/updater.md` is player-facing; `LAUNCHER.md` and `packs/README.md` are operator/developer references.
+- `AGENTS.md`, local `todo.md`, SDD ledgers, the Russian QA skill, and its Russian glossary are internal or language-specific sources, not generic German handoff docs. Do not translate private machine instructions wholesale or treat local TODO state as a public commitment.
+- Also review `updater/assets/README.md` and `vendor/guildenstern-nbp/ATTRIBUTION.md` for English-language provenance notes; retain upstream/vendor notices as required rather than rewriting license texts.
+
 ## Recommended implementation order
 
-1. Audit code, tests, and existing docs; build the `KNOWN-GAPS.md` evidence table first.
+1. Audit every handoff-facing document against code/tests; build the `KNOWN-GAPS.md` evidence table first and reconcile contradictory claims.
 2. Write `ARCHITECTURE.md` from that audited inventory.
 3. Update the root README and contribution/translation workflow.
 4. Translate and reconcile injection, launcher, and package guides against code.
