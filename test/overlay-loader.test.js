@@ -55,6 +55,17 @@ test('range gate: gameMin/gameMax inclusive, invalid range rejected', () => {
   assert.ok(isCompatible({ locale: 'ru', version: '1.0', gameMin: '0.1.7506', gameMax: '0.1.7553', files: [] }, '0.1.7524'), 'dotted tags compare');
 });
 
+test('open range: gameMin-only installs on newer, gameMax-only on older', () => {
+  const floor = { locale: 'ru', version: '1.4.0', gameMin: '8127', files: [] };
+  assert.ok(isCompatible(floor, '8127'), 'floor itself');
+  assert.ok(isCompatible(floor, '0.1.8404'), 'newer game installs (new keys fall back to EN)');
+  assert.ok(isCompatible(floor, '0.1.9999'), 'far future installs (no ceiling by design)');
+  assert.ok(!isCompatible(floor, '7553'), 'older game rejected (keys may not exist)');
+  const cap = { locale: 'ru', version: '1.4.0', gameMax: '8127', files: [] };
+  assert.ok(isCompatible(cap, '7553'), 'older installs under cap');
+  assert.ok(!isCompatible(cap, '0.1.8404'), 'newer rejected under cap');
+});
+
 test('splitKey is single-sourced with locale.js', async () => {
   const locale = await import('../src/locale/locale.js');
   const loader = await import('../src/locale/loader.js');
