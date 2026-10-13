@@ -1,7 +1,8 @@
 // Префы окна апдейтера (сторона приложения): авточек и папка игры.
 // Дефолт выкл, папка пуста — сеть и чтение только с согласия.
-// Битый файл = дефолт, не throw.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+// Битый файл сдвигается в бэкап prefs.corrupt-*.bak (папка не теряется
+// молча), возвращается дефолт. Файла нет — дефолт без бэкапа.
+import { readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 
 const FILE = 'prefs.json';
@@ -13,9 +14,21 @@ const clean = (parsed) => ({
 });
 
 export function loadPrefs(userDataDir) {
+  const file = join(userDataDir, FILE);
+  let raw;
   try {
-    return clean(JSON.parse(readFileSync(join(userDataDir, FILE), 'utf8')));
+    raw = readFileSync(file, 'utf8');
   } catch {
+    return { ...DEFAULT_PREFS };
+  }
+  try {
+    return clean(JSON.parse(raw));
+  } catch {
+    try {
+      renameSync(file, join(userDataDir, `prefs.corrupt-${Date.now()}.bak`));
+    } catch {
+      // Бэкап не встал — дефолт всё равно возвращаем, не throw.
+    }
     return { ...DEFAULT_PREFS };
   }
 }

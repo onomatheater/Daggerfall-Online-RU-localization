@@ -11,6 +11,7 @@ import { detectGameVersion } from '../tools/detect-game.mjs';
 import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, NEWS, TMP_PREFIXES, defaultGameDir } from './lib/config.js';
 import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
 import { isLocalPath, filePathFromUrl, resolvePickedGameDir } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
@@ -21,14 +22,9 @@ import { loadPrefs, savePrefs } from './lib/prefs.js';
 
 // Хост фида — packs/feed.json на main нашего репозитория.
 // RU_FEED_URL — стенд: локальный путь к feed.json вместо сети.
+// Остальные константы окна — updater/lib/config.js.
 const FEED_URL = process.env.RU_FEED_URL || DEFAULT_FEED_URL;
-const GAME_API_URL = 'https://api.github.com/repos/Lattymoy/daggerfall-js-source/releases/latest';
-// Ссылки разработчиков — те же, что в их лаунчере (Lattymoy, MIT).
-const LINKS = {
-  site: 'https://daggerfalljs.dev/',
-  discord: 'https://discord.gg/jM2JdwSM8w',
-};
-const DEFAULT_GAME_DIR = `${process.env.LOCALAPPDATA ?? ''}\\Programs\\Daggerfall Online`;
+const DEFAULT_GAME_DIR = defaultGameDir(process.env);
 
 const userData = () => app.getPath('userData');
 const storeDir = () => join(userData(), 'packs');
@@ -103,15 +99,15 @@ async function runCheck() {
 // Лента новостей игры — их releases API (note: текст целиком, движок режет сам).
 async function runGameNews() {
   try {
-    const res = await fetch(`${GAME_API_URL.replace('/releases/latest', '/releases?per_page=5')}`);
+    const res = await fetch(GAME_API_LIST);
     if (!res.ok) return [];
     const list = await res.json();
     if (!Array.isArray(list)) return [];
-    return list.slice(0, 5).map((r) => ({
+    return list.slice(0, NEWS.perPage).map((r) => ({
       version: String(r.tag_name ?? '').replace(/^app-v/, ''),
-      date: String(r.published_at ?? '').slice(0, 10),
+      date: String(r.published_at ?? '').slice(0, NEWS.dateLen),
       badge: 'update',
-      text: String(r.body ?? '').slice(0, 2000),
+      text: String(r.body ?? '').slice(0, NEWS.bodyMax),
     }));
   } catch (err) {
     // Лента — тихая по DA6, но ошибку логируем: молчание в UI, не в консоли.
@@ -122,7 +118,7 @@ async function runGameNews() {
 async function runGameCheck(current) {
   if (!current) return { status: 'unknown' };
   try {
-    const res = await fetch(GAME_API_URL);
+    const res = await fetch(GAME_API_LATEST);
     if (!res.ok) return { status: 'failed' };
     const verdict = checkGameUpdate({ apiText: await res.text(), currentVersion: current });
     return verdict.available ? { status: 'available', tag: verdict.tag } : { status: 'current' };
@@ -143,7 +139,7 @@ async function runInstall(entry) {
       unpack: unpackZip,
       storeDir: storeDir(),
       prefsDir: prefsLocaleDir(),
-      mkTmp: () => mkdtempSync(join(tmpdir(), 'ruapp-')),
+      mkTmp: () => mkdtempSync(join(tmpdir(), TMP_PREFIXES[0])),
       rmTmp: (tmp) => rmSync(tmp, { recursive: true, force: true }),
     });
   } catch (err) {
@@ -161,7 +157,7 @@ function pruneTmp() {
     return;
   }
   for (const name of names) {
-    if (name.startsWith('ruapp-') || name.startsWith('rurecipe-')) {
+    if (TMP_PREFIXES.some((p) => name.startsWith(p))) {
       rmSync(join(tmpdir(), name), { recursive: true, force: true });
     }
   }
@@ -170,8 +166,8 @@ function pruneTmp() {
 function createWindow() {
   const root = dirname(fileURLToPath(import.meta.url));
   const win = new BrowserWindow({
-    width: 960,
-    height: 600,
+    width: WINDOW.width,
+    height: WINDOW.height,
     useContentSize: true,
     resizable: false,
     maximizable: false,
@@ -209,7 +205,7 @@ app.whenReady().then(() => {
       backupPath: join(userData(), 'backups', `app-asar-${hit.version}.asar`),
     });
     onStage(50, 'Качаю рецепт перевода…');
-    const tmp = mkdtempSync(join(tmpdir(), 'rurecipe-'));
+    const tmp = mkdtempSync(join(tmpdir(), TMP_PREFIXES[1]));
     try {
       const zipPath = join(tmp, 'recipe.zip');
       if (isLocalPath(recipeRef.url)) {
@@ -346,7 +342,7 @@ app.whenReady().then(() => {
       state.busy = true;
       refresh();
       try {
-        const tmp = mkdtempSync(join(tmpdir(), 'ruapp-'));
+        const tmp = mkdtempSync(join(tmpdir(), TMP_PREFIXES[0]));
         try {
           const rep = installUpdate({
             zipPath: join(storeDir(), prev.file),

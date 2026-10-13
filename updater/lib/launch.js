@@ -6,14 +6,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn as nodeSpawn } from 'node:child_process';
+import { EXE_NAMES } from './config.js';
 
 export function resolveGameExe(gameDir) {
   if (typeof gameDir !== 'string' || gameDir.length === 0) return null;
-  const candidates = [
-    join(gameDir, 'DFO Online.exe'),
-    join(gameDir, 'DFO Online', 'DFO Online.exe'),
-    join(gameDir, 'Daggerfall Online.exe'),
-  ];
+  const candidates = EXE_NAMES.map((rel) => join(gameDir, ...rel.split('/')));
   for (const exe of candidates) {
     try {
       if (existsSync(exe)) return exe;
