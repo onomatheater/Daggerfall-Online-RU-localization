@@ -20,7 +20,7 @@
 
 ## Открытые PR (ждут «мерж»)
 
-- [~] PR #97 `feat/play-launch → dev` — Task A ревю (Играть по canPlay + запуск exe); G0 323/323, wire OK, живая проверка exe
+- [x] PR #97 `feat/play-launch → dev` — ВЛИТ (Task A: Играть по canPlay + запуск exe); ветка удалена везде
 
 - [x] PR #85 `feat/prefs-locale → dev` — ВЛИТ (Task 1 иммунитета + план в `todo.md`); ветка удалена везде
 - [x] PR #87 `feat/adapter-wiring → dev` — ВЛИТ (Task 2 иммунитета: Prefs-boot + wrap-default + render-proof); ветка удалена везде
@@ -236,7 +236,7 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 Наши выводы: форк не нужен, Prefs-путь верный, «Играть» чиним их правилом.
 Влито: nested-gamedir (PR #95, гнездо DFO Online), open-range (PR #96, потолка нет).
 
-- [~] Task A `feat/play-launch`: «Играть» по правилу canPlay (игра известна + не занят)
+- [x] Task A `feat/play-launch`: «Играть» по правилу canPlay (игра известна + не занят)
   → запуск exe (с учётом гнезда), `updater/lib/launch.js` + тесты → PR → апрув → мерж
 - [~] Task B `feat/latest-yml`: game-watch читает их `latest.yml` вместо API-списка
   (легче, их контракт) → PR → апрув → мерж
