@@ -29,7 +29,10 @@
    *  whose text is replaced, even with the same words (AUDIT INSTALL L5-17). */
   const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
 
-  /** "a **b** c" as text nodes and <strong>, `code` and links as their text. */
+  /** "a **b** c" as text nodes and <strong>, `code` and links as their text.
+   *  Самописный парсер_subset_ безопасен конструкцией: вход режется regex'ами
+   *  в ЧИСТЫЙ ТЕКСТ, наружу — только createTextNode/textContent через el()
+   *  (см. DA8 в шапке). innerHTML здесь нет и быть не должно. */
   function inline(target, text) {
     const plain = String(text).replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/`([^`]*)`/g, '$1');
     plain.split('**').forEach((part, i) => {

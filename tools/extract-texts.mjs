@@ -118,32 +118,51 @@ function scan(source) {
   return out;
 }
 
-function isSkippable(raw) {
+// Каждый пропуск именован: тишина сканера становится видимой через
+// skipHistogram (сколько чего отброшено), а не растворяется в continue.
+export function skipReason(raw) {
   const s = String(raw).replace(/\u0000/g, '').trim();
-  if (!s) return true;
-  if (s.startsWith('dfo:')) return true; // уже ключ
-  if (/^QBN:/i.test(s)) return true; // логика квестов — не трогаем
-  if (/^(https?:|\.\.?\/\/|\.\.?\/|[/\\])/.test(s)) return true; // url/путь
-  if (/[/\\].*\./.test(s)) return true; // путь с расширением
-  if (!/[A-Za-zА-Яа-яЁё]/.test(s)) return true; // без букв — не текст
-  if (!/[A-Za-zА-Яа-яЁё]{2}/.test(s)) return true; // короче двух букв подряд
-  if (/\s/.test(s) === false && /[:/]/.test(s)) return true; // ID без пробелов (Section/Key, a:1)
-  if (/^(aria|data)-[a-z-]+$/i.test(s)) return true; // имена атрибутов
-  if (/^-*[a-z][a-z0-9_$-]*$/.test(s)) return true; // одиночный строчный токен (классы, идентификаторы, css-переменные)
+  if (!s) return 'empty';
+  if (s.startsWith('dfo:')) return 'key'; // уже ключ
+  if (/^QBN:/i.test(s)) return 'qbn'; // логика квестов — не трогаем
+  if (/^(https?:|\.\.?\/\/|\.\.?\/|[/\\])/.test(s)) return 'url-path'; // url/путь
+  if (/[/\\].*\./.test(s)) return 'path-ext'; // путь с расширением
+  if (!/[A-Za-zА-Яа-яЁё]/.test(s)) return 'no-letters'; // без букв — не текст
+  if (!/[A-Za-zА-Яа-яЁё]{2}/.test(s)) return 'short'; // короче двух букв подряд
+  if (/\s/.test(s) === false && /[:/]/.test(s)) return 'id-nospace'; // ID без пробелов (Section/Key, a:1)
+  if (/^(aria|data)-[a-z-]+$/i.test(s)) return 'aria-attr'; // имена атрибутов
+  if (/^-*[a-z][a-z0-9_$-]*$/.test(s)) return 'lower-token'; // одиночный строчный токен (классы, идентификаторы, css-переменные)
   const toks = s.split(/\s+/);
-  if (toks.length <= 3 && toks.length > 1 && toks.every((t) => /^[a-z0-9][a-z0-9-]*$/.test(t)) && toks.some((t) => t.includes('-'))) return true; // class-комбо (px-a px-b)
-  if (!/\s/.test(s) && /[a-z][A-Z]/.test(s)) return true; // camelCase-ID (MoveForwards)
-  if (/^\.[A-Za-z_-]/.test(s) && !/\s/.test(s)) return true; // селектор (.px-x)
-  if (!/[A-Z]/.test(s) && /(\.\w|#\w|\bbody\s)/.test(s)) return true; // селектор-комбинатор (body .x)
-  if (/^#[0-9a-f]{3,8}$/i.test(s)) return true; // hex-цвет
-  if (/^[\s.kfybo#]{8,}$/.test(s)) return true; // пиксель-арт (......kkkk......)
-  if (!/\s/.test(s) && /[.]/u.test(s) && !/^([A-Z][a-z]*\.)+$/.test(s)) return true; // dotted-ID (menu.x, A.CIF_1-0, 1.7.1)
-  if (/^(TODO|FIXME|XXX)\b/.test(s) || /^NOTE:/.test(s)) return true; // dev-пометки
-  if (/\b\d+(\.\d+)?px\b/.test(s)) return true; // font-шорткат (700 11px ...)
+  if (toks.length <= 3 && toks.length > 1 && toks.every((t) => /^[a-z0-9][a-z0-9-]*$/.test(t)) && toks.some((t) => t.includes('-'))) return 'class-combo'; // class-комбо (px-a px-b)
+  if (!/\s/.test(s) && /[a-z][A-Z]/.test(s)) return 'camel-id'; // camelCase-ID (MoveForwards)
+  if (/^\.[A-Za-z_-]/.test(s) && !/\s/.test(s)) return 'selector'; // селектор (.px-x)
+  if (!/[A-Z]/.test(s) && /(\.\w|#\w|\bbody\s)/.test(s)) return 'selector-combinator'; // селектор-комбинатор (body .x)
+  if (/^#[0-9a-f]{3,8}$/i.test(s)) return 'hex-color'; // hex-цвет
+  if (/^[\s.kfybo#]{8,}$/.test(s)) return 'pixel-art'; // пиксель-арт (......kkkk......)
+  if (!/\s/.test(s) && /[.]/u.test(s) && !/^([A-Z][a-z]*\.)+$/.test(s)) return 'dotted-id'; // dotted-ID (menu.x, A.CIF_1-0, 1.7.1)
+  if (/^(TODO|FIXME|XXX)\b/.test(s) || /^NOTE:/.test(s)) return 'dev-note'; // dev-пометки
+  if (/\b\d+(\.\d+)?px\b/.test(s)) return 'font-shortcut'; // font-шорткат (700 11px ...)
   const core = s.replace(/[?!…]+$/u, '');
-  if (/[=<>!&|;:(){}\[\]\\]/.test(core)) return true; // обрывки кода
-  if (/\?\?/.test(core) || /\?\./.test(core) || /\w\?\w/.test(core) || / \? /.test(core)) return true; // кодовый ?
-  return false;
+  if (/[=<>!&|;:(){}\[\]\\]/.test(core)) return 'code-frag'; // обрывки кода
+  if (/\?\?/.test(core) || /\?\./.test(core) || /\w\?\w/.test(core) || / \? /.test(core)) return 'code-question'; // кодовый ?
+  return null;
+}
+
+function isSkippable(raw) {
+  return skipReason(raw) !== null;
+}
+
+// Гистограмма отбросов по именованным причинам (+ class-slot):
+// ревизор видит, что именно сканер не взял, вместо молчаливого continue.
+export function skipHistogram(source) {
+  const hist = {};
+  for (const { raw, index } of scan(source)) {
+    if (String(raw).includes('\u0000')) continue;
+    const en = String(raw).replace(/\u0000/g, '').trim();
+    const reason = skipReason(en) ?? (inClassSlot(source, index, en) ? 'class-slot' : null);
+    if (reason !== null) hist[reason] = (hist[reason] ?? 0) + 1;
+  }
+  return hist;
 }
 
 // Позиция «классового» литерала: селектор/тег в querySelector,
