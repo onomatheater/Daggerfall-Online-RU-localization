@@ -13,6 +13,7 @@ export {
   FEED_PACKS_BASE, DEFAULT_FEED_URL, GAME_RELEASES_PAGE, PS_TIMEOUT_MS,
 } from './config.js';
 import { PS_TIMEOUT_MS } from './config.js';
+import { isHttpUrl } from './paths.js';
 
 // Стабильная страница релизов игры (их REL5: версия в теге, не в имени файла).
 // Игру качаем только руками с этой страницы: установщик мы не тянем
@@ -48,7 +49,7 @@ export async function isGameRunning(listProcesses = defaultListProcesses) {
 // Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
 export async function loadFeedText(source, { fetchText, readText } = {}) {
   const src = String(source ?? '');
-  if (/^https?:\/\//i.test(src)) return fetchText(src);
+  if (isHttpUrl(src)) return fetchText(src);
   return readText(src);
 }
 
@@ -121,7 +122,7 @@ export function describeIssue(reason) {
 export function isFeedConfigured(url) {
   const src = String(url ?? '').trim();
   if (src.length === 0) return false;
-  if (/^https?:\/\//i.test(src)) return !/example\.invalid/i.test(src);
+  if (isHttpUrl(src)) return !/example\.invalid/i.test(src);
   return true;
 }
 

@@ -13,7 +13,7 @@ import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
 import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, NEWS, TMP_PREFIXES, defaultGameDir } from './lib/config.js';
 import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
-import { isLocalPath, filePathFromUrl, resolvePickedGameDir } from './lib/paths.js';
+import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
 import { launchGame } from './lib/launch.js';
@@ -76,7 +76,7 @@ async function fetchZip(url, dest) {
 }
 
 async function loadFeed() {
-  if (/^https?:\/\//i.test(FEED_URL)) return fetchText(FEED_URL);
+  if (isHttpUrl(FEED_URL)) return fetchText(FEED_URL);
   return loadFeedText(FEED_URL, {
     fetchText,
     readText: (path) => readFileSync(path, 'utf8'),
@@ -154,6 +154,7 @@ function pruneTmp() {
   try {
     names = readdirSync(tmpdir());
   } catch {
+    // tmp не читается — подбирать нечего, следующий запуск попробует снова.
     return;
   }
   for (const name of names) {

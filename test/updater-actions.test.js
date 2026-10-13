@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isLocalPath, filePathFromUrl, resolvePickedGameDir } from '../updater/lib/paths.js';
+import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl } from '../updater/lib/paths.js';
 import { runCheck, runInstall } from '../updater/lib/actions.js';
 
 test('paths: local stands detected, http is not', () => {
@@ -19,6 +19,19 @@ test('paths: local stands detected, http is not', () => {
 test('paths: file:// strips to fs path', () => {
   assert.equal(filePathFromUrl('file:///tmp/p.zip'), '/tmp/p.zip');
   assert.equal(filePathFromUrl('C:\\tmp\\p.zip'), 'C:\\tmp\\p.zip');
+});
+
+test('paths: http detected in one place (no regex triplicates)', () => {
+  assert.equal(isHttpUrl('https://example.invalid/feed.json'), true);
+  assert.equal(isHttpUrl('http://localhost/feed.json'), true);
+  assert.equal(isHttpUrl('file:///tmp/feed.json'), false);
+  assert.equal(isHttpUrl('C:\\tmp\\feed.json'), false);
+  assert.equal(isHttpUrl(''), false);
+});
+
+test('paths: file:// decodes percent-escapes', () => {
+  assert.equal(filePathFromUrl('file:///tmp/my%20pack.zip'), '/tmp/my pack.zip');
+  assert.equal(filePathFromUrl('file:///tmp/plain.zip'), '/tmp/plain.zip');
 });
 
 test('paths: picked folder accepted only with a visible game', () => {
@@ -63,8 +76,7 @@ test('runCheck: fetch throw is net-error, unknown game short-circuits', async ()
   assert.equal(unknown.reason, 'no game');
 });
 
-test('runInstall: fetch throw is net-error, unpack reason propagates', async () => {
-  const { createHash } = await import('node:crypto');
+test('runInstall: fetch throw is net-error, unpack reason propagates', async () => {  const { createHash } = await import('node:crypto');
   const { writeFileSync, mkdtempSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
@@ -83,4 +95,26 @@ test('runInstall: fetch throw is net-error, unpack reason propagates', async () 
   });
   assert.equal(net.ok, false);
   assert.equal(net.reason, 'net-error');
+});
+
+test('actions: failures are logged, not only returned', async () => {
+  const errs = [];
+  const orig = console.error;
+  console.error = (...a) => errs.push(a.map(String).join(' '));
+  try {
+    await runCheck({ gameVersion: '7553', currentVersion: undefined, loadFeed: async () => { throw new Error('down'); } });
+    await runInstall({
+      entry: { version: '1', url: 'https://example.invalid/p.zip', sha: 'a'.repeat(64) },
+      fetchZip: async () => { throw new Error('down'); },
+      unpack: () => ({ ok: true }),
+      storeDir: 's',
+      mkTmp: () => 't',
+      rmTmp: () => {},
+    });
+  } finally {
+    console.error = orig;
+  }
+  assert.equal(errs.length, 2);
+  assert.match(errs[0], /feed load failed/);
+  assert.match(errs[1], /fetchZip failed/);
 });

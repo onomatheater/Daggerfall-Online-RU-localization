@@ -28,6 +28,8 @@ export function importCorpus({ srcDir, locDir, outDir, books = false }) {
   return rep;
 }
 
+// Пара есть, если читается: нет файла/прав — пропускаем строкой skipped,
+// а не throw на весь корпус.
 function exists(p) {
   try { readFileSync(p); return true; } catch { return false; }
 }

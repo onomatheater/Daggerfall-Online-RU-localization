@@ -7,7 +7,7 @@
 // Отклонение от плана: частичный stage без рецепта не делаем — любой
 // затык роняет прогон целиком (hold, зовём человека), молчаливого
 // полупака не существует.
-import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync, rmSync, appendFileSync } from 'node:fs';
+import { readdirSync, readFileSync, mkdirSync, writeFileSync, cpSync, copyFileSync, existsSync, rmSync, appendFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -35,14 +35,16 @@ export const STEPS = [
 function walkJs(dir, out = []) {
   let names;
   try {
-    names = readdirSync(dir);
+    // Dirent вместо statSync: висячий симлинк не роняет обход;
+    // нечитаемая директория — пустой список, маркеры честно не найдутся.
+    names = readdirSync(dir, { withFileTypes: true });
   } catch {
     return out;
   }
-  for (const name of names) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) walkJs(full, out);
-    else if (name.endsWith('.js') || name.endsWith('.html')) out.push(full);
+  for (const ent of names) {
+    const full = join(dir, ent.name);
+    if (ent.isDirectory()) walkJs(full, out);
+    else if (ent.name.endsWith('.js') || ent.name.endsWith('.html')) out.push(full);
   }
   return out;
 }
@@ -53,6 +55,8 @@ export function bundleHasMarkers(distDir, markers) {
       try {
         return readFileSync(f, 'utf8');
       } catch {
+        // Гонка прав между обходом и чтением: файл пропускается,
+        // маркеры в нём честно считаются потерянными.
         return '';
       }
     })
