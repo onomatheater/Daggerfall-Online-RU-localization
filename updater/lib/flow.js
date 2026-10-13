@@ -7,12 +7,17 @@ import { verifyFileSha, installPack, installPackToPrefs } from '../../tools/upda
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
+// Канон констант — updater/lib/config.js; реэкспорт для совместимости
+// (тесты и main.js читали их отсюда).
+export {
+  FEED_PACKS_BASE, DEFAULT_FEED_URL, GAME_RELEASES_PAGE, PS_TIMEOUT_MS,
+} from './config.js';
+import { PS_TIMEOUT_MS } from './config.js';
 
 // Стабильная страница релизов игры (их REL5: версия в теге, не в имени файла).
 // Игру качаем только руками с этой страницы: установщик мы не тянем
 // (решение человека 12.10) — апдейтер замечает новую версию и возвращает
-// перевод рецептом.
-export const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
+// перевод рецептом. Значение — из config.js (см. реэкспорт выше).
 
 // Команда списка процессов по платформе: win — tasklist, остальное — pgrep
 // (macOS и почти весь linux его имеют; нет — тихо false, как раньше).
@@ -23,8 +28,7 @@ export function psCommand(platform = process.platform) {
 
 // Таймаут списка процессов: зависший tasklist/pgrep не вешает проверку
 // «игра запущена» навсегда — ошибка превращается в '' (не запущена),
-// как отсутствие утилиты. Значение запечено тестом ниже по файлу.
-export const PS_TIMEOUT_MS = 10000;
+// как отсутствие утилиты. Значение — PS_TIMEOUT_MS из config.js.
 
 const defaultListProcesses = () => new Promise((resolve) => {
   import('node:child_process').then(({ execFile }) => {
@@ -109,9 +113,7 @@ export function describeIssue(reason) {
 
 // Паки лежат в нашем репозитории: packs/feed.json + свежий zip на main
 // (решение человека 12.10: репо открывается, в main только свежий пак).
-// Стенд — RU_FEED_URL с локальным путём.
-export const FEED_PACKS_BASE = 'https://raw.githubusercontent.com/onomatheater/Daggerfall-Online-RU-localization/main/packs';
-export const DEFAULT_FEED_URL = `${FEED_PACKS_BASE}/feed.json`;
+// Стенд — RU_FEED_URL с локальным путём. Значения — из config.js.
 
 // Фид настроен? example.invalid — заглушка (осталась для чужих форков):
 // её не трогаем сетью и не врём про «нет соединения».
