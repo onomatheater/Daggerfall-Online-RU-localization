@@ -73,6 +73,56 @@ test('month: bad index warns', () => {
   assert.ok(warns.length > 0);
 });
 
+test('setLocale: unknown locale warns and falls to en', () => {
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (m) => warns.push(String(m));
+  try {
+    setLocale('fr');
+    assert.equal(getLocale(), 'en');
+  } finally {
+    console.warn = orig;
+    setLocale('en');
+  }
+  assert.equal(warns.length, 1);
+  assert.match(warns[0], /unknown locale=fr/);
+});
+
+test('month: bad case warns and falls to nom', () => {
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (m) => warns.push(String(m));
+  try {
+    assert.equal(month(0, 'foo'), 'Январь');
+  } finally {
+    console.warn = orig;
+  }
+  assert.equal(warns.length, 1);
+  assert.match(warns[0], /bad cas=foo/);
+});
+
+test('overlay register: garbage args warn instead of silent drop', async () => {
+  const { createOverlay } = await import('../src/locale/loader.js');
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (m) => warns.push(String(m));
+  try {
+    const ov = createOverlay({ en: {} });
+    ov.register('ru', 'strings', null);
+    assert.equal(ov.has('strings:x'), false);
+  } finally {
+    console.warn = orig;
+  }
+  assert.equal(warns.length, 1);
+});
+
+test('resolvePlural: params reach the form (parity with tp)', async () => {
+  const { createOverlay } = await import('../src/locale/loader.js');
+  const ov = createOverlay({ en: {} });
+  ov.register('ru', 'strings', { impedance: { one: '# ом {name}', few: '# ома {name}', many: '# ом {name}' } });
+  assert.equal(ov.resolvePlural('strings:impedance', 5, { name: 'R' }), '5 ом R');
+});
+
 test('select: unknown key warns and falls to other', () => {
   const warns = [];
   const orig = console.warn;

@@ -15,6 +15,16 @@ export const LINKS = {
 
 export const WINDOW = { width: 960, height: 600 };
 
+// Хром окна (рядом с WINDOW, а не россыпью в createWindow).
+export const WINDOW_CHROME = {
+  resizable: false,
+  maximizable: false,
+  autoHideMenuBar: true,
+  backgroundColor: '#0a0c11',
+  title: 'Обновление перевода',
+};
+export const ICON_FILE = 'assets/icon.ico';
+
 // Лента новостей: сколько релизов, обрезка тела и даты.
 export const NEWS = { perPage: 5, bodyMax: 2000, dateLen: 10 };
 
@@ -30,6 +40,12 @@ export function defaultGameDir(env = process.env) {
   const base = env?.LOCALAPPDATA ?? '';
   return base.length > 0 ? `${base}\\Programs\\Daggerfall Online` : '';
 }
+
+// Раскладка протокола: имена zip/директорий пака и рецепта + путь dist
+// в распакованной игре. Один источник вместо строк по main/actions.
+export const RECIPE = { zip: 'recipe.zip', dir: 'recipe', file: 'recipe.json' };
+export const PACK = { zip: 'ru-pack.zip', dir: 'pack' };
+export const APP_DIST = ['resources', 'app', 'dist'];
 
 // Таймаут списка процессов: зависший tasklist/pgrep не вешает проверку.
 export const PS_TIMEOUT_MS = 10000;

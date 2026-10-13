@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl } from '../updater/lib/paths.js';
+import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl, pruneTmpDir, backupAsarName, backupVanillaName } from '../updater/lib/paths.js';
 import { runCheck, runInstall } from '../updater/lib/actions.js';
 
 test('paths: local stands detected, http is not', () => {
@@ -32,6 +32,14 @@ test('paths: http detected in one place (no regex triplicates)', () => {
 test('paths: file:// decodes percent-escapes', () => {
   assert.equal(filePathFromUrl('file:///tmp/my%20pack.zip'), '/tmp/my pack.zip');
   assert.equal(filePathFromUrl('file:///tmp/plain.zip'), '/tmp/plain.zip');
+});
+
+test('paths: posix-absolute and UNC are local, localhost host stripped', () => {
+  assert.equal(isLocalPath('/tmp/pack.zip'), true);
+  assert.equal(isLocalPath('\\\\server\\share\\pack.zip'), true);
+  assert.equal(filePathFromUrl('file://localhost/C:/tmp/p.zip'), 'C:/tmp/p.zip');
+  assert.equal(filePathFromUrl('file:///tmp/p.zip', '/home/u'), '/tmp/p.zip');
+  assert.equal(filePathFromUrl('~/packs/p.zip', '/home/u'), '/home/u/packs/p.zip');
 });
 
 test('paths: picked folder accepted only with a visible game', () => {
@@ -97,8 +105,7 @@ test('runInstall: fetch throw is net-error, unpack reason propagates', async () 
   assert.equal(net.reason, 'net-error');
 });
 
-test('actions: failures are logged, not only returned', async () => {
-  const errs = [];
+test('actions: failures are logged, not only returned', async () => {  const errs = [];
   const orig = console.error;
   console.error = (...a) => errs.push(a.map(String).join(' '));
   try {
@@ -117,4 +124,26 @@ test('actions: failures are logged, not only returned', async () => {
   assert.equal(errs.length, 2);
   assert.match(errs[0], /feed load failed/);
   assert.match(errs[1], /fetchZip failed/);
+});
+
+test('pruneTmp: busy entry does not kill the sweep', () => {
+  const removed = [];
+  const slash = (a, b) => `${a}/${b}`;
+  const rep = pruneTmpDir('/tmp', {
+    readdir: () => ['ruapp-a', 'rurecipe-b', 'other'],
+    rm: (p) => {
+      if (p.endsWith('ruapp-a')) throw new Error('busy');
+      removed.push(p);
+    },
+    joinPath: slash,
+  });
+  assert.deepEqual(removed, ['/tmp/rurecipe-b']);
+  assert.deepEqual(rep, { removed: 1, failed: ['ruapp-a'] });
+});
+
+test('backup names: version segment sanitized (no traversal)', () => {
+  assert.equal(backupAsarName('7553'), 'app-asar-7553.asar');
+  assert.equal(backupVanillaName('7553'), 'vanilla-7553');
+  assert.equal(backupAsarName('../../evil'), 'app-asar-.._.._evil.asar');
+  assert.ok(!backupVanillaName('a/b\\c:v1').includes('/') && !backupVanillaName('a/b\\c:v1').includes('\\'));
 });

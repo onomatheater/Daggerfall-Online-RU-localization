@@ -4,7 +4,7 @@
 // Asar не вскрываем (ноль зависимостей) — это делает лаунчер до нас.
 // Нет источников или битый JSON -> {version: null, reason}, не throw:
 // селектор дальше вернёт null и клиент останется на старом паке / EN.
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const readText = (path) => {
@@ -26,19 +26,15 @@ const hasMarkers = (dir) =>
 const nestedCandidates = (dir) => {
   let names;
   try {
-    names = readdirSync(dir).sort();
+    names = readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1));
   } catch {
+    // Нечитаемая директория — кандидатов нет, дальше смотрит detectAt.
     return [];
   }
   return names
-    .map((name) => join(dir, name))
-    .filter((full) => {
-      try {
-        return statSync(full).isDirectory() && hasMarkers(full);
-      } catch {
-        return false;
-      }
-    });
+    .filter((ent) => ent.isDirectory())
+    .map((ent) => join(dir, ent.name))
+    .filter((full) => hasMarkers(full));
 };
 
 export function detectGameVersion(dir, { readAsar } = {}) {

@@ -12,6 +12,7 @@ export function distReady(distDir) {
     if (!statSync(join(distDir, 'assets')).isDirectory()) return false;
     return true;
   } catch {
+    // Нет файла/прав/висячий симлинк — не готов, а не throw в лицо CI.
     return false;
   }
 }

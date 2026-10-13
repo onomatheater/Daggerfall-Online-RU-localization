@@ -106,7 +106,10 @@ export function createOverlay(bundled) {
   const en = bundled?.en ?? {};
   return {
     register(locale, table, rows) {
-      if (typeof locale !== 'string' || typeof table !== 'string' || !rows || typeof rows !== 'object') return;
+      if (typeof locale !== 'string' || typeof table !== 'string' || !rows || typeof rows !== 'object') {
+        if (typeof console !== 'undefined') console.warn(`[locale] overlay register: bad args locale=${locale} table=${table}`);
+        return;
+      }
       overlay[locale] = overlay[locale] ?? {};
       overlay[locale][table] = { ...(overlay[locale][table] ?? {}), ...rows };
     },
@@ -125,19 +128,20 @@ export function createOverlay(bundled) {
       return overlay[locale]?.[table]?.[key] !== undefined;
     },
     // Plural-рендер запечённых форм {one,few,many} (см. morph.js):
-    // объект -> plural(n), строка -> как resolve(), miss -> key + warn.
-    resolvePlural(rawKey, n, locale = 'ru') {
+    // объект -> plural(n) + остаток params (паритет с tp),
+    // строка -> как resolve() с теми же params, miss -> key + warn.
+    resolvePlural(rawKey, n, params = {}, locale = 'ru') {
       const [table, key] = splitKey(rawKey);
       const hit = overlay[locale]?.[table]?.[key] ?? en?.[table]?.[key];
-      if (hit !== undefined && typeof hit === 'object') return plural(n, hit);
-      return this.resolve(rawKey, {}, locale);
+      if (hit !== undefined && typeof hit === 'object') return applyParams(plural(n, hit), params);
+      return this.resolve(rawKey, params, locale);
     },
   };
 }
 
 // Отдельный хелпер для тестов и адаптера: выбор формы поверх overlay-экземпляра.
-export function resolvePlural(ov, rawKey, n, locale = 'ru') {
-  return ov.resolvePlural(rawKey, n, locale);
+export function resolvePlural(ov, rawKey, n, params = {}, locale = 'ru') {
+  return ov.resolvePlural(rawKey, n, params, locale);
 }
 
 // Браузерный загрузчик внешнего пака: игра читает Prefs/Locale/ru/ через fetch

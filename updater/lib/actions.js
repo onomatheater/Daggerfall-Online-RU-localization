@@ -4,6 +4,7 @@
 // больше не маскируются под отсутствие соединения.
 import { join } from 'node:path';
 import { checkForUpdate, installUpdate } from './flow.js';
+import { PACK } from './config.js';
 
 export async function runCheck({ gameVersion, gameReason, currentVersion, loadFeed, feedConfigured = true } = {}) {
   if (typeof gameVersion !== 'string' || gameVersion.length === 0) {
@@ -30,14 +31,14 @@ export async function runCheck({ gameVersion, gameReason, currentVersion, loadFe
 export async function runInstall({ entry, fetchZip, unpack, storeDir, prefsDir, mkTmp, rmTmp, keep } = {}) {
   const tmp = mkTmp();
   try {
-    const zipPath = join(tmp, 'ru-pack.zip');
+    const zipPath = join(tmp, PACK.zip);
     try {
       await fetchZip(entry.url, zipPath);
     } catch (err) {
       if (typeof console !== 'undefined') console.error('[updater] fetchZip failed:', err);
       return { ok: false, reason: 'net-error' };
     }
-    return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir, unpack, keep, prefsDir });
+    return installUpdate({ zipPath, entry, unpackDir: join(tmp, PACK.dir), storeDir, unpack, keep, prefsDir });
   } finally {
     rmTmp(tmp);
   }
