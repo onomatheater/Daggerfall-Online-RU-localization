@@ -1,64 +1,37 @@
-# Translating Daggerfall Online to Other Languages
+# Translation workflow
 
-This repo holds a Russian (RU) localization overlay for
-[Daggerfall Online](https://github.com/Lattymoy/daggerfall-js-source)
-(the web + desktop client). It is structured so any language can reuse
-the machinery: string tables, extractor, validator, probe chain. This
-guide shows how (example: Spanish).
+This repository contains a Russian localization overlay for [Daggerfall Online](https://github.com/Lattymoy/daggerfall-js-source). Its existing code and tooling are useful references, but a new locale is **not** wired by adding a JSON file alone. Read [Locale data and mechanics](LOCALIZATION.md) for runtime details, [Architecture](ARCHITECTURE.md) for evidence boundaries, and [Known Gaps](KNOWN-GAPS.md) before treating an example as client support.
 
-## Architecture (what you copy)
+## Editing existing RU values
 
-- `src/locale/locale.js` — tiny loader: `t('table:key')` + `tOr(key, fallback)`.
-  Missing key = English text + console warning. Never `?`, never a crash.
-- `src/locale/en.json` — master tables: classic `strings`, DFU data tables,
-  and `dfo:` (the client's own UI strings, namespaced `dfo:<page>.<slug>`).
-- `src/locale/ru.json` — same key sets, translated values. **Keys are stable:
-  never rename a key, only translate the value.**
-- `tools/extract-texts.mjs` — finds hardcoded UI strings in `src/ui/` and
-  rewrites them to `t()` calls (safe side: IDs, classes, code fragments are
-  skipped; suspects are flagged `code-const`/`template-part` for human review).
-- `tools/ru-scan.mjs` — mechanical QA (spelling/diacritics, mixed scripts,
-  whitespace parity). Adapt the checks to your language or write your own.
-- `skills/ru-localization-qa/` — the RU quality gate (glossary → back-translation
-  → register → consistency → placeholders)._TS: replicate the discipline, not the file._
+1. Find the stable key in `src/locale/en.json` and edit only its corresponding value in `src/locale/ru.json`. Do not rename or delete keys. If a source key disappears, treat it as a deprecation candidate; preserve it unless maintainers make a separate decision.
+2. Keep placeholders, formatting markers, and data shape intact. Localized display text is presentation only: network messages, saves, and quest logic must continue to carry IDs/keys, never rendered translations.
+3. Save localization JSON/text/CSV as UTF-8 without BOM. For quest `-LOC` files, translate `QRC:` prose only; do not modify `QBN:` logic. Preserve macros and structural markup.
+4. Run the applicable checked-in tests/validators. `npm test` runs the root suite using the command in `package.json`; tests establish repository contracts only, not live-client rendering. `tools/ru-scan.mjs` contains RU-specific checks and is not a generic validator for other languages.
 
-## Adding a language (say ES)
+## Keeping keys aligned with upstream
 
-1. Copy `src/locale/en.json` → `src/locale/es.json`. Keep every key.
-2. Wire the locale list in `src/locale/locale.js` (`tables = { en, ru, es }`)
-   and expose a language switch that only **re-renders open surfaces**
-   (never restart the session, reconnect, rewrite saves, or touch `worldXXX`
-   protocol versions; in-flight trade/cast/quest frames finish in the old language).
-3. Translate values only. Rules that prevent desync and breakage:
-   - Network, saves and quest logic carry **IDs/keys only** (`templateId`,
-     `questName`). A localized string must never be persisted or sent.
-   - Never translate markup/macros: `[/center]`, `%pcn`, `%di`, `%s`, `<-->` stay.
-   - Never translate proper nouns, file paths, ini sections/keys, versions.
-   - Placeholders must match 1:1 (`{title}`, `%s`).
-   - Grammar via ICU (`{count, plural, ...}`, `{gender, select}`), never
-     `if (n==1)` in shipped strings; month/case forms go in the dictionary.
-   - UTF-8 without BOM.
-4. Fonts: vendor an OFL-licensed font under `vendor/<family>/` that covers your
-   script (we use Handjet for Cyrillic). Verify the license file + subset with
-   a parser, not by eye. Pixel text: weight ≥ 600, size ≥ 14px. Unknown glyph
-   must render `?`, never vanish silently.
-5. Validate: missing-key fallback works (EN + warning), tables scan clean,
-   `npm test` green. For an upstream PR, EN screenshots before/after must be
-   pixel-identical.
+`tools/key-sync.mjs` compares upstream English tables with this repository’s `en.json`. For example:
 
-## Scope note (one-time patch)
+```sh
+node tools/key-sync.mjs --upstream <path-to-upstream-en.json> --en src/locale/en.json
+```
 
-This overlay was built against a client updating ~10×/day with no
-localization hook, so it ships as an **external one-shot patch**: strings are
-decoupled locally (`ruTOr('dfo:key', 'EN fallback')` at render sites, tables
-as data), the game is translated, and that is the end of it — no tracking of
-upstream. If the upstream team wants a maintained integration (a real `t()`
-with a locale switch that survives updates), the tables + extractor + this
-guide are the starting point — contact the repo owner.
+Review its queues rather than treating them as automatic translation: `newKeys` need human-authored values; `changedEn` requires review of translations that may have become stale; `gone` identifies keys to deprecate, not delete. The command exits nonzero when new or changed keys exist, so that result means work is queued, not that it translated anything.
 
-## Status pointer
+`tools/extract-texts.mjs` exports helpers that find likely UI literals and can rewrite eligible display literals to `ruT('dfo:page.slug')`, adding an import alias `t as ruT`. It skips likely IDs/code and surfaces some risky strings for human review. This is a tooling helper, not a complete parser or a guarantee every visible string is found. Check its tests and inspect generated output before using it.
 
-Pre-character-creation menu (door/rails/settings/account/save-load/dialogs/
-launcher) is fully translated in RU and verified on screen; character creation
-uses classic `BIOG` data (separate pipeline). See `src/locale/en.json` (`dfo:`
-+ `save.`/`account.`/`dlg.`/`acct.`/`tier.` prefixes) for the covered set.
+## Production APIs versus probe helpers
+
+- The product `src/locale/locale.js` exports `t`, `tp`, `hasKey`, `setLocale`, `getLocale`, and `splitKey`. It does **not** export `tOr` or `ruT`.
+- `ruT` in extractor-generated source is simply a local alias for `t`.
+- `tOr`/`ruTOr` names belong to probe/call-site fallback scaffolding, not to the product locale module. Do not copy a probe-only helper into a production API claim.
+- `inject/locale-adapter.js` has its own tested wrapper API, but this repository does not contain a game boot path proving that the client invokes it.
+
+## Rebasing upstream probes
+
+The current workflow tracks probe scripts and touched upstream files in `tools/probe-queue.json`; `tools/probe-rebase.mjs` can first report drift without mutation. Its CLI takes a scripts directory, disposable upstream clone, queue, and from/to refs; the default is dry-run. Review the drift report before considering `--apply`: that mode runs the patch queue against the clone and can change it. It refuses a dirty clone unless explicitly allowed; when it snapshots an allowed dirty tree, it restores that work after the queue. Probe success is not a live-client verification.
+
+## Adding another language
+
+Do not advertise German or another locale as supported by copying `en.json` and translating it. The current runtime and external package path are RU-specific: locale registration, manifest validation, adapter registration, package filenames/building, plural/month behavior, validation, fonts, and host-client integration need code and pipeline work. The external loader currently expects an RU pack; client boot and `-LOC` consumption are not established here. See [Known Gaps](KNOWN-GAPS.md) for evidence and verification needs. This guide does not choose another language’s plural rules, glossary, or editorial policy.
