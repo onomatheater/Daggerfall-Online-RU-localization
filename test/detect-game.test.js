@@ -107,3 +107,24 @@ test('describeIssue maps updater failure reasons to Russian', async () => {
   assert.equal(restoreFailReason(new Error('migrate: extract failed: x')), 'migrate: extract failed: x');
   assert.equal(restoreFailReason(undefined), 'net-error');
 });
+
+test('nested install one level down is found when root is empty (DFO Online rename)', () => {
+  const root = mk();
+  const nested = join(root, 'DFO Online');
+  mkdirSync(nested, { recursive: true });
+  writeFileSync(join(nested, 'package.json'), JSON.stringify({ name: 'game', version: '0.1.8404' }));
+  const hit = detectGameVersion(root);
+  assert.equal(hit.version, '0.1.8404');
+});
+
+test('root markers win over nested dir, empty tree stays unknown', () => {
+  const root = mk();
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'game', version: '0.1.8127' }));
+  const nested = join(root, 'DFO Online');
+  mkdirSync(nested, { recursive: true });
+  writeFileSync(join(nested, 'package.json'), JSON.stringify({ name: 'game', version: '0.1.8404' }));
+  assert.equal(detectGameVersion(root).version, '0.1.8127');
+  const empty = detectGameVersion(mk());
+  assert.equal(empty.version, null);
+  assert.ok(empty.reason.length > 0, 'reason present');
+});
