@@ -5,7 +5,12 @@
 // здесь только месяцы как самый частый кейс (даты), остальное — словарь
 // вида { nom, gen, dat, acc, inst, prep } поверх t().
 export function plural(n, forms) {
-  const v = Math.abs(Number(n));
+  const num = Number(n);
+  if (!Number.isFinite(num)) {
+    if (typeof console !== 'undefined') console.warn(`[locale] plural: bad n=${n}`);
+    return String(forms?.many ?? forms?.other ?? '').replaceAll('#', String(n));
+  }
+  const v = Math.abs(num);
   const d10 = v % 10;
   const d100 = v % 100;
   const pick = d10 === 1 && d100 !== 11 ? 'one' : d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14) ? 'few' : 'many';
@@ -34,5 +39,7 @@ const MONTHS = Object.freeze([
 const CASES = Object.freeze({ nom: 0, gen: 1, dat: 2, acc: 3, inst: 4, prep: 5 });
 
 export function month(index, cas = 'nom') {
-  return MONTHS[index]?.[CASES[cas] ?? 0] ?? '';
+  const hit = MONTHS[index]?.[CASES[cas] ?? 0];
+  if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] month: bad index=${index} cas=${cas}`);
+  return hit ?? '';
 }
