@@ -10,9 +10,10 @@ import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync, copyFile
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
-import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
+import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL } from './lib/flow.js';
 import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, WINDOW_CHROME, ICON_FILE, NEWS, TMP_PREFIXES, defaultGameDir, RECIPE, PACK, APP_DIST, PROGRESS } from './lib/config.js';
 import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
+import { runGameUpdate, latestRelease, diskFreeBytes } from './lib/game-install.js';
 import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl, pruneTmpDir, backupAsarName, backupVanillaName } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
 import { unpackZip } from './lib/unzip.js';
@@ -294,10 +295,64 @@ app.whenReady().then(() => {
       }
       refresh();
     } else if (action === 'download-game') {
-      // Игра обновляется руками (решение 12.10, установщик не качаем):
-      // открываем страницу релизов, дальше штатно. Заметили новую версию —
-      // баннер; поставили — «Восстановить перевод» вернёт русский рецептом.
-      shell.openExternal(GAME_RELEASES_PAGE);
+      // Наш апдейтер ставит игру сам (альтернативный канал, решение человека):
+      // setup релиза -> тихая установка -> детект версии -> проверка пака.
+      // Родной канал обновления при этом не нужен. Пак ставится отдельной
+      // кнопкой: цепочка останавливается на его статусе, молча не ставим.
+      if (await isGameRunning()) {
+        dialog.showMessageBox(win, {
+          message: 'Закрой игру перед обновлением.',
+          detail: 'Файлы игры заняты запущенной копией.',
+        });
+        refresh();
+      } else {
+        state.busy = true;
+        state.progress = { percent: PROGRESS.start, label: 'Смотрю релизы игры…' };
+        refresh();
+        try {
+          const res = await fetch(GAME_API_LIST);
+          if (!res.ok) throw new Error(`game releases ${res.status}`);
+          const release = latestRelease(await res.text());
+          if (!release) {
+            state.check = { status: 'install-failed', reason: 'game releases unreadable' };
+          } else {
+            const { spawn } = await import('node:child_process');
+            const rep = await runGameUpdate({
+              releaseJson: release,
+              platform: process.platform,
+              gameDir: gameDir(),
+              running: false,
+              fetchText,
+              fetchFn: (...a) => fetch(...a),
+              writeFile: (p, b) => writeFileSync(p, b),
+              freeBytes: (d) => diskFreeBytes(d),
+              spawn,
+              detectVersion: (d) => detectGameVersion(d, { readAsar: readAsarPackageJson }),
+              mkTmp: () => mkdtempSync(join(tmpdir(), TMP_PREFIXES[0])),
+              rmTmp: (t) => rmSync(t, { recursive: true, force: true }),
+              onStage: (percent, label) => {
+                state.progress = { percent, label };
+                refresh();
+              },
+            });
+            if (rep.status === 'game-updated') {
+              // Игра новая — сразу смотрим пак под неё (цепочка game->pack).
+              state.check = await runCheck();
+              state.pending = state.check.status === 'available' ? state.check.entry : null;
+              state.gameUpdate = null;
+            } else {
+              state.check = { status: 'install-failed', reason: rep.reason ?? rep.status };
+            }
+          }
+        } catch (err) {
+          console.error('[updater] game upgrade failed:', err);
+          state.check = { status: 'install-failed', reason: restoreFailReason(err) };
+        } finally {
+          state.busy = false;
+          state.progress = null;
+        }
+        refresh();
+      }
     } else if (action === 'install') {
       const entry = state.pending;
       // Некого ставить (гонка дабл-клика: pending уже снят) — не баг, выходим.
