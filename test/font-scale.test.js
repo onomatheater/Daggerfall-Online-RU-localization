@@ -101,3 +101,14 @@ test('scale css scales boxes with fonts, ratios intact', async () => {
     assert.ok(css.slice(i, css.indexOf('}', i)).includes(prop), `${sel} lacks ${prop}`);
   }
 });
+
+// Листья — данные LEAVES: вывод содержит каждый (sel, base), префикс один.
+test('scale leaves are enumerated data, single specificity prefix', async () => {
+  const { buildScaleCSS, LEAVES } = await import('../src/font/scale.js');
+  const css = buildScaleCSS();
+  assert.ok(LEAVES.length >= 16, 'leaf table volume');
+  for (const [sel, base] of LEAVES) {
+    assert.ok(css.includes(`body ${sel}{font-size:calc(${base} * var(--ru-fs`), `${sel} ${base} pinned`);
+  }
+  assert.doesNotMatch(css.replaceAll('body ', ''), /(^|[^-\w])body([^-\w]|$)/, 'no stray body outside the single prefix use');
+});
