@@ -13,7 +13,9 @@ export async function runCheck({ gameVersion, gameReason, currentVersion, loadFe
   let text;
   try {
     text = await loadFeed();
-  } catch {
+  } catch (err) {
+    // Сеть тиха в UI по DA6, но в консоль пишем: маскировка багов кончилась.
+    if (typeof console !== 'undefined') console.error('[updater] feed load failed:', err);
     return { status: 'net-error' };
   }
   // Фид наш, но битый (сеть побила/свалили руками): это не net-error.
@@ -31,7 +33,8 @@ export async function runInstall({ entry, fetchZip, unpack, storeDir, prefsDir, 
     const zipPath = join(tmp, 'ru-pack.zip');
     try {
       await fetchZip(entry.url, zipPath);
-    } catch {
+    } catch (err) {
+      if (typeof console !== 'undefined') console.error('[updater] fetchZip failed:', err);
       return { ok: false, reason: 'net-error' };
     }
     return installUpdate({ zipPath, entry, unpackDir: join(tmp, 'pack'), storeDir, unpack, keep, prefsDir });

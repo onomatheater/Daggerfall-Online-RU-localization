@@ -15,6 +15,7 @@ export function resolveGameExe(gameDir) {
     try {
       if (existsSync(exe)) return exe;
     } catch {
+      // FS-гонка на кандидате: пробуем следующего, не падаем.
       continue;
     }
   }

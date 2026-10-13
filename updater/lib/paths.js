@@ -1,6 +1,12 @@
 // Пути стенда апдейтера: file-пути и win-диски читаются с диска,
 // http(s) — сетью по кнопке. Один предикат на оба call site main.js
 // (fetchZip и restoreTranslation делили копию regex).
+
+// http(s) — сеть по кнопке, всё остальное — локальные пути/стенды.
+// Один предикат на loadFeed/feedConfigured/loadFeedText (дубль regex убит).
+export function isHttpUrl(url) {
+  return /^https?:\/\//i.test(String(url ?? ''));
+}
 export function isLocalPath(url) {
   const s = String(url ?? '');
   if (s.length === 0) return false;
@@ -8,9 +14,17 @@ export function isLocalPath(url) {
 }
 
 // file:// URL -> fs-путь; обычный путь возвращается как есть.
+// Процент-эскейпы декодируются (иначе %20 ломает copyFileSync);
+// битый эскейп — как есть, упадёт громко в copyFileSync, не молча.
 export function filePathFromUrl(url) {
   const s = String(url ?? '');
-  return s.startsWith('file://') ? s.replace(/^file:\/\//, '') : s;
+  if (!s.startsWith('file://')) return s;
+  const path = s.replace(/^file:\/\//, '');
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
 }
 
 // Папка из диалога становится папкой игры, только если в ней видна игра:

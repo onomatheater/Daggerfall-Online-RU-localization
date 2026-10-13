@@ -103,22 +103,7 @@ body[data-busy] .gem { animation: gleam 1.6s steps(8) infinite; }
 .release li { margin: 0 0 4px; }
 .release strong { font-weight: 500; color: #d8cfae; }
 
-/* `safe`: a card taller than the panel scrolls from its TOP - plain `center` overflows both ways, and the title
-   and the first folders went where no scroll reaches (six folders found, measured) */
-.setup { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; justify-content: safe center; padding: 18px 24px; text-align: center; }
-/* R2-E7: the card scrolls in the feed's own bar, not the system's white one */
-.setup::-webkit-scrollbar { width: 10px; }
-.setup::-webkit-scrollbar-thumb { background: rgba(125,116,96,0.45); }
-#setup-title { margin: 0; font-size: 24px; font-weight: 400; line-height: 1.2; text-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
-#setup-detail { margin: 8px 0 0; max-width: 58ch; color: #a89f88; }
-#setup-detail:empty { display: none; }
-.found { list-style: none; margin: 16px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.found li {
-  display: flex; align-items: center; gap: 14px; padding: 10px 12px; text-align: left;
-  background: rgba(10,12,17,0.55); border: 2px solid rgba(125,116,96,0.35);
-}
-.found .where { flex: 1; min-width: 0; }
-.found .from { display: block; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #a89f88; }
+/* setup-карточка вендора удалена вместе с секцией (см. index.html). */
 .path { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d8cfae; direction: rtl; text-align: left; }
 .actions { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
 .actions:empty { display: none; }
