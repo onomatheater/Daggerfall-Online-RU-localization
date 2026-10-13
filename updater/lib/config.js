@@ -47,5 +47,9 @@ export const RECIPE = { zip: 'recipe.zip', dir: 'recipe', file: 'recipe.json' };
 export const PACK = { zip: 'ru-pack.zip', dir: 'pack' };
 export const APP_DIST = ['resources', 'app', 'dist'];
 
+// Шкала прогресса восстановления перевода: одна шкала на main
+// (шаги prepare/fetch/apply + стартовый start), а не магия по call site.
+export const PROGRESS = { start: 5, prepare: 20, fetch: 50, apply: 75 };
+
 // Таймаут списка процессов: зависший tasklist/pgrep не вешает проверку.
 export const PS_TIMEOUT_MS = 10000;

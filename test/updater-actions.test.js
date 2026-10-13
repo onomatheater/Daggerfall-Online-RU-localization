@@ -147,3 +147,21 @@ test('backup names: version segment sanitized (no traversal)', () => {
   assert.equal(backupAsarName('../../evil'), 'app-asar-.._.._evil.asar');
   assert.ok(!backupVanillaName('a/b\\c:v1').includes('/') && !backupVanillaName('a/b\\c:v1').includes('\\'));
 });
+
+test('external pack: trailing slash in baseUrl never doubles', async () => {
+  const { loadExternalPackFetch } = await import('../src/locale/loader.js');
+  const seen = [];
+  const ok = await loadExternalPackFetch({
+    baseUrl: 'https://x.invalid/ru/',
+    gameVersion: '7553',
+    bundled: { en: {} },
+    fetchJson: async (url) => {
+      seen.push(url);
+      if (url.endsWith('locale-version.json')) return { locale: 'ru', version: '1', game: '7553', files: ['ru.json'] };
+      return { strings: {} };
+    },
+  });
+  assert.equal(ok.ok, true);
+  assert.ok(seen.every((u) => !u.includes('//ru') && !u.includes('.json//')), seen.join(','));
+  assert.ok(seen.some((u) => u === 'https://x.invalid/ru/locale-version.json'), seen.join(','));
+});

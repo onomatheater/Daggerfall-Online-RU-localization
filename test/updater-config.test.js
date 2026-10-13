@@ -47,6 +47,11 @@ test('config: window chrome, recipe/pack layout pinned', () => {
   assert.deepEqual(APP_DIST, ['resources', 'app', 'dist']);
 });
 
+test('config: restore progress stages pinned (single scale)', async () => {
+  const { PROGRESS } = await import('../updater/lib/config.js');
+  assert.deepEqual(PROGRESS, { start: 5, prepare: 20, fetch: 50, apply: 75 });
+});
+
 test('prefs: corrupt file is backed up, default returned', async () => {
   const { loadPrefs, DEFAULT_PREFS } = await import('../updater/lib/prefs.js');
   const dir = mkdtempSync(join(tmpdir(), 'ruprefs-'));

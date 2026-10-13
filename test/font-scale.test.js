@@ -112,3 +112,13 @@ test('scale leaves are enumerated data, single specificity prefix', async () => 
   }
   assert.doesNotMatch(css.replaceAll('body ', ''), /(^|[^-\w])body([^-\w]|$)/, 'no stray body outside the single prefix use');
 });
+
+// Брейкпоинт один на оба media-правила (нули min-width:0 — анти-клип,
+// не брейкпоинты; дрейф апстрима — в одну точку BREAKPOINT_PX).
+test('scale breakpoint is a single constant', async () => {
+  const { BREAKPOINT_PX } = await import('../src/font/scale.js');
+  const { buildScaleCSS } = await import('../src/font/scale.js');
+  assert.equal(BREAKPOINT_PX, 481);
+  const css = buildScaleCSS();
+  assert.equal(css.split(`min-width:${BREAKPOINT_PX}px`).length - 1, 2);
+});

@@ -6,12 +6,12 @@ import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir, homedir } from 'node:os';
-import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, rmSync, copyFileSync } from 'node:fs';
 import { detectGameVersion } from '../tools/detect-game.mjs';
 import { resolveGameLocaleDir } from '../tools/game-prefs.mjs';
 import { listPacks, rollbackPack } from '../tools/pack-store.mjs';
 import { installUpdate, decideStartup, loadFeedText, checkGameUpdate, isGameRunning, restoreFailReason, shaProblem, isFeedConfigured, DEFAULT_FEED_URL, GAME_RELEASES_PAGE } from './lib/flow.js';
-import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, WINDOW_CHROME, ICON_FILE, NEWS, TMP_PREFIXES, defaultGameDir, RECIPE, PACK, APP_DIST } from './lib/config.js';
+import { GAME_API_LATEST, GAME_API_LIST, LINKS, WINDOW, WINDOW_CHROME, ICON_FILE, NEWS, TMP_PREFIXES, defaultGameDir, RECIPE, PACK, APP_DIST, PROGRESS } from './lib/config.js';
 import { runCheck as runCheckLib, runInstall as runInstallLib } from './lib/actions.js';
 import { isLocalPath, filePathFromUrl, resolvePickedGameDir, isHttpUrl, pruneTmpDir, backupAsarName, backupVanillaName } from './lib/paths.js';
 import { viewOf } from './lib/view.js';
@@ -64,8 +64,8 @@ async function fetchText(url) {
 async function fetchZip(url, dest) {
   // Демо/стенд: file-путь читается с диска, http(s) — сетью по кнопке.
   // Предикаты и file-пути — updater/lib/paths.js (тестируются в node).
+  // node:fs уже в шапке статически — ленивый import здесь был без причины.
   if (isLocalPath(url)) {
-    const { copyFileSync } = await import('node:fs');
     copyFileSync(filePathFromUrl(url, homedir()), dest);
     return dest;
   }
@@ -190,13 +190,15 @@ app.whenReady().then(() => {
       });
       return null;
     }
-    onStage(20, 'Готовлю распакованную установку…');
+    onStage(PROGRESS.prepare, 'Готовлю распакованную установку…');
+    // migrate/unzip/dist-apply — лениво: тяжёлый @electron/asar и пайплайны
+    // грузятся только по кнопке восстановления, а не на каждый старт окна.
     const { ensureUnpacked } = await import('./lib/migrate.js');
     await ensureUnpacked({
       resourcesDir: join(gameDir(), 'resources'),
       backupPath: join(userData(), 'backups', backupAsarName(hit.version)),
     });
-    onStage(50, 'Качаю рецепт перевода…');
+    onStage(PROGRESS.fetch, 'Качаю рецепт перевода…');
     const tmp = mkdtempSync(join(tmpdir(), TMP_PREFIXES[1]));
     try {
       const zipPath = join(tmp, RECIPE.zip);
@@ -209,7 +211,7 @@ app.whenReady().then(() => {
         const sha = verifyFileSha(zipPath, recipeRef.sha);
         if (!sha.ok) return { status: 'install-failed', reason: sha.reason };
       }
-      onStage(75, 'Возвращаю перевод…');
+      onStage(PROGRESS.apply, 'Возвращаю перевод…');
       const { unpackZip } = await import('./lib/unzip.js');
       const unpackDir = join(tmp, RECIPE.dir);
       unpackZip(zipPath, unpackDir);
@@ -233,7 +235,7 @@ app.whenReady().then(() => {
   };
   const runRestore = async (recipeRef) => {
     state.busy = true;
-    state.progress = { percent: 5, label: 'Смотрю версию игры…' };
+    state.progress = { percent: PROGRESS.start, label: 'Смотрю версию игры…' };
     refresh();
     try {
       const result = await restoreTranslation(recipeRef, (percent, label) => {
@@ -339,7 +341,7 @@ app.whenReady().then(() => {
           const rep = installUpdate({
             zipPath: join(storeDir(), prev.file),
             entry: prev,
-            unpackDir: join(tmp, 'pack'),
+            unpackDir: join(tmp, PACK.dir),
             storeDir: storeDir(),
             unpack: unpackZip,
             prefsDir: prefsLocaleDir(),
