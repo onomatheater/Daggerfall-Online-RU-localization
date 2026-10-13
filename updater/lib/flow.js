@@ -150,7 +150,7 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
   if (!sha.ok) return { ok: false, reason: sha.reason };
   try {
     const un = unpack(zipPath, unpackDir);
-    if (!un || un.ok !== true) return { ok: false, reason: 'unpack failed' };
+    if (!un || un.ok !== true) return { ok: false, reason: un?.reason ?? 'unpack failed' };
   } catch (err) {
     return { ok: false, reason: `unpack failed: ${err.message}` };
   }

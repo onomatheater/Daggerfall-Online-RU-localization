@@ -6,6 +6,17 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 
+// Путь рецепта обязан сидеть внутри appDir: только относительные пути без
+// ..-сегментов, абсолюта, букв дисков и nul-байтов. Сетевой рецепт с ../
+// иначе пишет/удаляет за пределами игры (траверс).
+export function isSafeRel(rel) {
+  if (typeof rel !== 'string' || rel.length === 0 || rel.includes('\0')) return false;
+  if (/^[a-zA-Z]:/.test(rel) || rel.startsWith('/') || rel.startsWith('\\')) return false;
+  const parts = rel.replace(/\\/g, '/').split('/');
+  if (parts.some((p) => p === '..' || p === '')) return false;
+  return true;
+}
+
 // Декод add-записи в байты. Только строгий shape {path, content, encoding:'base64'}:
 // legacy-utf8 и мусор отказываются громко, а не пишутся молча.
 function decodeFile(file) {
@@ -33,6 +44,8 @@ export async function applyRecipe({ appDir, recipe, backupDir } = {}) {
   if (!recipe || !Array.isArray(recipe.add) || !Array.isArray(recipe.delete)) {
     return { ok: false, reason: 'bad recipe shape' };
   }
+  const unsafe = [...recipe.delete, ...recipe.add.map((f) => f?.path)].find((p) => !isSafeRel(p));
+  if (unsafe !== undefined) return { ok: false, reason: `bad recipe shape: unsafe path ${unsafe}` };
   const missing = recipe.delete.filter((rel) => !existsSync(join(appDir, rel)));
   if (missing.length > 0) return { ok: false, reason: `base mismatch, missing: ${missing.slice(0, 3).join(',')}` };
   const decoded = decodeAdd(recipe.add);
@@ -95,6 +108,8 @@ export async function rollbackVanilla({ appDir, backupDir } = {}) {
 export function verifyApplied({ appDir, recipe } = {}) {
   const decoded = decodeAdd(recipe.add ?? []);
   if (decoded === null) return { ok: false, reason: 'bad recipe shape: entry is not base64' };
+  const unsafe = decoded.map((f) => f.path).find((p) => !isSafeRel(p));
+  if (unsafe !== undefined) return { ok: false, reason: `bad recipe shape: unsafe path ${unsafe}` };
   for (const file of decoded) {
     let text;
     try {
