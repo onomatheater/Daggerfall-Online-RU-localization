@@ -58,8 +58,8 @@ can import updater modules, but is not a read-only check.
 
 ### Build the Windows updater installer
 
-After installing updater dependencies, this command builds an unsigned Windows
-NSIS package:
+After installing updater dependencies, this command builds a Windows NSIS
+package:
 
 ```sh
 cd updater
@@ -67,8 +67,11 @@ npm run dist
 ```
 
 The `dist` script invokes `electron-builder --win nsis` and writes build output
-under `updater/release/`. It builds local artifacts; it does not publish them.
-Do not run it as part of ordinary read-only verification.
+under `updater/release/`. The checked-in repository contains no signing
+credentials or signing configuration, but no built artifact was inspected;
+verify the signature status of the actual artifact before distribution. The
+command builds local artifacts; it does not publish them. Do not run it as part
+of ordinary read-only verification.
 
 ### Probe, package, install, and publication workflows
 

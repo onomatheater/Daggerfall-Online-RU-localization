@@ -14,12 +14,12 @@ build and feed with a maintainer before continuing; do not mistake the
 source-tree launcher script for a released installer.
 
 1. Start a compatible RU updater build and confirm that it has found the right
-   game folder. If it has not, use **Choose folder** (`Указать папку` or
-   `Сменить папку`) and select the installed game directory.
-2. Select **Check** (`Проверить`). The updater compares the detected game
+   game folder. If it has not, use **Choose folder** (“Указать папку” or
+   “Сменить папку”) and select the installed game directory.
+2. Select **Check** (“Проверить”). The updater compares the detected game
    version with the pack feed and offers the newest compatible pack, if one
    exists. Checking does not install it.
-3. Select **Install** (`Установить`) to download and install the offered pack.
+3. Select **Install** (“Установить”) to download and install the offered pack.
    The updater checks the downloaded archive's SHA-256 against the feed and
    validates the pack before copying its manifest-listed data files and
    manifest to the game's `Prefs/Locale/ru` directory.
@@ -36,12 +36,12 @@ game's English fallback); it does not require reinstalling the game.
   whenever it starts. This request happens even if automatic pack checking is
   off.
 - Pack checking is manual by default. The **Check on launch** option
-  (`Проверять автоматически`) is opt-in and off by default. A manual check with
+  (“Проверять автоматически”) is opt-in and off by default. A manual check with
   a detected game version, or an enabled startup check with a detected version,
   fetches the pack feed and checks game-release metadata. A manual check
   refreshes the game-news list too.
 - The pack ZIP is fetched only when you choose **Install**. A game-release
-  banner can expose **Download game** (`Скачать игру`); choosing it fetches
+  banner can expose **Download game** (“Скачать игру”); choosing it fetches
   release metadata and the game installer, then runs the installer in the
   selected game folder.
   This action can install or update the game and changes game files. Close the
@@ -56,7 +56,7 @@ game's English fallback); it does not require reinstalling the game.
 
 ## Roll back an ordinary pack
 
-After at least two pack versions have been installed, **Rollback** (`Откатить`)
+After at least two pack versions have been installed, **Rollback** (“Откатить”)
 reinstalls the previous locally stored pack into `Prefs/Locale/ru`. The
 updater keeps up to three pack archives in its local application data. This
 control rolls back a pack only; it does not roll back a game update or the
@@ -65,7 +65,7 @@ recipe fallback below.
 ## Restore via a game-build recipe (separate fallback)
 
 If a compatible offered pack includes a recipe, the updater can show **Restore
-translation** (`Восстановить перевод`). This is not ordinary pack installation:
+translation** (“Восстановить перевод”). This is not ordinary pack installation:
 it can migrate `resources/app.asar` to an unpacked `resources/app` directory,
 save an asar backup, download and verify the recipe, then apply it to
 `resources/app/dist` and verify the result. This writes game-installation files.

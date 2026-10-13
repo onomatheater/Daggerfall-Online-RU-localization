@@ -123,55 +123,6 @@ upstream check.
   claiming the full switching contract.
 - **As of:** 2026-10-14.
 
-### Translation guidance does not fully match current APIs and tooling
-
-- **Status:** Documentation gap. `docs/TRANSLATING.md` describes `tOr()` as a
-  product API, says the extractor rewrites to `t()`, and describes a one-shot
-  patch without upstream tracking. The product `locale.js` exports no `tOr()`;
-  current extractor output aliases `t` as `ruT`, and probe-rebase/key-sync
-  tooling is present. The morphology helper is a small RU-specific form
-  selector, not general ICU parsing.
-- **Evidence:** [TRANSLATING.md](TRANSLATING.md#L9-L20);
-  [locale.js exports](../src/locale/locale.js#L12-L50);
-  [extract-texts.mjs, `rewriteFile()`](../tools/extract-texts.mjs#L241-L280);
-  [morph.js, `plural()` and `select()`](../src/locale/morph.js#L8-L25);
-  [probe-rebase.mjs](../tools/probe-rebase.mjs);
-  [key-sync.mjs](../tools/key-sync.mjs).
-- **Evidence class:** Code and documentation inspection.
-- **Impact:** A new translator could follow a non-existent API or infer that
-  current extraction/rebase tooling is absent; the stated grammar model could
-  be mistaken for a locale-neutral ICU engine.
-- **Next decision/check:** Reconcile the guide against current exports and
-  tools, and describe baked forms accurately without promising general ICU
-  support.
-- **As of:** 2026-10-14.
-
-### Updater guides conflict with current code and with each other
-
-- **Status:** Documentation gap. `docs/updater.md` calls the feed an
-  `example.invalid` placeholder, says game installation is manual, and
-  describes network activity as user-triggered. Current config sets a real
-  default feed; `updater/main.js` fetches game-release news at startup and has
-  a `download-game` action. `LAUNCHER.md` says the updater does not download
-  the game. Normal pack installation and the recipe fallback are also
-  different paths: the latter applies a recipe to the unpacked game `dist`.
-- **Evidence:** [updater.md](updater.md#L13-L35);
-  [config.js, feed and path constants](../updater/lib/config.js#L4-L8);
-  [main.js, game news and `download-game`](../updater/main.js#L100-L117);
-  [main.js, startup fetch](../updater/main.js#L421-L435);
-  [main.js, `download-game` action](../updater/main.js#L297-L339);
-  [config.js, pack and recipe paths](../updater/lib/config.js#L44-L48);
-  [LAUNCHER.md](../LAUNCHER.md#L1-L8).
-- **Evidence class:** Code and documentation inspection. This does not verify
-  the behavior of a built Electron release.
-- **Impact:** Players and operators may misunderstand when network requests
-  occur, whether the updater can install the game, or whether recipe recovery
-  is ordinary locale-pack installation.
-- **Next decision/check:** Reconcile player and operator guides against the
-  current main-process actions and tested library paths; validate any release
-  claims against a built app before publication.
-- **As of:** 2026-10-14.
-
 ### Pack staging and publishing have different side effects
 
 - **Status:** Implemented with distinct risk levels. `publish-pack.mjs` is a
@@ -196,13 +147,15 @@ upstream check.
 
 ### Dependency health needs a current review
 
-- **Status:** Unknown; no current advisory count or disposition is recorded
-  here. Dependency metadata is present, but package manifests alone cannot
-  establish whether advisories are open or applicable.
+- **Status:** Unknown. During updater dependency installation for this handoff,
+  `npm ci` reported 11 advisories (8 moderate, 3 high). The `npm audit` details
+  and applicability were not reviewed; this count does not establish that all
+  11 advisories are exploitable or affect the shipped application.
 - **Evidence:** [updater/package.json](../updater/package.json);
-  `updater/package-lock.json`.
-- **Evidence class:** Code inspection only; current automated audit and
-  maintainer disposition are unverified.
+  [updater/package-lock.json](../updater/package-lock.json). The advisory count
+  is an installation-time observation, not an audit disposition.
+- **Evidence class:** Code inspection and dependency-install output; advisory
+  applicability and maintainer disposition are unverified.
 - **Impact:** The security and maintenance state of updater dependencies is
   not established by the root test suite.
 - **Next decision/check:** Run `npm audit` from `updater/`, review each
@@ -278,7 +231,7 @@ upstream check.
   does not establish the scope of any rights for redistribution or derivative
   translations. Font licensing is a separate matter and must not be inferred
   from translation-text provenance.
-- **Evidence:** [README.md, source attribution](../README.md#L17-L20);
+- **Evidence:** [jagget-import.mjs, pinned source repository and commit](../tools/jagget-import.mjs#L1-L8);
   [Guildenstern NBP attribution](../vendor/guildenstern-nbp/ATTRIBUTION.md).
 - **Evidence class:** Code/document inspection for tracked attribution;
   rights scope remains unverified and requires maintainer confirmation.
