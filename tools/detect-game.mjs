@@ -4,7 +4,7 @@
 // Asar не вскрываем (ноль зависимостей) — это делает лаунчер до нас.
 // Нет источников или битый JSON -> {version: null, reason}, не throw:
 // селектор дальше вернёт null и клиент останется на старом паке / EN.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const readText = (path) => {
@@ -15,7 +15,44 @@ const readText = (path) => {
   }
 };
 
+// Маркер установки в папке: хоть один источник версии на месте.
+// Пустой корень (переезд игры на уровень вниз — переименование
+// «Daggerfall Online» → «DFO Online», факт 13.10) — смотрим во вложенные.
+const hasMarkers = (dir) =>
+  existsSync(join(dir, 'package.json')) ||
+  existsSync(join(dir, 'app-update.yml')) ||
+  existsSync(join(dir, 'resources', 'app.asar'));
+
+const nestedCandidates = (dir) => {
+  let names;
+  try {
+    names = readdirSync(dir).sort();
+  } catch {
+    return [];
+  }
+  return names
+    .map((name) => join(dir, name))
+    .filter((full) => {
+      try {
+        return statSync(full).isDirectory() && hasMarkers(full);
+      } catch {
+        return false;
+      }
+    });
+};
+
 export function detectGameVersion(dir, { readAsar } = {}) {
+  const at = (target) => detectAt(target, { readAsar });
+  const root = at(dir);
+  if (root.version !== null || hasMarkers(dir)) return root;
+  for (const candidate of nestedCandidates(dir)) {
+    const hit = at(candidate);
+    if (hit.version !== null) return hit;
+  }
+  return root;
+}
+
+function detectAt(dir, { readAsar } = {}) {
   const pkgText = readText(join(dir, 'package.json'));
   if (pkgText !== null) {
     try {
