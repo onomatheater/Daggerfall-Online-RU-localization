@@ -13,10 +13,16 @@ export function toWire({ templateId, ...rest } = {}) {
   for (const k of Object.keys(rest)) {
     if (LOCALIZED_FIELDS.has(String(k).toLowerCase())) throw new Error(`ID-only: localized field '${k}' must not go on the wire`);
   }
+  const dropped = Object.keys(rest);
+  if (dropped.length > 0 && typeof console !== 'undefined') {
+    console.warn(`[net] toWire drops extras (add to protocol if needed): ${dropped.join(',')}`);
+  }
   return { kind: 'itemLink', templateId };
 }
 
 export function renderLink(wire, locale, names) {
   if (!wire || wire.kind !== 'itemLink' || typeof wire.templateId !== 'string') return '';
-  return names?.[locale]?.[wire.templateId] ?? names?.en?.[wire.templateId] ?? wire.templateId;
+  const hit = names?.[locale]?.[wire.templateId] ?? names?.en?.[wire.templateId];
+  if (hit === undefined && typeof console !== 'undefined') console.warn(`[net] renderLink: unknown id ${wire.templateId}`);
+  return hit ?? wire.templateId;
 }

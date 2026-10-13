@@ -1,19 +1,15 @@
 // Handjet-на замену Pixelify для RU: веса только 400/500/700 (100-300 —
-// точечный конструкт, нечитаемы). Сабсеты cyrillic + cyrillic-ext + latin +
-// latin-ext, OFL-1.1 (vendor/handjet/OFL.txt). Пин версии fontsource — 5.3.0.
+// точечный конструкт, нечитаемы). Сабсеты cyrillic + latin (OFL-1.1,
+// vendor/handjet/OFL.txt; пин версии fontsource — 5.3.0). В вендоре лежат
+// и -ext файлы, но пак везёт только используемые: ext-диапазоны игре не
+// нужны (контракт покрытия — src/font/coverage.js), мёртвый вес не шиппим.
 export const HANDJET_FILES = [
   'handjet-cyrillic-400-normal.woff2',
   'handjet-cyrillic-500-normal.woff2',
   'handjet-cyrillic-700-normal.woff2',
-  'handjet-cyrillic-ext-400-normal.woff2',
-  'handjet-cyrillic-ext-500-normal.woff2',
-  'handjet-cyrillic-ext-700-normal.woff2',
   'handjet-latin-400-normal.woff2',
   'handjet-latin-500-normal.woff2',
   'handjet-latin-700-normal.woff2',
-  'handjet-latin-ext-400-normal.woff2',
-  'handjet-latin-ext-500-normal.woff2',
-  'handjet-latin-ext-700-normal.woff2',
 ];
 
 const RANGE = {

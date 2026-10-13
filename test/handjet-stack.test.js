@@ -10,6 +10,19 @@ test('handjet face covers cyrillic, no thin weights', () => {
   assert.doesNotMatch(HANDJET_FACE, /font-weight:100|font-weight:200|font-weight:300/);
 });
 
+test('every injected face has a unicode-range (no undefined trap)', () => {
+  for (const line of HANDJET_FACE.split('\n')) {
+    if (!line.includes('@font-face')) continue;
+    assert.match(line, /unicode-range:U\+[0-9A-F]/);
+    assert.doesNotMatch(line, /undefined/);
+  }
+});
+
+test('shipped files match injected faces (no dead weight in pack)', () => {
+  const used = new Set([...HANDJET_FACE.matchAll(/(handjet-[a-z-]+-\d+-normal\.woff2)/g)].map((m) => m[1]));
+  assert.deepEqual(new Set(HANDJET_FILES), used);
+});
+
 test('vendored woff2 files exist on disk', () => {
   for (const f of HANDJET_FILES) assert.equal(existsSync(new URL(`../vendor/handjet/${f}`, import.meta.url)), true, f);
 });

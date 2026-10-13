@@ -35,7 +35,7 @@ export function registerPack(pack, version = gameVersion) {
   if (!pack || typeof pack !== 'object') return fail('pack: need {manifest, tables}');
   let manifest;
   try {
-    manifest = parseManifest(JSON.stringify(pack.manifest));
+    manifest = parseManifest(pack.manifest);
   } catch (err) {
     return fail(`pack: ${err.message}`);
   }
@@ -49,11 +49,9 @@ export function registerPack(pack, version = gameVersion) {
 
 function wrap(key, params, fallback) {
   if (packOverlay.has(key, getLocale())) return packOverlay.resolve(key, params, getLocale());
-  if (!hasKey(key)) {
-    // Явный total miss (без сравнения строк): call site держит EN-дефолт.
-    if (fallback !== undefined) return applyParams(String(fallback), params);
-    return t(key, params);
-  }
+  // Явный total miss: call site держит EN-дефолт (tOr-паритет),
+  // иначе — честный bundled t() (с варнингом внутри при промахе).
+  if (!hasKey(key) && fallback !== undefined) return applyParams(String(fallback), params);
   return t(key, params);
 }
 
