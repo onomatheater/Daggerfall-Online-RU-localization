@@ -30,6 +30,13 @@ export function latestGameTag(releasesJsonText) {
 function maxClaimedBuild(feed) {
   let best = null;
   for (const pack of feed?.packs ?? []) {
+    // Пол без потолка (open range): покрывает всё новее — бесконечность,
+    // иначе конвейер требовал бы релиз при каждом их теге.
+    if (typeof pack?.gameMin === 'string' && typeof pack?.gameMax !== 'string' && typeof pack?.game !== 'string') {
+      const floor = canonGameVersion(pack.gameMin);
+      if (/^\d+$/.test(floor)) return Infinity;
+      continue;
+    }
     const claim = pack?.gameMax ?? pack?.game;
     if (typeof claim !== 'string') continue;
     const build = canonGameVersion(claim);
@@ -39,8 +46,17 @@ function maxClaimedBuild(feed) {
   return best;
 }
 
-export function pendingUpdate(feedJsonText, releasesJsonText) {
-  const tag = latestGameTag(releasesJsonText);
+// Их latest.yml (356 байт против API-простыни): строка version: -> app-v тег.
+// Мусор -> null (тишина, закон DA6).
+export function latestGameTagYml(ymlText) {
+  const line = String(ymlText ?? '').split('\n').find((l) => l.trimStart().startsWith('version:'));
+  const version = line?.split(':').slice(1).join(':').trim().replace(/^['"]|['"]$/g, '');
+  if (!version) return null;
+  const tag = `app-v${version}`;
+  return updateCheck.parseReleaseTag(tag) === null ? null : tag;
+}
+
+function pendingFromTag(feedJsonText, tag) {
   if (tag === null) return null;
   let feed;
   try {
@@ -53,4 +69,12 @@ export function pendingUpdate(feedJsonText, releasesJsonText) {
   const claimed = maxClaimedBuild(feed);
   if (claimed !== null && Number(canonGameVersion(version)) <= Number(claimed)) return null;
   return { tag, version };
+}
+
+export function pendingUpdate(feedJsonText, releasesJsonText) {
+  return pendingFromTag(feedJsonText, latestGameTag(releasesJsonText));
+}
+
+export function pendingUpdateYml(feedJsonText, ymlText) {
+  return pendingFromTag(feedJsonText, latestGameTagYml(ymlText));
 }
