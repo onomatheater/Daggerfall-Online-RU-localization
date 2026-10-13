@@ -67,11 +67,12 @@ npm run dist
 ```
 
 The `dist` script invokes `electron-builder --win nsis` and writes build output
-under `updater/release/`. The checked-in repository contains no signing
-credentials or signing configuration, but no built artifact was inspected;
-verify the signature status of the actual artifact before distribution. The
-command builds local artifacts; it does not publish them. Do not run it as part
-of ordinary read-only verification.
+under `updater/release/`. No signing credentials or configuration were found in
+the inspected tracked updater package and source. The build environment or
+produced artifact may differ; no build was performed or artifact inspected.
+Verify the actual artifact's signature status before distribution. The command
+builds local artifacts; it does not publish them. Do not run it as part of
+ordinary read-only verification.
 
 ### Probe, package, install, and publication workflows
 
