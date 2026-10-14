@@ -17,4 +17,35 @@ list.push(0x00ab, 0x00bb, 0x2014, 0x2116);
 export const COVERAGE = Object.freeze(list.slice().sort((a, b) => a - b));
 const set = new Set(COVERAGE);
 export const has = (cp) => set.has(cp);
-export const RANGES = Object.freeze(['U+0400-045F', 'U+0490-0491', 'U+04B0-04B1', 'U+00AB,U+00BB,U+2014,U+2116']);
+
+// Человекочитаемые диапазоны выводятся из COVERAGE сворачиванием,
+// а не второй рукой: два источника дрейфовали бы независимо.
+const hex = (cp) => cp.toString(16).toUpperCase().padStart(4, '0');
+function rangesOf(sorted) {
+  const out = [];
+  let start = null;
+  let prev = null;
+  const flush = () => {
+    out.push(start === prev ? `U+${hex(start)}` : `U+${hex(start)}-${hex(prev)}`);
+  };
+  for (const cp of sorted) {
+    if (start === null) {
+      start = cp;
+      prev = cp;
+    } else if (cp === prev + 1) {
+      prev = cp;
+    } else {
+      flush();
+      start = cp;
+      prev = cp;
+    }
+  }
+  if (start !== null) flush();
+  // Одиночки сливаются запятой (пунктуация Jagget), диапазоны — отдельно:
+  // формат держит исторический вид RANGES для читаемости контракта.
+  const singles = [];
+  const ranges = [];
+  for (const r of out) (r.includes('-') ? ranges : singles).push(r);
+  return [...ranges, singles.join(',')].filter((s) => s.length > 0);
+}
+export const RANGES = Object.freeze(rangesOf(COVERAGE));

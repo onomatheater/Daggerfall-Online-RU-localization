@@ -40,25 +40,28 @@ const NEED = [
   'bindc.transport', 'bindc.static_keys', 'bindc.howto', 'bindc.shared', 'bindc.confirm_hint',
   'bindc.primary', 'bindc.secondary', 'bindc.which_set', 'bindc.defaults',
   'bindc.primary_caps', 'bindc.secondary_caps', 'bindc.press_key_dot', 'bindc.console',
-  'bindc.screenshot', 'bindc.none', 'bindc.lowest', 'bindc.highest', 'bindc.vanilla',
+  'bindc.screenshot', 'bindc.none', 'bindc.smoothing_none', 'bindc.lowest', 'bindc.highest', 'bindc.vanilla',
   'bindc.look_smoothing', 'bindc.look_sens', 'bindc.swing_mode', 'bindc.invert_y',
   'bindc.move_accel', 'bindc.bow_draw', 'bindc.toggle_sneak', 'bindc.protect',
   'bindc.attack_threshold', 'bindc.adv_controls', 'bindc.continue_caps',
   'bindc.pad_controls', 'bindc.left_click', 'bindc.middle_click', 'bindc.right_click',
   'bindc.move_h', 'bindc.invert', 'bindc.move_v', 'bindc.cam_h', 'bindc.cam_v',
-  'bindc.look_sens', 'bindc.look_sens_pad', 'bindc.ui_sens', 'bindc.max_threshold', 'bindc.deadzone',
+  'bindc.look_sens_pad', 'bindc.ui_sens', 'bindc.max_threshold', 'bindc.deadzone',
   'bindc.enable_pad', 'bindc.move_axis',
   'val.full', 'val.half', 'val.quarter', 'val.maximum', 'val.default', 'val.meadow',
   'val.pixel', 'val.smooth', 'val.none', 'val.vanilla', 'val.lowest', 'val.highest',
   'val.ultra', 'val.hq', 'val.invert', 'val.back', 'val.reset', 'val.minimal',
-  'val.large', 'val.colour', 'val.monochrome',   'val.primary', 'val.secondary', 'val.minimal', 'val.large', 'val.colour',
-  'val.monochrome', 'val.hq', 'val.invert', 'val.back', 'val.reset',
+  'val.large', 'val.colour', 'val.monochrome', 'val.primary', 'val.secondary',
   'val.light', 'val.normal', 'val.heavy', 'val.abattoir', 'val.casual', 'val.hard',
   'val.closed', 'val.open', 'val.exact', 'val.few', 'val.many', 'val.some',
   'val.journal', 'val.magic_plus', 'val.rare_plus', 'val.night_sky', 'val.responsive',
   'val.town', 'val.with_secrets', 'val.with_shadows', 'val.your_screens',
   'val.default_4x',
 ];
+
+test('binds NEED has no duplicates', () => {
+  assert.equal(new Set(NEED).size, NEED.length, 'duplicate keys mask coverage');
+});
 
 test('binds batch: EN+RU share all keys, RU non-empty', () => {
   for (const k of NEED) {
@@ -77,6 +80,8 @@ test('binds exact RU values (QA-gated)', () => {
   eq('bindc.confirm_hint', 'Ничего не сохранится, пока не нажмёте {confirm}, включая значения по умолчанию. Уйдёте со страницы — изменения сбросятся.');
   eq('val.ultra', 'Ультра');
   assert.equal(en.dfo['bindc.none'], 'NONE', 'кнопка без привязки — капс из buttonText');
+  assert.equal(en.dfo['bindc.smoothing_none'], 'None', 'сглаживание — обычный регистр из SMOOTHING_STRENGTHS');
+  eq('bindc.smoothing_none', 'Нет');
 });
 
 test('binds render in RU', () => {

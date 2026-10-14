@@ -20,6 +20,16 @@
 
 ## Открытые PR (ждут «мерж»)
 
+- [x] PR #101 `release/pack-1.0.0 → main` — ВЛИТ (первый пак: 3910 ключей, пол 8404, без рецепта); ветка удалена везде
+
+- [x] PR #97 `feat/play-launch → dev` — ВЛИТ (Task A: Играть по canPlay + запуск exe); ветка удалена везде
+- [x] PR #99 `feat/latest-yml → dev` — ВЛИТ (Task B: latest.yml + пол покрывает новее); ветка удалена везде
+
+- [x] PR #85 `feat/prefs-locale → dev` — ВЛИТ (Task 1 иммунитета + план в `todo.md`); ветка удалена везде
+- [x] PR #87 `feat/adapter-wiring → dev` — ВЛИТ (Task 2 иммунитета: Prefs-boot + wrap-default + render-proof); ветка удалена везде
+- [x] PR #89 `feat/updater-data-only → dev` — ВЛИТ (Task 3 иммунитета: пак в Prefs, рецепт как fallback); ветка удалена везде
+- [x] PR #91 `feat/key-sync → dev` — ВЛИТ (Task 4 иммунитета: очередь синка ключей); ветка удалена везде
+
 - [x] PR #47 `feat/contributing → dev` — ВЛИТ 11.11, ветка удалена; `CONTRIBUTING.md` (tracked) — входной документ контрибьютора; на `dev` 165/165
 
 - [x] #19 `feat/dfo-menu` — ЗАКРЫТ как superseded (поглощён `feat/menu-finish`, PR #32 влит в `dev` 10.10)
@@ -172,7 +182,7 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 - [x] Орфография 11.10: PR #73 ВЛИТ (4 strings + эльфы + unknown + Ё-гейт + тире, 203/203); открытых PR ноль
 - [x] Честный wire-check 11.10: PR #76 ВЛИТ (7 ложняков убиты; 223/223, wire OK); открытых PR ноль
 - [x] Группы SAVED/NOT AVAILABLE 11.10: только wiring в пробе (ключи были), DOM-PROBE OK 4/4 RU 0 EN; в репо коммитить нечего
-- [ ] Оверлей plural-дыра 12.10: 9 object-ключей (ago×3, sync×2, feat.n×3, tab.n) возвращаются сырым объектом через resolve; нужен wrapPlural — передано второму агенту (трек апдейтера)
+- [x] Оверлей plural-дыра 12.10: 9 object-ключей (ago×3, sync×2, feat.n×3, tab.n) возвращались сырым объектом через resolve; wrapPlural/resolvePlural через plural() — ГОТОВО, влито в dev (fcb7e4b + PR #78 следом), забрано у второго агента по слову человека
 - [ ] Субтитры вариантов модов (типа `Basic Roads — rivers…`) + G.pack-динамика: триаж
 - [ ] Оружейка тест-комнаты (названия предметов): только в Фазе 3, иначе задвоение таблиц
 - [ ] Соцсистема глубокая (друзья/гильдии/письма): не главное меню, deferred
@@ -206,6 +216,42 @@ P0 (Фазы 1–2) → P1 (Фазы 3–4) → P2 (Фазы 5–6) → рели
 - Игра 0.1.7363, апдейтер РАЗЛОЧЕН и больше не лочится. Проба пересажена на 7363 (ваниль: `tmp/vanilla-7363.asar`).
 - База пробы e40f6dbb9 (= тег 7361), дрейф от 7363 — 2 коммита (16 файлов, в т.ч. enhancedMenu/settingsMap). Ребейз — по необходимости.
 - Остаток меню (P1): chips значений пресетов/тайлов, названия фич (systems/features.js — нужен батч features.*), юниты (65 DEG), тест-комната (template-halves в ревью), credits.
+
+## Иммунитет перевода (план утверждён человеком; сверка здесь)
+
+Цель: обновление игры не сносит русский перевод; обновление русификатора не требует пересборки игры.
+Средство: PR в апстрим (адаптер + чтение внешнего пака из `Prefs/Locale/ru/` с гейтом версии и fallback EN) →
+апдейтер data-only (фид паков, без рецептов) → конвейер синкает только новые ключи.
+Пока PR не принят — старый рецепт как fallback, не как основа.
+Критерий готовности каждого таска: PR → апрув → мерж (G4, только по слову человека).
+
+- [x] Task 1 `feat/prefs-locale`: `loadExternalPack(dir, gameVersion, bundled)` в `tools/load-pack.mjs` (не в `loader.js`: туда `fs` нельзя — он едет в браузерный бандл; гейты `parseManifest/isCompatible/createOverlay` переиспользованы из `loader.js`, single-source) + `test/overlay-external.test.js` (NEED: нет dir → `{ok:false}`; чужая версия → `{ok:false}`; битый `ru.json`/BOM → `{ok:false}`; валидный пак → RU + EN-fallback). G0 302/302 + wire-check зелёные → PR #85 → апрув → мерж
+- [x] Task 2 врезка адаптера (код в `dev`, render-proof headless зелёный; ОСТАТОК ЗА ЧЕЛОВЕКОМ: глаз на экран + PR в апстрим): `probe-rebase` dry-run → ONE-SHOT apply в `tmp/dfjs` → build → grep `dfo:` → headless (один Chrome, прибить после) → глаз человека → PR в апстрим (EN до/после попиксельно); в наш репо — только `inject/*` + гварды
+- [x] Task 3 `feat/updater-data-only`: пак в `Prefs/Locale/ru/` (код в `dev`; чтение страницей — сторона апстрим-PR) + `test/updater-data-only.test.js` (NEED: пак в Prefs → RU без рецепта; старая игра → рецепт-fallback; `recipe.game !== version` → честный `no-recipe`) → PR → апрув → мерж
+- [x] Task 4 синк ключей: новый ключ апстрима без RU → EN-fallback + warn + очередь синка + `test/key-sync.test.js` (NEED: инверсия диапазона — брак) → PR → апрув → мерж
+- [ ] RISK-очередь: PR в апстрим отклонён → остаёмся на рецепте-fallback (зафиксировать здесь, не молча)
+
+## Апдейтер-ревью (вскрытие их апдейтера 13.10, сверка здесь)
+
+Разобрали их `app/`: два транспорта (electron-updater NSIS/AppImage vs notice),
+полный NSIS 239 МБ в кэше, `latest.yml` + blockmap, REL5-имена + BR5-алиасы,
+лаунчер до игры с правилом `canPlay = setupDone && !updateHolds`, userData живёт.
+Наши выводы: форк не нужен, Prefs-путь верный, «Играть» чиним их правилом.
+Влито: nested-gamedir (PR #95, гнездо DFO Online), open-range (PR #96, потолка нет).
+
+- [x] Task A `feat/play-launch`: «Играть» по правилу canPlay (игра известна + не занят)
+  → запуск exe (с учётом гнезда), `updater/lib/launch.js` + тесты → PR → апрув → мерж
+- [x] Task B `feat/latest-yml`: game-watch читает их `latest.yml` вместо API-списка
+  (легче, их контракт) → PR → апрув → мерж
+
+## Релиз 1.0.0 (пак в `main`, сверка здесь)
+
+- [x] Пак 1.0.0: 3910 RU-ключей, шрифт, 244 квеста, 93 книги; пол 8404 без потолка;
+  без рецепта (notes честно). Круг проверен (zip-sha, Prefs, резолв на 8404).
+- [ ] Переводчику: 4 протухших ключа модов 8127→8404 (`feat.modded-lighting`,
+  `feat.mod-windmills-kamer`, `feat.mod-climates-calories{,.note}`) — на ревью RU.
+  Ключи не удалять (MUST), на 8404 не используются (апстрим ушёл на шаблоны).
+- [ ] Рецепт-dist под 8404: пересадка очереди (~30 уплывших якорей) — отдельная работа.
 
 ## Как продолжать перевод (инструкция)
 

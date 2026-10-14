@@ -29,7 +29,10 @@
    *  whose text is replaced, even with the same words (AUDIT INSTALL L5-17). */
   const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
 
-  /** "a **b** c" as text nodes and <strong>, `code` and links as their text. */
+  /** "a **b** c" as text nodes and <strong>, `code` and links as their text.
+   *  Самописный парсер_subset_ безопасен конструкцией: вход режется regex'ами
+   *  в ЧИСТЫЙ ТЕКСТ, наружу — только createTextNode/textContent через el()
+   *  (см. DA8 в шапке). innerHTML здесь нет и быть не должно. */
   function inline(target, text) {
     const plain = String(text).replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/`([^`]*)`/g, '$1');
     plain.split('**').forEach((part, i) => {
@@ -129,22 +132,8 @@
     play.textContent = v.play.label;
 
     $('news').hidden = v.panel !== 'news';
-    $('setup').hidden = v.panel !== 'setup';
-    if (v.setup && changed('setup', v.setup)) {
-      $('setup-title').textContent = v.setup.title;
-      $('setup-detail').textContent = v.setup.detail;
-      const found = $('found');
-      found.replaceChildren(...v.setup.found.map((f) => {
-        const li = el('li');
-        const where = el('span', 'where');
-        where.append(el('span', 'from', f.from), pathLine(f.dir));
-        const use = button({ id: 'use-found', arg: f.index, label: 'Взять эти файлы', name: `Взять эти файлы — ${f.from}: ${f.dir}`, primary: f.primary }, 'plaque small');
-        li.append(where, use);
-        return li;
-      }));
-      found.hidden = !v.setup.found.length;
-      $('setup-actions').replaceChildren(...v.setup.actions.map((a) => button(a, 'plaque')));
-    }
+    // setup-панель вендора удалена: view.js всегда отдаёт panel:'news',
+    // v.setup не приходит никогда (мёртвая ветка + DOM + CSS вычищены).
     if (changed('news', v.news)) {
       document.querySelector('#news .feed').replaceChildren(...v.news.items.map(notesBlock));
       const note = document.querySelector('#news .note');
@@ -159,17 +148,16 @@
     const check = $('update-check');
     if (check.checked !== v.options.checkOnLaunch) check.checked = v.options.checkOnLaunch;
 
-    // Enter takes the screen's own answer - the first run's card's, or PLAY once it can be pressed -
+    // Enter takes the screen's own answer - PLAY once it can be pressed -
     // and only that: "Play without updating" under a download is the way out, not the way on
-    const focusKey = v.panel === 'setup' ? `setup:${JSON.stringify(v.setup)}` : `play:${v.play.enabled}`;
+    const focusKey = `play:${v.play.enabled}`;
     if (changed('focus', focusKey)) {
       const at = document.activeElement;
       // AUDIT INSTALL R2-E1: a control inside a region just hidden (the card's answer, once the card gives way to the
       // news) is gone for the player - Chromium blurs it only later, after this view had used up its one focus move,
       // and Enter pressed nothing
       const idle = !at || at === document.body || at.disabled || !at.isConnected || !at.checkVisibility();
-      if (v.panel === 'setup') document.querySelector('#setup .plaque.primary')?.focus({ preventScroll: true });
-      else if (v.play.enabled && idle) play.focus({ preventScroll: true });
+      if (v.play.enabled && idle) play.focus({ preventScroll: true });
     }
   }
 

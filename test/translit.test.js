@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { translitPart } from '../src/locale/translit.js';
 
 // NEED: транслитерация слогов NameGen (DFU MIT) на рендере.
@@ -40,4 +41,10 @@ test('translit: unknown part falls back to EN with warn', () => {
     console.warn = orig;
   }
   assert.ok(warns.some((w) => String(w).includes('XyzQw')));
+});
+
+test('translit: nord suffix fallback matches the dictionary (no drift)', async () => {
+  const { NORD_SUFFIX_RU } = await import('../src/locale/translit.js');
+  const table = JSON.parse(fs.readFileSync(new URL('../src/locale/ru/names/syllables.json', import.meta.url), 'utf8'));
+  assert.equal(NORD_SUFFIX_RU, table['@nordSuffix']);
 });

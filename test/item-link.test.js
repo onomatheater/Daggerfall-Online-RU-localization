@@ -19,6 +19,11 @@ test('localized text in, error out', () => {
   assert.throws(() => toWire({ templateId: 'steel_cuirass', name: 'Steel Cuirass' }), /ID-only/);
 });
 
+test('technical fields containing the substrings pass through', () => {
+  assert.deepEqual(toWire({ templateId: 'steel_cuirass', filename: 'icon.png' }).templateId, 'steel_cuirass');
+  assert.deepEqual(toWire({ templateId: 'steel_cuirass', subtitle: 'x' }).templateId, 'steel_cuirass');
+});
+
 test('each side renders in its own locale', () => {
   const wire = toWire({ templateId: 'steel_cuirass' });
   assert.equal(renderLink(wire, 'ru', NAMES), 'Стальная кираса');
@@ -27,4 +32,19 @@ test('each side renders in its own locale', () => {
 
 test('unknown id falls back to templateId, never crashes', () => {
   assert.equal(renderLink(toWire({ templateId: 'nope' }), 'ru', NAMES), 'nope');
+});
+
+test('dropped extras and unknown ids warn (nothing silent)', () => {
+  const warns = [];
+  const orig = console.warn;
+  console.warn = (m) => warns.push(String(m));
+  try {
+    toWire({ templateId: 'steel_cuirass', count: 2 });
+    renderLink(toWire({ templateId: 'nope' }), 'ru', NAMES);
+  } finally {
+    console.warn = orig;
+  }
+  assert.equal(warns.length, 2);
+  assert.match(warns[0], /drops extras/);
+  assert.match(warns[1], /unknown id/);
 });

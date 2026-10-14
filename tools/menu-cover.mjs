@@ -8,6 +8,7 @@ import { extractTexts } from './extract-texts.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveProbeDir } from './probe-dir.mjs';
 
 // verdicts from docs/outbox/menu-review.md (code, not display text)
 export const SKIP_STRINGS = new Set([
@@ -51,7 +52,7 @@ export function coverReport(dfjsDir, haveSet) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const dfjsDir = process.argv[2] ?? 'C:/Users/kblue/AppData/Local/Temp/opencode/dfjs/src';
+  const dfjsDir = resolveProbeDir(process.argv[2]);
   const en = JSON.parse(fs.readFileSync(new URL('../src/locale/en.json', import.meta.url), 'utf8'));
   const misses = coverReport(dfjsDir, new Set(Object.values(en.dfo)));
   const hard = misses.filter((m) => !m.risk);

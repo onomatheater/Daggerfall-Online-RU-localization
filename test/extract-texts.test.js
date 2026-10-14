@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractTexts, rewriteFile } from '../tools/extract-texts.mjs';
+import { extractTexts, rewriteFile, skipReason, skipHistogram } from '../tools/extract-texts.mjs';
 
 const FICTIONAL = `
 <button>New Game</button>
@@ -262,4 +262,24 @@ test('skips className slots, template-folder consts, ini-section args', () => {
   assert.ok(!byEn['LargeHUD'], 'ini key arg skipped');
   assert.ok(byEn['save failed, retry'], 'user-facing error kept');
   assert.ok(byEn['OK'], 'OK kept');
+});
+
+test('skips explain themselves: every drop has a reason id', () => {
+  assert.equal(skipReason(''), 'empty');
+  assert.equal(skipReason('dfo:menu.new'), 'key');
+  assert.equal(skipReason('QBN: logic'), 'qbn');
+  assert.equal(skipReason('https://x.y/z'), 'url-path');
+  assert.equal(skipReason('MoveForwards'), 'camel-id');
+  assert.equal(skipReason('.px-menu'), 'selector');
+  assert.equal(skipReason('TODO: fix this'), 'dev-note');
+  assert.equal(skipReason('700 11px bold'), 'font-shortcut');
+  assert.equal(skipReason('ab === cd'), 'code-frag');
+  assert.equal(skipReason('New Game'), null);
+});
+
+test('skipHistogram counts drops by reason (silence becomes visible)', () => {
+  const hist = skipHistogram(`el('button', 'act', 'New Game');\nconst u = 'https://x.y/z';\nfoo('MoveForwards');\n`);
+  assert.equal(hist['url-path'], 1);
+  assert.equal(hist['camel-id'], 1);
+  assert.ok(!('New Game' in hist), 'kept strings are not drops');
 });

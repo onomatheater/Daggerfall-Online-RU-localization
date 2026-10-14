@@ -3,16 +3,22 @@
 // готовые feedText/zipPath. Порядок: sha -> распаковка -> installPack -> стор.
 // Ложь наружу не идёт: каждый отказ — {ok:false} с причиной, клиент живёт дальше.
 import { selectPack } from '../../tools/feed-ru.mjs';
-import { verifyFileSha, installPack } from '../../tools/update-ru.mjs';
+import { verifyFileSha, installPack, installPackToPrefs } from '../../tools/update-ru.mjs';
 import { storePack } from '../../tools/pack-store.mjs';
 import { cmpVersion } from '../../src/locale/loader.js';
 import updateCheck from '../vendor-dfo/updateCheck.cjs';
+// Канон констант — updater/lib/config.js; реэкспорт для совместимости
+// (тесты и main.js читали их отсюда).
+export {
+  FEED_PACKS_BASE, DEFAULT_FEED_URL, GAME_RELEASES_PAGE, PS_TIMEOUT_MS,
+} from './config.js';
+import { PS_TIMEOUT_MS } from './config.js';
+import { isHttpUrl } from './paths.js';
 
 // Стабильная страница релизов игры (их REL5: версия в теге, не в имени файла).
 // Игру качаем только руками с этой страницы: установщик мы не тянем
 // (решение человека 12.10) — апдейтер замечает новую версию и возвращает
-// перевод рецептом.
-export const GAME_RELEASES_PAGE = 'https://github.com/Lattymoy/daggerfall-js-source/releases/latest';
+// перевод рецептом. Значение — из config.js (см. реэкспорт выше).
 
 // Команда списка процессов по платформе: win — tasklist, остальное — pgrep
 // (macOS и почти весь linux его имеют; нет — тихо false, как раньше).
@@ -21,10 +27,14 @@ export function psCommand(platform = process.platform) {
   return { cmd: 'pgrep', args: ['-afi', 'daggerfall online'] };
 }
 
+// Таймаут списка процессов: зависший tasklist/pgrep не вешает проверку
+// «игра запущена» навсегда — ошибка превращается в '' (не запущена),
+// как отсутствие утилиты. Значение — PS_TIMEOUT_MS из config.js.
+
 const defaultListProcesses = () => new Promise((resolve) => {
   import('node:child_process').then(({ execFile }) => {
     const { cmd, args } = psCommand();
-    execFile(cmd, args, (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
+    execFile(cmd, args, { timeout: PS_TIMEOUT_MS }, (err, stdout) => resolve(err ? '' : String(stdout ?? '')));
   });
 });
 
@@ -39,7 +49,7 @@ export async function isGameRunning(listProcesses = defaultListProcesses) {
 // Фид: http(s) — сеть (только по кнопке), иначе локальный путь (демо/стенд).
 export async function loadFeedText(source, { fetchText, readText } = {}) {
   const src = String(source ?? '');
-  if (/^https?:\/\//i.test(src)) return fetchText(src);
+  if (isHttpUrl(src)) return fetchText(src);
   return readText(src);
 }
 
@@ -69,6 +79,14 @@ const ISSUE_RU = [
   [/app-update\.yml has no version/, 'В app-update.yml нет версии'],
   [/fetch failed|ENOTFOUND|UND_ERR|ETIMEDOUT|timeout|network|getaddrinfo|net-error/i, 'Нет соединения с сервером паков'],
   [/no pack entry selected/, 'Пак не выбран: нечего устанавливать'],
+  [/^feed: /, 'Фид паков испорчен: жди следующий выпуск, остаёшься на старом паке'],
+  [/game setup failed/, 'Установщик игры не встал: скачай обновление заново или поставь вручную со страницы релизов'],
+  [/close the game first/, 'Закрой игру перед обновлением: файлы заняты запущенной копией'],
+  [/game version mismatch/, 'Версия не сошлась: установщик отработал, но игра рапортует другую версию'],
+  [/game detect failed/, 'Не получилось прочитать версию игры после установки'],
+  [/game releases/, 'Не получилось прочитать список релизов игры: нет соединения или GitHub недоступен'],
+  [/no disk space/, 'Нет места на диске: освободи место и попробуй снова'],
+  [/disk check failed/, 'Не получилось проверить место на диске'],
   [/unpack failed/, 'Не получилось распаковать пак: скачай его заново из релизов'],
   [/sha mismatch/, 'Скачанный файл не сошёлся по sha: подмена или битый файл, остаёшься на старом паке'],
   [/sha missing/, 'У пака нет sha в фиде: ставить нечего, остаёшься на старом паке'],
@@ -79,6 +97,8 @@ const ISSUE_RU = [
   [/content mismatch|missing after apply|apply failed/, 'Перевод не встал: установка игры не тронута'],
   [/bad recipe shape/, 'Рецепт перевода испорчен: жди следующий выпуск'],
   [/empty backup|rollback failed/, 'Откат не удался: предыдущий пак недоступен'],
+  [/no game exe/, 'Игра не найдена: нет запускаемого файла в папке игры'],
+  [/launch failed/, 'Не получилось запустить игру'],
   [/^unknown(-game)?$/, 'Неизвестная ошибка'],
 ];
 
@@ -101,9 +121,7 @@ export function describeIssue(reason) {
 
 // Паки лежат в нашем репозитории: packs/feed.json + свежий zip на main
 // (решение человека 12.10: репо открывается, в main только свежий пак).
-// Стенд — RU_FEED_URL с локальным путём.
-export const FEED_PACKS_BASE = 'https://raw.githubusercontent.com/onomatheater/Daggerfall-Online-RU-localization/main/packs';
-export const DEFAULT_FEED_URL = `${FEED_PACKS_BASE}/feed.json`;
+// Стенд — RU_FEED_URL с локальным путём. Значения — из config.js.
 
 // Фид настроен? example.invalid — заглушка (осталась для чужих форков):
 // её не трогаем сетью и не врём про «нет соединения».
@@ -111,7 +129,7 @@ export const DEFAULT_FEED_URL = `${FEED_PACKS_BASE}/feed.json`;
 export function isFeedConfigured(url) {
   const src = String(url ?? '').trim();
   if (src.length === 0) return false;
-  if (/^https?:\/\//i.test(src)) return !/example\.invalid/i.test(src);
+  if (isHttpUrl(src)) return !/example\.invalid/i.test(src);
   return true;
 }
 
@@ -140,7 +158,7 @@ export function shaProblem(entry) {
   return null;
 }
 
-export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, keep } = {}) {
+export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, keep, prefsDir } = {}) {
   if (!entry || typeof entry.version !== 'string') return { ok: false, reason: 'no pack entry selected' };
   const shaIssue = shaProblem(entry);
   if (shaIssue !== null) return { ok: false, reason: shaIssue };
@@ -148,7 +166,7 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
   if (!sha.ok) return { ok: false, reason: sha.reason };
   try {
     const un = unpack(zipPath, unpackDir);
-    if (!un || un.ok !== true) return { ok: false, reason: 'unpack failed' };
+    if (!un || un.ok !== true) return { ok: false, reason: un?.reason ?? 'unpack failed' };
   } catch (err) {
     return { ok: false, reason: `unpack failed: ${err.message}` };
   }
@@ -162,5 +180,13 @@ export function installUpdate({ zipPath, entry, unpackDir, storeDir, unpack, kee
     notes: entry.notes,
     keep,
   });
+  // Data-only контур: проверенный пак — в Prefs-локаль игры (вне resources/app,
+  // обновление игры его не сносит). prefsDir не задан — старое поведение (стор).
+  // Prefs не встал — успех не заявляем: игра осталась бы на старом паке молча.
+  if (prefsDir !== undefined) {
+    const laid = installPackToPrefs(unpackDir, prefsDir);
+    if (!laid.ok) return { ok: false, reason: laid.reason };
+    return { ok: true, version: entry.version, shaChecked: true, stats: installed.stats, prefs: laid.installed };
+  }
   return { ok: true, version: entry.version, shaChecked: true, stats: installed.stats };
 }

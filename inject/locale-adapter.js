@@ -18,15 +18,22 @@
 // Рантайм-пак (оверлей-исход): setGameVersion + registerPack кладут таблицы
 // пака поверх bundled. Чужой/битый пак -> {ok:false}, bundled не тронут.
 // wrap* сначала смотрят в пак (has), иначе — как раньше через t().
-export { t, setLocale, getLocale, splitKey } from '../src/locale/locale.js';
-import { t, tp, getLocale } from '../src/locale/locale.js';
+import { t, tp, getLocale, hasKey, splitKey, setLocale } from '../src/locale/locale.js';
 import { createOverlay, parseManifest, isCompatible, resolvePlural } from '../src/locale/loader.js';
+import { applyParams } from '../src/locale/params.js';
+export { t, tp, getLocale, hasKey, splitKey, setLocale };
 
 const packOverlay = createOverlay({});
+// Локаль рантайм-пака одна — именованная константа, не магия 'ru' по файлу.
+const PACK_LOCALE = 'ru';
 let gameVersion = '';
 
 export function setGameVersion(version) {
-  gameVersion = typeof version === 'string' ? version : '';
+  if (typeof version === 'string') {
+    gameVersion = version;
+    return;
+  }
+  if (typeof console !== 'undefined') console.warn(`[adapter] setGameVersion: bad version, keeping '${gameVersion}'`);
 }
 
 export function registerPack(pack, version = gameVersion) {
@@ -34,34 +41,39 @@ export function registerPack(pack, version = gameVersion) {
   if (!pack || typeof pack !== 'object') return fail('pack: need {manifest, tables}');
   let manifest;
   try {
-    manifest = parseManifest(JSON.stringify(pack.manifest));
+    manifest = parseManifest(pack.manifest);
   } catch (err) {
     return fail(`pack: ${err.message}`);
   }
   if (!isCompatible(manifest, version)) return fail(`pack ${manifest.version} incompatible with game ${version || '<unknown>'}`);
   if (!pack.tables || typeof pack.tables !== 'object') return fail('pack: need tables');
   for (const [table, rows] of Object.entries(pack.tables)) {
-    packOverlay.register('ru', table, rows);
+    packOverlay.register(PACK_LOCALE, table, rows);
   }
   return { ok: true, version: manifest.version };
 }
 
-function wrap(key, params) {
+function wrap(key, params, fallback) {
   if (packOverlay.has(key, getLocale())) return packOverlay.resolve(key, params, getLocale());
+  // Явный total miss: call site держит EN-дефолт (tOr-паритет),
+  // иначе — честный bundled t() (с варнингом внутри при промахе).
+  if (!hasKey(key) && fallback !== undefined) return applyParams(String(fallback), params);
   return t(key, params);
 }
 
-export function wrapLiteral(key, params = {}) {
-  return wrap(key, params);
+export function wrapLiteral(key, params = {}, fallback) {
+  return wrap(key, params, fallback);
 }
 
-export function wrapTemplate(key, params = {}) {
-  return wrap(key, params);
+export function wrapTemplate(key, params = {}, fallback) {
+  return wrap(key, params, fallback);
 }
 
 // Plural-рендер поверх пака: объект {one,few,many} -> строка через plural(),
-// иначе (нет в паке) — как bundled через tp(). Строковый путь не тронут.
-export function wrapPlural(key, n) {
-  if (packOverlay.has(key, getLocale())) return resolvePlural(packOverlay, key, n, getLocale());
-  return tp(key, n);
+// иначе (нет в паке) — как bundled через tp(). Арность как у tp:
+// params и локаль пробрасываются, а не хардкодятся.
+export function wrapPlural(key, n, params = {}, locale) {
+  const loc = locale ?? getLocale();
+  if (packOverlay.has(key, loc)) return resolvePlural(packOverlay, key, n, params, loc);
+  return tp(key, n, params, loc);
 }

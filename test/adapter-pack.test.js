@@ -8,7 +8,7 @@
 // Проба на экране остаётся за запуском; здесь — статика в node.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { setLocale, setGameVersion, registerPack, wrapLiteral, wrapTemplate } from '../inject/locale-adapter.js';
+import { setLocale, setGameVersion, registerPack, wrapLiteral, wrapTemplate, wrapPlural } from '../inject/locale-adapter.js';
 
 setLocale('ru');
 
@@ -58,4 +58,16 @@ test('broken manifest never throws, refuses with reason', () => {
   setGameVersion('7553');
   const rep = registerPack({ manifest: { locale: 'ru' }, tables: {} });
   assert.equal(rep.ok, false);
+});
+
+test('wrapPlural passes params and locale (no arity loss)', () => {
+  setGameVersion('7553');
+  setLocale('ru');
+  const rep = registerPack({
+    manifest: { locale: 'ru', version: '9.9.9', game: '7553', files: [] },
+    tables: { strings: { packN: { one: '# шт {name}', few: '# шт {name}', many: '# шт {name}' } } },
+  });
+  assert.equal(rep.ok, true);
+  assert.equal(wrapPlural('strings:packN', 5, { name: 'R' }), '5 шт R');
+  setLocale('en');
 });

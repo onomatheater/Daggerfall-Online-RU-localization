@@ -76,3 +76,15 @@ test('guard: all shipped tables scan clean', () => {
   const bad = scanTables(en, ru).filter((r) => !ALLOW.has(`${r.table}:${r.key}`));
   assert.deepEqual(bad, []);
 });
+
+// ALLOW выше — не слепое пятно: ожидаемые значения запечены, тихая
+// правка любого из пяти ключей уронит этот тест (править парой с ассёртом).
+test('guard: ALLOW-listed values are pinned', () => {
+  const en = JSON.parse(fs.readFileSync(new URL('../src/locale/en.json', import.meta.url), 'utf8'));
+  const ru = JSON.parse(fs.readFileSync(new URL('../src/locale/ru.json', import.meta.url), 'utf8'));
+  assert.equal(ru.strings.comma, ', ');
+  assert.equal(ru.strings.exteriorAutomapToolTipRotateLeftButton, 'Щелчок левой кнопкой мыши: поворот карты влево (горячая клавиша: {0})\\r Щелчок правой кнопкой мыши: поворот карты вокруг позиции игрока\\r влево (горячая клавиша: {1})');
+  assert.equal(ru.strings.serviceSummonCost1, '%pcn, плата за мою попытку ');
+  assert.equal(ru.strings.loanReminder, 'У вас есть заём в размере {0} золотых монет, подлежащий выплате ');
+  assert.equal(ru.strings.cannotLoiterMoreThanXHours1, 'Вы не можете бездельничать больше ');
+});

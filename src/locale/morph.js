@@ -1,11 +1,17 @@
 // Русская морфология без морфологии в рантайме: движок знает только
 // правила выбора готовой формы, сами формы — запечённый словарь.
 // one/few/many — классика CLDR для ru (1, 2-4, 0/5-20 + mod10/mod100).
-// Падежи месяцев и существительных — полями словаря (Task 8 плана),
-// здесь только месяцы как самый частый кейс (даты), остальное — словарь
-// вида { nom, gen, dat, acc, inst, prep } поверх t().
+// Падежи месяцев и существительных — полями словаря (таблица months
+// в en|ru.json, ключи 0-11); здесь только чтение, не склонение кодом.
+import en from './en.json' with { type: 'json' };
+import ru from './ru.json' with { type: 'json' };
 export function plural(n, forms) {
-  const v = Math.abs(Number(n));
+  const num = Number(n);
+  if (!Number.isFinite(num)) {
+    if (typeof console !== 'undefined') console.warn(`[locale] plural: bad n=${n}`);
+    return String(forms?.many ?? forms?.other ?? '').replaceAll('#', String(n));
+  }
+  const v = Math.abs(num);
   const d10 = v % 10;
   const d100 = v % 100;
   const pick = d10 === 1 && d100 !== 11 ? 'one' : d10 >= 2 && d10 <= 4 && (d100 < 12 || d100 > 14) ? 'few' : 'many';
@@ -13,26 +19,21 @@ export function plural(n, forms) {
 }
 
 export function select(key, forms) {
-  return forms[key] ?? forms.other ?? '';
+  const hit = forms[key] ?? forms.other;
+  if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] select: bad key=${key}`);
+  return hit ?? '';
 }
 
-// month(index 0-11, case) — запечено, не склоняется кодом.
-const MONTHS = Object.freeze([
-  ['Январь', 'Января', 'Январю', 'Январь', 'Январём', 'Январе'],
-  ['Февраль', 'Февраля', 'Февралю', 'Февраль', 'Февралём', 'Феврале'],
-  ['Март', 'Марта', 'Марту', 'Март', 'Мартом', 'Марте'],
-  ['Апрель', 'Апреля', 'Апрелю', 'Апрель', 'Апрелем', 'Апреле'],
-  ['Май', 'Мая', 'Маю', 'Май', 'Маем', 'Мае'],
-  ['Июнь', 'Июня', 'Июню', 'Июнь', 'Июнем', 'Июне'],
-  ['Июль', 'Июля', 'Июлю', 'Июль', 'Июлем', 'Июле'],
-  ['Август', 'Августа', 'Августу', 'Август', 'Августом', 'Августе'],
-  ['Сентябрь', 'Сентября', 'Сентябрю', 'Сентябрь', 'Сентябрём', 'Сентябре'],
-  ['Октябрь', 'Октября', 'Октябрю', 'Октябрь', 'Октябрём', 'Октябре'],
-  ['Ноябрь', 'Ноября', 'Ноябрю', 'Ноябрь', 'Ноябрём', 'Ноябре'],
-  ['Декабрь', 'Декабря', 'Декабрю', 'Декабрь', 'Декабрём', 'Декабре'],
-]);
-const CASES = Object.freeze({ nom: 0, gen: 1, dat: 2, acc: 3, inst: 4, prep: 5 });
+// month(index 0-11, case) — чтение словаря months (ru, фолбэк en).
+// EN не склоняется: все падежи — та же форма (см. en.json).
+const CASES = Object.freeze(['nom', 'gen', 'dat', 'acc', 'inst', 'prep']);
 
 export function month(index, cas = 'nom') {
-  return MONTHS[index]?.[CASES[cas] ?? 0] ?? '';
+  const key = String(index);
+  const forms = ru.months?.[key] ?? en.months?.[key];
+  const sane = CASES.includes(cas) ? cas : 'nom';
+  if (sane !== cas && typeof console !== 'undefined') console.warn(`[locale] month: bad cas=${cas}, falling back to nom`);
+  const hit = forms?.[sane];
+  if (hit === undefined && typeof console !== 'undefined') console.warn(`[locale] month: bad index=${index} cas=${cas}`);
+  return hit ?? '';
 }
