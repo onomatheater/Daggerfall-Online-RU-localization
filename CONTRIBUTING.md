@@ -1,82 +1,105 @@
-# CONTRIBUTING — как контрибьюить в RU-локализацию
+# Contributing
 
-Правила для всех, кто правит этот репозиторий. Полная инженерная доктрина
-живёт в другом месте; здесь — рабочий минимум контрибьютора.
+This repository is an RU localization overlay for Daggerfall Online. This guide
+describes the current repository's contribution rules; it does not establish
+that another locale is supported or that this project's RU-specific policies
+apply to a separate fork. For the implemented locale data and mechanics, see
+[Locale data and mechanics](docs/LOCALIZATION.md). For implementation boundaries
+and evidence, see [Architecture](docs/ARCHITECTURE.md) and
+[Known gaps](docs/KNOWN-GAPS.md).
 
-## Ветки и PR
+## Project-wide boundaries
 
-- Рабочая ветка: `fix/ru-<короткое-описание>` или `feat/ru-<описание>`,
-  от свежего `dev` (`git fetch origin` перед созданием).
-- PR открывать **только в `dev`**. `main` — только мержи owner'а.
-- Один открытый PR на человека. Закончил и смержили — ветку удалить
-  (`git branch -d` + `git push origin --delete`).
-- Force-push запрещён. Self-merge запрещён: апрув и мерж — только owner,
-  по его слову. Ваша работа считается сделанной после мержа в `dev`.
-- В описании PR — секция `## Patch notes: <что и почему>`.
+These constraints apply to work on this localization project, independent of
+the language being discussed:
 
-## Что можно править (скоуп переводчика)
+- Keep localized display text at the rendering boundary. Network messages,
+  saves, and gameplay or quest logic must use stable IDs/keys, not rendered
+  translations.
+- Preserve source keys and structural tokens. Do not translate markup,
+  placeholders, macros, IDs, or logic sections as if they were prose. See the
+  [localization guide](docs/LOCALIZATION.md) for the formats actually used.
+- Do not infer support for a new locale from the RU implementation. German
+  support would require agreed scope plus runtime, packaging, validation, font,
+  and client-integration work; [Known gaps](docs/KNOWN-GAPS.md) records the
+  current evidence and limits.
+- Keep changes focused and add or update relevant tests with code/data changes.
+  The root test command is `npm test` (`node --test "test/*.test.js"`, Node.js
+  20 or newer). Passing unit tests prove only their exercised repository
+  behavior, not live game-client integration.
 
-Только переводы:
+## Current RU repository policy — RU-specific, not portable
 
-- `src/locale/ru.json` — **только поле `Value`**. Ключ (`Key`) стабилен:
-  не переименовывать, не удалять, не добавлять без отдельного согласования.
-- `src/locale/ru/quests/*-LOC.txt`, `src/locale/ru/books/*-LOC.txt`,
-  `src/locale/ru/biog/*-LOC.txt` — только текст в `QRC:`.
+The following rules preserve the current maintainer policy for contributions to
+this RU repository. They are not a template for a German translation, a fork,
+or another locale. Follow them only when the maintainer has assigned you RU
+translation work in this repository.
 
-Чего касаться нельзя:
+### RU translation scope and ownership
 
-- `src/locale/en.json` — EN-значения байт-в-байт из апстрима, не трогать.
-  Новые ключи добавляет только основной работник (парой `en.json` + `ru.json` + тест).
-  Переводчику добавлять ключи в любой json запрещено — правится только Value
-  существующих ключей.
-- Секция `QBN:` в `-LOC` файлах — логика квестов, не переводится.
-- Разметка и макросы: `[/center]`, `[/record]`, `[/end]`, `%pcn`, `%di`,
-  `%s`, `<-->`, `{placeholder}`, `${x}` — остаются как есть, плейсхолдеры 1:1.
-- `tools/`, `src/` (кроме `ru.json`), `test/` — без отдельного согласования.
-- Имена собственные, пути, ini-секции, версии, ID, кодовые константы —
-  не переводить (канон: `skills/ru-localization-qa/glossary.md`).
+An approved RU translator's data scope is limited to:
 
-## Качество перевода (обязательно)
+- Existing values in `src/locale/ru.json` (the `Value` fields only).
+- Text in `QRC:` sections of `src/locale/ru/quests/*-LOC.txt`,
+  `src/locale/ru/books/*-LOC.txt`, and `src/locale/ru/biog/*-LOC.txt`.
 
-Читать по порядку: `docs/TRANSLATING.md`, затем
-`skills/ru-localization-qa/SKILL.md` + `glossary.md`.
+Do not add, rename, or remove keys. The `Key` values are stable; only the
+maintainer owns additions, paired updates to `en.json` and `ru.json`, and their
+tests. Do not edit `src/locale/en.json` or existing RU content unless the
+maintainer has explicitly assigned that RU scope. Never edit `QBN:` sections;
+they contain quest logic. Keep macros, placeholders, and markup unchanged.
 
-1. Глоссарий первым: один EN-термин = один RU во всех таблицах, без синонимов.
-2. Обратный перевод RU→EN: смысл не должен уплывать.
-3. Регистр — нейтрально-помогающий, без сленга и смешения языков.
-4. `ё` обязательна; UTF-8 без BOM; CRLF в `ru.json` и `-LOC`.
-5. Ремарка `note`/`help`/соседние ключи — источник контекста; дословный
-   перевод без контекста = баг.
+The RU QA glossary and its exact-value assertions are language-specific. For
+approved RU work, consult [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md) and the
+tracked [RU localization QA guide](skills/ru-localization-qa/SKILL.md) and
+[glossary](skills/ru-localization-qa/glossary.md). These sources do not define
+German terminology, grammar, or review policy.
 
-## Изменение перевода = правка теста
+For this repository's RU translation changes, update the corresponding exact
+assertion in `test/dfo-*.test.js` in the same change. Do not delete or weaken
+cases (including skipping them, changing the tested key, or removing
+placeholder/`Ё` checks). Keep localization data UTF-8 without a BOM. The
+project's RU-specific editorial policy requires `Ё/ё`; this is not a universal
+German-language rule. Before submitting approved RU work, run `npm test` and,
+where relevant, `node tools/ru-scan.mjs`.
 
-Тесты в `test/` держат точные RU-значения. Если исправляете перевод:
+### RU repository branches and review
 
-- в том же коммите обновите соответствующий ассерт в `test/dfo-*.test.js`
-  на новое точное значение;
-- кейсы не удалять и не ослаблять (без `skip`, без смены ключа на другой);
-- код ошибки/секцию `// NEED:` в тесте не переписывать.
+These are current repository governance rules, not general Git advice:
 
-## Проверка перед пушем
+- Work from a fresh `dev` branch in a short `feat/ru-...` or `fix/ru-...`
+  branch; open a PR to `dev` only. `main` receives approved merges from `dev`.
+- Keep one open PR per contributor. Do not force-push or self-merge. Approval
+  and merge are maintainer-controlled; do not merge without the maintainer's
+  approval.
+- Include `## Patch notes: <what and why>` in the PR description. For RU value
+  changes, list each key and its old/new text with the reason.
+- After an approved merge, immediately delete your merged feature branch both
+  locally (`git branch -d`) and remotely (`git push origin --delete`). This
+  cleanup requirement applies only to your own merged feature branch; do not
+  delete another contributor's branch without the maintainer's authorization.
 
-```
-npm test        # node --test "test/*.test.js", Node >= 20
-```
+Do not read private/local planning notes as public contribution commitments.
+Use the tracked documentation linked above for current behavior and gaps.
 
-Всё зелёное. Дополнительно (по возможности): `node tools/ru-scan.mjs` —
-ё/смешанные скрипты/пробельный паритет. Падает — чинить перевод, не сканер.
+## Proposing German or another locale
 
-## Как owner проверяет ваш PR (что смотрим лично)
+This repository currently implements RU-specific locale and pack behavior; a
+German translation is not presently a data-only addition. A German contributor
+must first agree with the maintainer on the target repository/branch, file
+scope, review process, and ownership policy for a separate locale or fork.
+Until that arrangement is agreed, this guide grants no permission to create or
+edit locale files here. In particular, it does not authorize edits to
+`src/locale/en.json`, existing RU values, or RU `-LOC` data. The RU ownership,
+branch, glossary, and exact-RU-test policies above do not automatically apply to
+a German fork; the agreed German scope must define its own files, tests, and
+review process. Do not assume RU translation text may be reused or adapted;
+see the provenance question in [Known gaps](docs/KNOWN-GAPS.md).
 
-- `en.json` не тронут (`git diff --name-only` без него); новых ключей в `ru.json` нет.
-- Каждый правленный Value имеет парный ассёрт в `test/dfo-*.test.js` в том же коммите;
-  кейсы не удалены, не ослаблены (`skip`, смена ключа, снятие `Ё`/плейсхолдера = реджект).
-- Плейсхолдеры 1:1 с EN (`%s`, `{name}`, `%pcn`), разметка на месте, `Ё`, UTF-8 без BOM, CRLF.
-- Patch notes перечисляют ключи `«старое» → «новое» — почему`; спорное — описано, не решено молча.
+## Integration and test evidence
 
-## Размер и ритм
-
-- Один PR — одна тема, до ~50 исправленных ключей. Больше — разбейте.
-- Каждое исправление в Patch notes: `ключ: «старое» → «новое» — почему`.
-- Спорные случаи (см. ревью-очередь owner'а) — не решать молча: опишите
-  в PR, owner решит.
+The [client integration guide](inject/README.md) lists the adapter APIs and
+their tests, while distinguishing them from missing game boot wiring. A green
+test suite is not proof that the game loads a locale package or renders it.
+Check [Known gaps](docs/KNOWN-GAPS.md) before making client compatibility or
+locale-support claims.

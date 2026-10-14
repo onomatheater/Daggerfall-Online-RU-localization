@@ -1,22 +1,26 @@
-# Guildenstern NBP — атрибуция и решение о вендоринге
+# Guildenstern NBP — attribution and vendoring decision
 
-- **Автор:** Nate Halley (FontStruct, 01.05.2013, v1.0).
-- **Лицензия:** Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0).
-  Оригинал: `readme.txt` («give me credit»), `COPYRIGHT.txt`.
-- **Состав:** пара `GuildensternNbp.ttf` (заголовки) + `RosencrantzNbp.ttf`
-  (основной текст). Вендорится дистрибутивной единицей как есть;
-  выбранный лицевой шрифт — **Guildenstern**.
-- **Явное решение человека, 10.10.2026:** вендорить несмотря на AGENTS
-  MUST «только OFL» — Guildenstern единственный проверенный читаемый
-  кириллический пиксель-шрифт, на выбор потрачено значительное время.
-  Ответственность за последствия (включая удаление) — на человеке.
-- **Ограничения решения:**
-  - В апстрим MIT (PR в daggerfall-js-source) этот шрифт НЕ предлагать
-    без отдельного разбора (CC BY-SA vs MIT).
-  - ShareAlike: производные версии шрифта — тоже CC BY-SA с кредитом автору.
-- **Известные зазоры (парсер cmap, тест `test/guildenstern.test.js`):**
-  русское ядро 100% (А-Я, а-я, Ёё, «», —), отсутствуют только
-  нерусские Єє Іі Ѐѐ Ѝѝ + Ґґ Ұұ и знак **№ U+2116**.
-  № в русском UI отрендерится как `?` (FNT_ERROR_CODE) — нужен обход
-  (замена «№» на «No.»/«номер» в строках под этим шрифтом либо второй шрифт).
-- **Источник файла:** локальная копия (zip удалён 10.10); апстрим — FontStruct.
+- **Author:** Nate Halley (FontStruct, 2013-05-01, v1.0).
+- **License:** Creative Commons Attribution-ShareAlike 3.0 (CC BY-SA 3.0).
+  Original notices: `readme.txt` ("give me credit") and `COPYRIGHT.txt`.
+- **Files:** `GuildensternNbp.ttf` (headings) and `RosencrantzNbp.ttf`
+  (body text) are vendored together as one distribution unit. The selected
+  display face is **Guildenstern**.
+- **Explicit human decision, 2026-10-10:** Vendor this family as an exception
+  to the project's OFL-only requirement. It was the only verified readable
+  pixel-font option with Cyrillic found after substantial evaluation. The
+  decision-maker accepts responsibility for the consequences, including
+  removal of the files.
+- **Limits of that decision:**
+  - Do **not** propose this font for the MIT-licensed upstream
+    `daggerfall-js-source` project without a separate review of the CC BY-SA
+    versus MIT licensing implications.
+  - ShareAlike applies to derivative font versions: they remain CC BY-SA and
+    must credit the author.
+- **Known character-coverage gaps** (cmap parser; see
+  `test/guildenstern.test.js`): the Russian core is fully covered (А–Я, а–я,
+  Ёё, «», —). Missing characters are Єє, Іі, Ѐѐ, Ѝѝ, Ґґ, Ұұ, and the number
+  sign **№ U+2116**. In Russian UI, № renders as `?` (`FNT_ERROR_CODE`); a
+  workaround is needed, such as replacing it with “No.” or “number” in text
+  shown in this font, or using a second font.
+- **Source:** The upstream source is FontStruct.

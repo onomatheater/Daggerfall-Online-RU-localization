@@ -1,62 +1,124 @@
-# Встройка RU-пака в клиент
+# Client integration guide
 
-Два исхода — один адаптер (`inject/locale-adapter.js`):
-- разработчики говорят «давайте в апстрим» — файл ложится в `src/locale/` клиента как есть;
-- говорят «только внешний оверлей» — тот же файл грузится первым скриптом поверх сборки.
+`inject/locale-adapter.js` is an adapter module in this repository. Parts of
+its API/helper behavior are unit-tested here, but this repository does not
+contain a game-client boot call that loads or invokes the adapter. The examples
+below describe the current module interface; they are illustrative integration
+patterns, not drop-in client instructions or evidence of an upstream client
+change. Confirm call sites, module paths, and host hooks against the exact game
+client revision before integrating.
 
-## Как врапить (механика)
+See [Architecture](../docs/ARCHITECTURE.md) for the component boundaries and
+[Known gaps](../docs/KNOWN-GAPS.md) for the current evidence and unresolved
+client questions.
+
+## Adapter API in this repository
+
+`inject/locale-adapter.js` exports:
+
+- `setGameVersion(version)` — records the game version string used as the
+  default compatibility input for pack registration.
+- `registerPack({ manifest, tables }, version?)` — validates the RU manifest
+  and game-version compatibility, then registers its tables in the adapter's
+  in-memory overlay. It returns `{ ok: true, version }` or
+  `{ ok: false, reason }` when manifest/version validation fails. The adapter's
+  pack locale is currently fixed to `ru`.
+- `wrapLiteral(key, params?, fallback?)` and
+  `wrapTemplate(key, params?, fallback?)` — resolve a pack value when present,
+  otherwise use the bundled locale resolver. An explicit `fallback` is used
+  for a key missing from both the pack and bundled dictionaries.
+- `wrapPlural(key, count, params?, locale?)` — resolves a pack plural-form
+  object or delegates to bundled `tp()`. The supported plural data and selector
+  are RU-specific; this is not a general ICU parser.
+- Re-exports from `src/locale/locale.js`: `t`, `tp`, `getLocale`, `hasKey`,
+  `splitKey`, and `setLocale`.
+
+No game boot path calls this module, and access to `Prefs/Locale` remains
+unconfirmed; the helper exports do not establish either integration hook.
+
+Illustrative wrapper calls (the helper signatures are covered by
+[`loader-adapter.test.js`](../test/loader-adapter.test.js) and
+[`adapter-pack.test.js`](../test/adapter-pack.test.js)):
 
 ```js
-// было (src/scenes/hostMagic.js): NO_SPELLBOOK_TEXT = 'You have no spellbook!';
-import { wrapLiteral } from 'locale-adapter.js';
-const NO_SPELLBOOK_TEXT = () => wrapLiteral('spells:nospellbook' /* ключ по аудиту */);
+wrapLiteral('strings:youSee', { s: name });
+wrapTemplate('strings:thingJustDied', { s: name });
+wrapPlural('strings:someKey', count, params);
 ```
 
-```js
-// было (src/scenes/corpseMarker.js:149): const line = `${name} just died.`;
-const line = wrapTemplate('strings:thingJustDied', { s: name });
-```
+These examples show adapter calls, not verified edits to a current game-client
+call site. Do not infer that a particular upstream literal, filename, line
+number, import path, or boot module matches without checking that client's
+source revision. The adapter's source comments describe the relative-import
+mapping needed for a proposed upstream placement; the mapping test checks those
+comments/layout strings, not an actual upstream integration.
 
-## Загрузка из Prefs/Locale (иммунитет к обновлению игры)
+The locale module starts in English. `setLocale('ru')` changes its locale
+state; it does not load/register a pack or trigger a host UI redraw. Pack
+registration and locale selection are separate actions.
 
-Перевод лежит вне сборки — `Prefs/Locale/ru/` рядом с сейвами (апдейтер игры
-их не трогает). Старт игры (буквально, `node:fs` в бандле нет — только fetch):
+## Host-client responsibilities and switching contract
 
-```js
-// src/main.js клиента (или его boot-модуль):
-import { registerPack, setGameVersion, setLocale } from './locale/locale-adapter.js';
-setGameVersion(gameVersion); // dotted '0.1.8127' — канон сведёт сам
-const [manifest, tables] = await Promise.all([
-  fetch('/Prefs/Locale/ru/locale-version.json').then((r) => r.json()),
-  fetch('/Prefs/Locale/ru/ru.json').then((r) => r.json()),
-]);
-const pack = registerPack({ manifest, tables }); // {ok:false} → остаёмся на EN
-if (pack.ok) setLocale('ru'); // ре-рендер, сеть молчит, сейвы — только ID
-```
+The adapter's `setLocale()` only changes locale-module state. A host-client
+integration that adopts locale switching must also arrange to:
 
-Та же механика покрыта тестом без браузера: `loadExternalPackFetch()`
-(`src/locale/loader.js`, `test/overlay-external-fetch.test.js`) — fetchJson
-инжектится, отказ `{ok:false}`, никогда throw. RISK: как именно браузерный
-клиент дотягивается до папки Prefs (file:// vs протокол Electron) — решает
-апстрим, адаптер путь не зашивает (baseUrl — параметр).
+- redraw currently open UI surfaces as appropriate; and
+- invalidate/rebuild any font or SDF atlas whose glyph coverage depends on
+  displayed text.
 
-## Якоря (первые 5 точек — исторический пример механики, 11.10)
+Neither responsibility is implemented by this adapter or established by its
+unit tests. A locale switch is intended to remain client-local, without
+changing network messages, saves, or gameplay IDs; the repository's host-side
+integration does not prove that behavior. In particular, the required
+in-flight trade/cast/quest behavior—an operation already underway is not
+recoded or retransmitted in a different locale, with the current frame allowed
+to finish in its original presentation—is not established by a test here.
+Treat these as host integration requirements to implement and verify, not as
+current guarantees.
 
-> Актуальная очередь и drift-контроль — `tools/probe-queue.json` +
-> `tools/probe-rebase.mjs`; слои системы — AGENTS §4. Ниже — исходный
-> пример врезки, строки/номера могут дрейфовать с апстримом.
+## Pack-loading helpers and their evidence
 
-1. `src/scenes/hostMagic.js:41` — `'You have no spellbook!'` → таблица spells/strings.
-2. `src/scenes/corpseMarker.js:149` — `` `${name} just died.` `` → `strings:thingJustDied`.
-3. `src/scenes/world.js:13948` — `'You cannot save now.'` → `strings:cannotSaveNow`-класс ключей.
-4. `src/player/activate.js:44` — `youSee,You see %s.` → `strings:youSee`.
-5. `src/player/climbing.js:186` — `Internal_Strings.csv:371 climbingMode` → дословно.
+There are two tested helper boundaries; neither is wired into game startup by
+this repository:
 
-## Правила, неснимаемые любым ответом
+- `loadExternalPackFetch({ baseUrl, gameVersion, bundled, fetchJson })` from
+  [`src/locale/loader.js`](../src/locale/loader.js) is a browser-oriented
+  helper. It asks the injected `fetchJson` function for `locale-version.json`
+  and `ru.json`, validates the RU manifest/version, and returns an overlay or
+  `{ ok: false, reason }`. `fetchJson` is injected rather than bound to a
+  browser global. [`overlay-external-fetch.test.js`](../test/overlay-external-fetch.test.js)
+  uses a stub; it proves helper behavior with that stub, not access to a real
+  user-data directory, network request, or live client.
+- `readPackDir()` and `loadExternalPack()` from
+  [`tools/load-pack.mjs`](../tools/load-pack.mjs) read the same manifest and
+  `ru.json` from a local directory using Node.js filesystem APIs. They are
+  tooling helpers, not browser APIs or proof that the game can read those
+  files.
 
-- Сеть и сейвы — только ID (см. `src/net/link.js`). Переключатель языка — чисто
-  клиентское состояние, ре-рендер + инвалидация SDF-атласа, без переподключения.
-- Нюанс кавычек: DFU-значения иногда в кавычках, клиент рисует без — решает call
-  site, адаптер не правит текст.
-- SDF-атлас: сид из `src/font/coverage.js` скормить в `buildSdfFace()` (`src/ui/text.js`
-  клиента) рядом с `vendor/handjet` TTF.
+The `Prefs/Locale` path is not confirmed as accessible to the browser/Electron
+client. The loader accepts a caller-supplied `baseUrl`, but this does not
+establish a URL scheme, permission, or host bridge for the client's user-data
+directory. A maintainer-confirmed access mechanism and boot hook are needed
+before writing client instructions around that path.
+
+The external JSON loader handles a manifest and `ru.json` tables only. It does
+not consume packaged quest/book `-LOC` files; their separate game-client
+loading path remains outside this repository and unverified. German is not
+currently supported by this fixed-RU adapter and loader path.
+
+## Tests and limits
+
+- [`adapter-pack.test.js`](../test/adapter-pack.test.js) exercises adapter pack
+  registration, compatibility rejection, wrapper fallback, and plural
+  delegation.
+- [`loader-adapter.test.js`](../test/loader-adapter.test.js) exercises
+  representative bundled wrapper values and checks adapter import-map
+  comments/layout text.
+- [`overlay-external-fetch.test.js`](../test/overlay-external-fetch.test.js)
+  exercises external-fetch helper validation and overlay results with a stub.
+
+These are module/helper tests, not tests of game boot wiring, `Prefs/Locale`
+access, an upstream call site, visible UI redraw, font-atlas invalidation,
+`-LOC` consumption, network/save behavior in a live session, or in-flight
+operations. Confirm each such integration point with the client maintainer and
+appropriate client-level evidence before describing it as implemented.
